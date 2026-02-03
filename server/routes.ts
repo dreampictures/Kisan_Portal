@@ -22,7 +22,7 @@ const upload = multer({
 });
 
 // Admin emails that are allowed to access admin panel (lowercase only)
-const ADMIN_EMAILS = ['sukdev3689@gmail.com'];
+const ADMIN_EMAILS = ['help.dreampictures@gmail.com'];
 
 // Middleware to check admin access
 const isAdmin = (req: any, res: any, next: any) => {
