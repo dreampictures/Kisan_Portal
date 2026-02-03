@@ -2,7 +2,7 @@ import { useState } from "react";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { insertRegistrationSchema, type InsertRegistration } from "@shared/schema";
-import { useGenerateCard } from "@/hooks/use-registration";
+import { useSubmitRegistration } from "@/hooks/use-registration";
 import {
   Form,
   FormControl,
@@ -15,19 +15,18 @@ import {
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
-import { Upload, Loader2, Download, CheckCircle2 } from "lucide-react";
+import { Upload, Loader2, Send, CheckCircle2 } from "lucide-react";
 import { motion } from "framer-motion";
 import { z } from "zod";
 
-// Add file validation to the schema for client-side check
 const formSchema = insertRegistrationSchema.extend({
   photo: z
     .instanceof(FileList)
-    .refine((files) => files?.length === 1, "Photo is required")
-    .refine((files) => files?.[0]?.size <= 5000000, "Max file size is 5MB")
+    .refine((files) => files?.length === 1, "ਫੋਟੋ ਲੋੜੀਂਦੀ ਹੈ")
+    .refine((files) => files?.[0]?.size <= 5000000, "ਵੱਧ ਤੋਂ ਵੱਧ ਆਕਾਰ 5MB")
     .refine(
       (files) => ["image/jpeg", "image/png", "image/jpg"].includes(files?.[0]?.type),
-      "Only .jpg, .jpeg, .png formats are supported"
+      "ਸਿਰਫ਼ .jpg, .jpeg, .png ਸਮਰਥਿਤ ਹਨ"
     ),
 });
 
@@ -35,13 +34,13 @@ type FormValues = z.infer<typeof formSchema>;
 
 export default function Contact() {
   const [isSuccess, setIsSuccess] = useState(false);
-  const { mutate, isPending } = useGenerateCard();
+  const { mutate, isPending } = useSubmitRegistration();
 
   const form = useForm<FormValues>({
     resolver: zodResolver(formSchema),
     defaultValues: {
       name: "",
-      designation: "Member",
+      designation: "ਮੈਂਬਰ",
       village: "",
       tehsil: "",
       district: "",
@@ -53,14 +52,13 @@ export default function Contact() {
   function onSubmit(data: FormValues) {
     const formData = new FormData();
     formData.append("name", data.name);
-    formData.append("designation", data.designation || "Member");
+    formData.append("designation", data.designation || "ਮੈਂਬਰ");
     formData.append("village", data.village);
     formData.append("tehsil", data.tehsil);
     formData.append("district", data.district);
     formData.append("mobileNumber", data.mobileNumber);
     formData.append("aadhaarNumber", data.aadhaarNumber);
     
-    // Append the file
     if (data.photo && data.photo.length > 0) {
       formData.append("photo", data.photo[0]);
     }
@@ -73,7 +71,6 @@ export default function Contact() {
     });
   }
 
-  // File input handler helper
   const fileRef = form.register("photo");
 
   return (
@@ -86,20 +83,19 @@ export default function Contact() {
         <div className="text-center mb-10">
           <h1 className="text-4xl font-display font-bold mb-4">ਪਛਾਣ ਪੱਤਰ ਰਜਿਸਟ੍ਰੇਸ਼ਨ</h1>
           <p className="text-muted-foreground text-lg max-w-2xl mx-auto">
-            ਆਪਣਾ ਅਧਿਕਾਰਤ ਕਿਸਾਨ ਮਜ਼ਦੂਰ ਸੰਘਰਸ਼ ਕਮੇਟੀ ਪਛਾਣ ਪੱਤਰ ਬਣਾਉਣ ਲਈ ਆਪਣੇ ਵੇਰਵੇ ਭਰੋ।
+            ਆਪਣਾ ਅਧਿਕਾਰਤ ਕਿਸਾਨ ਮਜ਼ਦੂਰ ਸੰਘਰਸ਼ ਕਮੇਟੀ ਪਛਾਣ ਪੱਤਰ ਲਈ ਰਜਿਸਟਰ ਕਰੋ।
           </p>
         </div>
 
         <div className="grid lg:grid-cols-3 gap-8">
-          {/* Info Card */}
           <div className="lg:col-span-1 space-y-6">
             <Card className="bg-primary text-primary-foreground border-none shadow-xl">
               <CardHeader>
-                <CardTitle>ਜ਼ਰੂਰੀ ਨੋਟ</CardTitle>
+                <CardTitle>ਜ਼ਰੂਰੀ ਨੋਟ</CardTitle>
               </CardHeader>
               <CardContent className="space-y-4">
                 <p className="opacity-90 leading-relaxed">
-                  ਤੁਹਾਡਾ ਆਈਡੀ ਕਾਰਡ ਆਪਣੇ ਆਪ ਇੱਕ ਜ਼ਿਪ ਫਾਈਲ ਦੇ ਰੂਪ ਵਿੱਚ ਤਿਆਰ ਹੋ ਜਾਵੇਗਾ ਜਿਸ ਵਿੱਚ HTML ਕਾਰਡ ਅਤੇ ਤੁਹਾਡੇ ਵੇਰਵੇ ਹੋਣਗੇ।
+                  ਤੁਹਾਡੀ ਜਾਣਕਾਰੀ ਸੁਰੱਖਿਅਤ ਢੰਗ ਨਾਲ ਸੰਭਾਲੀ ਜਾਵੇਗੀ। ਤੁਹਾਡਾ ਕਾਰਡ ਜਲਦੀ ਹੀ ਤਿਆਰ ਕੀਤਾ ਜਾਵੇਗਾ।
                 </p>
                 <div className="flex items-start gap-3 mt-4">
                   <CheckCircle2 className="w-5 h-5 mt-0.5 text-accent" />
@@ -111,7 +107,7 @@ export default function Contact() {
                 </div>
                 <div className="flex items-start gap-3">
                   <CheckCircle2 className="w-5 h-5 mt-0.5 text-accent" />
-                  <p className="text-sm opacity-90">ਫਾਈਲ ਤੁਹਾਡੇ ਡਿਵਾਈਸ 'ਤੇ ਤੁਰੰਤ ਡਾਊਨਲੋਡ ਹੋ ਜਾਵੇਗੀ।</p>
+                  <p className="text-sm opacity-90">ਰਜਿਸਟ੍ਰੇਸ਼ਨ ਤੋਂ ਬਾਅਦ ਤੁਹਾਡਾ ਕਾਰਡ ਤਿਆਰ ਕੀਤਾ ਜਾਵੇਗਾ।</p>
                 </div>
               </CardContent>
             </Card>
@@ -119,12 +115,12 @@ export default function Contact() {
             <div className="bg-secondary/30 rounded-xl p-6 border border-border">
                <h3 className="font-bold mb-2">ਮਦਦ ਦੀ ਲੋੜ ਹੈ?</h3>
                <p className="text-sm text-muted-foreground">
-                 ਜੇਕਰ ਤੁਹਾਨੂੰ ਆਪਣਾ ਕਾਰਡ ਬਣਾਉਣ ਵਿੱਚ ਕੋਈ ਸਮੱਸਿਆ ਆਉਂਦੀ ਹੈ, ਤਾਂ ਜ਼ਿਲ੍ਹਾ ਸਕੱਤਰ ਨਾਲ ਸੰਪਰਕ ਕਰੋ।
+                 ਜੇਕਰ ਤੁਹਾਨੂੰ ਕੋਈ ਸਮੱਸਿਆ ਆਉਂਦੀ ਹੈ, ਤਾਂ ਜ਼ਿਲ੍ਹਾ ਸਕੱਤਰ ਨਾਲ ਸੰਪਰਕ ਕਰੋ।
                </p>
+               <p className="text-sm font-semibold text-primary mt-2">ਫੋਨ: 81465 54106</p>
             </div>
           </div>
 
-          {/* Form Card */}
           <Card className="lg:col-span-2 shadow-2xl border-border/50">
             <CardHeader>
               <CardTitle>ਮੈਂਬਰ ਦੇ ਵੇਰਵੇ</CardTitle>
@@ -144,7 +140,7 @@ export default function Contact() {
                         <FormItem>
                           <FormLabel>ਨਾਮ</FormLabel>
                           <FormControl>
-                            <Input placeholder="ਉਦਾਹਰਣ: ਭਗਵੰਤ ਸਿੰਘ" {...field} className="h-12" />
+                            <Input data-testid="input-name" placeholder="ਉਦਾਹਰਣ: ਭਗਵੰਤ ਸਿੰਘ" {...field} className="h-12" />
                           </FormControl>
                           <FormMessage />
                         </FormItem>
@@ -157,7 +153,7 @@ export default function Contact() {
                         <FormItem>
                           <FormLabel>ਆਹੁਦਾ</FormLabel>
                           <FormControl>
-                            <Input placeholder="ਮੈਂਬਰ" {...field} className="h-12" />
+                            <Input data-testid="input-designation" placeholder="ਮੈਂਬਰ" {...field} className="h-12" />
                           </FormControl>
                           <FormMessage />
                         </FormItem>
@@ -173,7 +169,7 @@ export default function Contact() {
                         <FormItem>
                           <FormLabel>ਆਧਾਰ ਨੰਬਰ (12 ਅੰਕ)</FormLabel>
                           <FormControl>
-                            <Input placeholder="XXXX XXXX XXXX" {...field} maxLength={12} className="h-12 font-mono" />
+                            <Input data-testid="input-aadhaar" placeholder="XXXX XXXX XXXX" {...field} maxLength={12} className="h-12 font-mono" />
                           </FormControl>
                           <FormMessage />
                         </FormItem>
@@ -186,7 +182,7 @@ export default function Contact() {
                         <FormItem>
                           <FormLabel>ਮੋਬਾਈਲ ਨੰਬਰ</FormLabel>
                           <FormControl>
-                            <Input placeholder="9876543210" {...field} maxLength={10} className="h-12 font-mono" />
+                            <Input data-testid="input-mobile" placeholder="9876543210" {...field} maxLength={10} className="h-12 font-mono" />
                           </FormControl>
                           <FormMessage />
                         </FormItem>
@@ -202,7 +198,7 @@ export default function Contact() {
                         <FormItem>
                           <FormLabel>ਪਿੰਡ</FormLabel>
                           <FormControl>
-                            <Input placeholder="ਪਿੰਡ ਦਾ ਨਾਮ" {...field} className="h-12" />
+                            <Input data-testid="input-village" placeholder="ਪਿੰਡ ਦਾ ਨਾਮ" {...field} className="h-12" />
                           </FormControl>
                           <FormMessage />
                         </FormItem>
@@ -215,7 +211,7 @@ export default function Contact() {
                         <FormItem>
                           <FormLabel>ਤਹਿਸੀਲ</FormLabel>
                           <FormControl>
-                            <Input placeholder="ਤਹਿਸੀਲ" {...field} className="h-12" />
+                            <Input data-testid="input-tehsil" placeholder="ਤਹਿਸੀਲ" {...field} className="h-12" />
                           </FormControl>
                           <FormMessage />
                         </FormItem>
@@ -226,9 +222,9 @@ export default function Contact() {
                       name="district"
                       render={({ field }) => (
                         <FormItem>
-                          <FormLabel>ਜ਼ਿਲ੍ਹਾ</FormLabel>
+                          <FormLabel>ਜ਼ਿਲ੍ਹਾ</FormLabel>
                           <FormControl>
-                            <Input placeholder="ਜ਼ਿਲ੍ਹਾ" {...field} className="h-12" />
+                            <Input data-testid="input-district" placeholder="ਜ਼ਿਲ੍ਹਾ" {...field} className="h-12" />
                           </FormControl>
                           <FormMessage />
                         </FormItem>
@@ -246,6 +242,7 @@ export default function Contact() {
                           <div className="flex items-center gap-4">
                             <div className="relative w-full">
                               <Input 
+                                data-testid="input-photo"
                                 type="file" 
                                 accept="image/*"
                                 className="pl-10 h-12 pt-2.5 file:text-primary file:font-semibold file:bg-primary/10 file:rounded-full file:border-0 file:px-3 file:mr-4"
@@ -263,6 +260,7 @@ export default function Contact() {
 
                   <div className="pt-4">
                     <Button 
+                      data-testid="button-submit"
                       type="submit" 
                       className="w-full h-14 text-lg font-semibold bg-primary hover:bg-primary/90 shadow-lg shadow-primary/20 transition-all hover:-translate-y-0.5"
                       disabled={isPending}
@@ -270,12 +268,12 @@ export default function Contact() {
                       {isPending ? (
                         <>
                           <Loader2 className="mr-2 h-5 w-5 animate-spin" />
-                          ਕਾਰਡ ਬਣਾਇਆ ਜਾ ਰਿਹਾ ਹੈ...
+                          ਭੇਜਿਆ ਜਾ ਰਿਹਾ ਹੈ...
                         </>
                       ) : (
                         <>
-                          <Download className="mr-2 h-5 w-5" />
-                          ਆਈਡੀ ਕਾਰਡ ਬਣਾਓ ਅਤੇ ਡਾਊਨਲੋਡ ਕਰੋ
+                          <Send className="mr-2 h-5 w-5" />
+                          ਰਜਿਸਟ੍ਰੇਸ਼ਨ ਭੇਜੋ
                         </>
                       )}
                     </Button>
@@ -291,8 +289,8 @@ export default function Contact() {
                 >
                   <CheckCircle2 className="h-6 w-6 text-green-600" />
                   <div>
-                    <p className="font-semibold">ਕਾਰਡ ਸਫਲਤਾਪੂਰਵਕ ਬਣਾਇਆ ਗਿਆ!</p>
-                    <p className="text-sm text-green-700">ਜ਼ਿਪ ਫਾਈਲ ਲਈ ਆਪਣੇ ਡਾਊਨਲੋਡ ਫੋਲਡਰ ਦੀ ਜਾਂਚ ਕਰੋ।</p>
+                    <p className="font-semibold">ਰਜਿਸਟ੍ਰੇਸ਼ਨ ਸਫਲ!</p>
+                    <p className="text-sm text-green-700">ਤੁਹਾਡਾ ਕਾਰਡ ਜਲਦੀ ਹੀ ਤਿਆਰ ਕੀਤਾ ਜਾਵੇਗਾ।</p>
                   </div>
                 </motion.div>
               )}

@@ -1,27 +1,30 @@
-import { pgTable, text, serial, integer, boolean, timestamp } from "drizzle-orm/pg-core";
+import { pgTable, text, serial, timestamp } from "drizzle-orm/pg-core";
 import { createInsertSchema } from "drizzle-zod";
 import { z } from "zod";
+
+// Export auth models (mandatory for Replit Auth)
+export * from "./models/auth";
 
 export const registrations = pgTable("registrations", {
   id: serial("id").primaryKey(),
   name: text("name").notNull(),
-  designation: text("designation").default("Member"),
+  designation: text("designation").default("ਮੈਂਬਰ"),
   village: text("village").notNull(),
   tehsil: text("tehsil").notNull(),
   district: text("district").notNull(),
   mobileNumber: text("mobile_number").notNull(),
   aadhaarNumber: text("aadhaar_number").notNull(),
-  photoUrl: text("photo_url"), // Path to temp file if needed, or just for schema
+  photoData: text("photo_data"), // Base64 encoded photo
+  photoMimeType: text("photo_mime_type"),
   createdAt: timestamp("created_at").defaultNow(),
 });
 
-// Schema for the form validation (excluding ID/Dates)
+// Schema for the form validation (excluding ID/Dates/Photo fields)
 export const insertRegistrationSchema = createInsertSchema(registrations)
-  .omit({ id: true, createdAt: true, photoUrl: true })
+  .omit({ id: true, createdAt: true, photoData: true, photoMimeType: true })
   .extend({
-    // We handle file upload separately in the multipart form, but we can validate other fields here
-    aadhaarNumber: z.string().length(12, "Aadhaar number must be 12 digits"),
-    mobileNumber: z.string().min(10, "Mobile number must be at least 10 digits"),
+    aadhaarNumber: z.string().length(12, "ਆਧਾਰ ਨੰਬਰ 12 ਅੰਕ ਹੋਣਾ ਚਾਹੀਦਾ ਹੈ"),
+    mobileNumber: z.string().min(10, "ਮੋਬਾਈਲ ਨੰਬਰ 10 ਅੰਕ ਹੋਣਾ ਚਾਹੀਦਾ ਹੈ"),
   });
 
 export type Registration = typeof registrations.$inferSelect;
