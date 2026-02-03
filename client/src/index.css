@@ -27,8 +27,8 @@
   
   --radius: 0.75rem;
 
-  --font-display: 'Merriweather', serif;
-  --font-sans: 'DM Sans', sans-serif;
+  --font-display: 'Merriweather', 'Noto Sans Gurmukhi', serif;
+  --font-sans: 'DM Sans', 'Noto Sans Gurmukhi', sans-serif;
   
   --background: 0 0% 100%;
   --foreground: 150 50% 10%;

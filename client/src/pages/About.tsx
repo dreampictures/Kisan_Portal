@@ -12,9 +12,9 @@ export default function About() {
             animate={{ opacity: 1, y: 0 }}
             className="max-w-3xl mx-auto"
           >
-            <h1 className="text-4xl md:text-5xl font-display font-bold mb-6">About Our Union</h1>
+            <h1 className="text-4xl md:text-5xl font-display font-bold mb-6">ਸਾਡੀ ਯੂਨੀਅਨ ਬਾਰੇ</h1>
             <p className="text-lg text-muted-foreground">
-              Kisan Mazdoor Sangharsh Committee Punjab stands as a pillar of strength for the agricultural community.
+              ਕਿਸਾਨ ਮਜ਼ਦੂਰ ਸੰਘਰਸ਼ ਕਮੇਟੀ ਪੰਜਾਬ ਖੇਤੀਬਾੜੀ ਭਾਈਚਾਰੇ ਲਈ ਇੱਕ ਮਜ਼ਬੂਤ ਥੰਮ੍ਹ ਵਾਂਗ ਖੜ੍ਹੀ ਹੈ।
             </p>
           </motion.div>
         </div>
@@ -29,9 +29,9 @@ export default function About() {
         >
           <div className="grid md:grid-cols-2 gap-12 items-center">
             <div className="space-y-6">
-              <h2 className="text-3xl font-display font-bold text-foreground">Our Mission</h2>
+              <h2 className="text-3xl font-display font-bold text-foreground">ਸਾਡਾ ਮਿਸ਼ਨ</h2>
               <p className="text-muted-foreground leading-relaxed text-lg">
-                We are dedicated to safeguarding the interests of farmers and laborers in Punjab. Through unity and peaceful struggle, we aim to resolve the pressing issues facing our agricultural sector.
+                ਅਸੀਂ ਪੰਜਾਬ ਦੇ ਕਿਸਾਨਾਂ ਅਤੇ ਮਜ਼ਦੂਰਾਂ ਦੇ ਹਿੱਤਾਂ ਦੀ ਰਾਖੀ ਲਈ ਵਚਨਬੱਧ ਹਾਂ। ਏਕਤਾ ਅਤੇ ਸ਼ਾਂਤਮਈ ਸੰਘਰਸ਼ ਰਾਹੀਂ, ਅਸੀਂ ਖੇਤੀਬਾੜੀ ਖੇਤਰ ਦੇ ਭਖਦੇ ਮਸਲਿਆਂ ਨੂੰ ਹੱਲ ਕਰਨ ਦਾ ਟੀਚਾ ਰੱਖਦੇ ਹਾਂ।
               </p>
               <div className="space-y-4">
                 <div className="flex gap-4">
@@ -39,8 +39,8 @@ export default function About() {
                     <BadgeCheck className="w-5 h-5 text-primary" />
                   </div>
                   <div>
-                    <h4 className="font-bold text-foreground">Official Recognition</h4>
-                    <p className="text-sm text-muted-foreground">Recognized body fighting for farmers' rights.</p>
+                    <h4 className="font-bold text-foreground">ਸਰਕਾਰੀ ਮਾਨਤਾ</h4>
+                    <p className="text-sm text-muted-foreground">ਕਿਸਾਨਾਂ ਦੇ ਹੱਕਾਂ ਲਈ ਲੜਨ ਵਾਲੀ ਮਾਨਤਾ ਪ੍ਰਾਪਤ ਜਥੇਬੰਦੀ।</p>
                   </div>
                 </div>
                 <div className="flex gap-4">
@@ -48,8 +48,8 @@ export default function About() {
                     <Leaf className="w-5 h-5 text-primary" />
                   </div>
                   <div>
-                    <h4 className="font-bold text-foreground">Sustainable Future</h4>
-                    <p className="text-sm text-muted-foreground">Promoting policies that ensure long-term viability.</p>
+                    <h4 className="font-bold text-foreground">ਸੁਨਹਿਰੀ ਭਵਿੱਖ</h4>
+                    <p className="text-sm text-muted-foreground">ਅਜਿਹੀਆਂ ਨੀਤੀਆਂ ਨੂੰ ਉਤਸ਼ਾਹਿਤ ਕਰਨਾ ਜੋ ਲੰਬੇ ਸਮੇਂ ਦੀ ਖੁਸ਼ਹਾਲੀ ਯਕੀਨੀ ਬਣਾਉਣ।</p>
                   </div>
                 </div>
                 <div className="flex gap-4">
@@ -57,8 +57,8 @@ export default function About() {
                     <HeartHandshake className="w-5 h-5 text-primary" />
                   </div>
                   <div>
-                    <h4 className="font-bold text-foreground">Community Support</h4>
-                    <p className="text-sm text-muted-foreground">Standing together in times of crisis and need.</p>
+                    <h4 className="font-bold text-foreground">ਭਾਈਚਾਰਕ ਸਾਂਝ</h4>
+                    <p className="text-sm text-muted-foreground">ਸੰਕਟ ਅਤੇ ਲੋੜ ਦੇ ਸਮੇਂ ਇੱਕਜੁੱਟ ਹੋ ਕੇ ਖੜੇ ਹੋਣਾ।</p>
                   </div>
                 </div>
               </div>
@@ -69,9 +69,9 @@ export default function About() {
               <div className="aspect-[4/3] rounded-2xl bg-gradient-to-br from-primary/20 to-secondary/50 flex items-center justify-center relative overflow-hidden">
                  <div className="absolute inset-0 opacity-20 bg-[radial-gradient(#065f46_1px,transparent_1px)] [background-size:16px_16px]"></div>
                  <div className="text-center p-8">
-                   <h3 className="text-2xl font-display font-bold text-primary mb-2">Leadership</h3>
-                   <p className="font-semibold">Sukhdev Singh Mand</p>
-                   <p className="text-sm text-muted-foreground">State Vice President</p>
+                   <h3 className="text-2xl font-display font-bold text-primary mb-2">ਅਗਵਾਈ</h3>
+                   <p className="font-semibold">ਸੁਖਦੇਵ ਸਿੰਘ ਮੰਡ</p>
+                   <p className="text-sm text-muted-foreground">ਸੂਬਾ ਮੀਤ ਪ੍ਰਧਾਨ</p>
                  </div>
               </div>
             </div>
@@ -79,13 +79,13 @@ export default function About() {
         </motion.div>
         
         <div className="mt-16 text-center max-w-2xl mx-auto">
-          <h3 className="text-2xl font-bold mb-4">Contact Information</h3>
+          <h3 className="text-2xl font-bold mb-4">ਸੰਪਰਕ ਜਾਣਕਾਰੀ</h3>
           <p className="text-muted-foreground mb-8">
-            For any queries or assistance, please reach out to our headquarters.
+            ਕਿਸੇ ਵੀ ਪੁੱਛਗਿੱਛ ਜਾਂ ਸਹਾਇਤਾ ਲਈ, ਕਿਰਪਾ ਕਰਕੇ ਸਾਡੇ ਮੁੱਖ ਦਫਤਰ ਨਾਲ ਸੰਪਰਕ ਕਰੋ।
           </p>
           <div className="p-6 bg-secondary/20 rounded-xl border border-secondary">
-             <p className="font-bold text-primary text-lg">Helpline: 81465 54106</p>
-             <p className="text-muted-foreground mt-2">Email: Sukdev3689@gmail.com</p>
+             <p className="font-bold text-primary text-lg">ਹੈਲਪਲਾਈਨ: 81465 54106</p>
+             <p className="text-muted-foreground mt-2">ਈਮੇਲ: Sukdev3689@gmail.com</p>
           </div>
         </div>
       </div>

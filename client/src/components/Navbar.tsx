@@ -9,9 +9,9 @@ export function Navbar() {
   const [isOpen, setIsOpen] = useState(false);
 
   const links = [
-    { href: "/", label: "Home" },
-    { href: "/about", label: "About Union" },
-    { href: "/contact", label: "Contact Us" },
+    { href: "/", label: "ਮੁੱਖ ਪੰਨਾ" },
+    { href: "/about", label: "ਯੂਨੀਅਨ ਬਾਰੇ" },
+    { href: "/contact", label: "ਸੰਪਰਕ ਕਰੋ" },
   ];
 
   return (
@@ -22,7 +22,7 @@ export function Navbar() {
             <Tractor className="h-6 w-6 text-primary" />
           </div>
           <span className="font-display font-bold text-lg md:text-xl text-foreground">
-            Kisan Union Punjab
+            ਕਿਸਾਨ ਯੂਨੀਅਨ ਪੰਜਾਬ
           </span>
         </Link>
 
@@ -43,7 +43,7 @@ export function Navbar() {
           ))}
           <Link href="/contact">
             <Button size="sm" className="bg-primary hover:bg-primary/90 text-white shadow-lg shadow-primary/20">
-              Get ID Card
+              ਆਈਡੀ ਕਾਰਡ ਪ੍ਰਾਪਤ ਕਰੋ
             </Button>
           </Link>
         </nav>
@@ -83,7 +83,7 @@ export function Navbar() {
               ))}
               <Link href="/contact">
                 <Button className="w-full bg-primary hover:bg-primary/90" onClick={() => setIsOpen(false)}>
-                  Get ID Card
+                  ਆਈਡੀ ਕਾਰਡ ਪ੍ਰਾਪਤ ਕਰੋ
                 </Button>
               </Link>
             </div>
