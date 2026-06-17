@@ -46,15 +46,24 @@ export async function registerRoutes(
     const { username, password } = req.body;
     if (username === ADMIN_USERNAME && password === ADMIN_PASSWORD) {
       req.session.adminAuthenticated = true;
-      return res.json({ success: true });
+      req.session.save((err: any) => {
+        if (err) {
+          console.error('Session save error:', err);
+          return res.status(500).json({ message: "Session error" });
+        }
+        return res.json({ success: true });
+      });
+    } else {
+      return res.status(401).json({ message: "ਗਲਤ ਯੂਜ਼ਰਨੇਮ ਜਾਂ ਪਾਸਵਰਡ" });
     }
-    return res.status(401).json({ message: "ਗਲਤ ਯੂਜ਼ਰਨੇਮ ਜਾਂ ਪਾਸਵਰਡ" });
   });
 
   // Admin logout
   app.post('/api/admin/logout', (req: any, res: any) => {
-    req.session.adminAuthenticated = false;
-    res.json({ success: true });
+    req.session.destroy((err: any) => {
+      if (err) console.error('Session destroy error:', err);
+      res.json({ success: true });
+    });
   });
 
   // Check admin auth status
