@@ -1,9 +1,11 @@
-import { useEffect } from "react";
+import { useState } from "react";
 import { useAuth } from "@/hooks/use-auth";
 import { useRegistrations, useDeleteRegistration, useDownloadRegistrations } from "@/hooks/use-registration";
 import { useToast } from "@/hooks/use-toast";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
 import { Avatar, AvatarImage, AvatarFallback } from "@/components/ui/avatar";
 import { 
   Table, 
@@ -20,7 +22,9 @@ import {
   LogOut, 
   Users, 
   ShieldCheck,
-  Eye
+  Eye,
+  EyeOff,
+  Lock
 } from "lucide-react";
 import { motion } from "framer-motion";
 import {
@@ -31,38 +35,117 @@ import {
   DialogTrigger,
 } from "@/components/ui/dialog";
 
+function LoginForm() {
+  const { login, isLoggingIn, loginError } = useAuth();
+  const [username, setUsername] = useState("");
+  const [password, setPassword] = useState("");
+  const [showPassword, setShowPassword] = useState(false);
+  const { toast } = useToast();
+
+  const handleSubmit = (e: React.FormEvent) => {
+    e.preventDefault();
+    login(
+      { username, password },
+      {
+        onError: () => {
+          toast({
+            title: "ਲੌਗਇਨ ਫੇਲ੍ਹ",
+            description: "ਗਲਤ ਯੂਜ਼ਰਨੇਮ ਜਾਂ ਪਾਸਵਰਡ",
+            variant: "destructive",
+          });
+        },
+      }
+    );
+  };
+
+  return (
+    <div className="min-h-screen flex items-center justify-center bg-background px-4">
+      <motion.div
+        initial={{ opacity: 0, y: 20 }}
+        animate={{ opacity: 1, y: 0 }}
+        className="w-full max-w-sm"
+      >
+        <Card className="shadow-lg">
+          <CardHeader className="text-center space-y-3 pb-4">
+            <div className="mx-auto bg-primary/10 p-4 rounded-full w-fit">
+              <Lock className="h-8 w-8 text-primary" />
+            </div>
+            <CardTitle className="text-2xl font-display">ਪ੍ਰਸ਼ਾਸਕ ਲੌਗਇਨ</CardTitle>
+            <CardDescription>ਕਿਸਾਨ ਯੂਨੀਅਨ ਪੰਜਾਬ</CardDescription>
+          </CardHeader>
+          <CardContent>
+            <form onSubmit={handleSubmit} className="space-y-4">
+              <div className="space-y-2">
+                <Label htmlFor="username">ਯੂਜ਼ਰਨੇਮ</Label>
+                <Input
+                  id="username"
+                  type="text"
+                  value={username}
+                  onChange={(e) => setUsername(e.target.value)}
+                  placeholder="ਯੂਜ਼ਰਨੇਮ ਦਰਜ ਕਰੋ"
+                  required
+                  autoComplete="username"
+                  data-testid="input-username"
+                />
+              </div>
+              <div className="space-y-2">
+                <Label htmlFor="password">ਪਾਸਵਰਡ</Label>
+                <div className="relative">
+                  <Input
+                    id="password"
+                    type={showPassword ? "text" : "password"}
+                    value={password}
+                    onChange={(e) => setPassword(e.target.value)}
+                    placeholder="ਪਾਸਵਰਡ ਦਰਜ ਕਰੋ"
+                    required
+                    autoComplete="current-password"
+                    data-testid="input-password"
+                    className="pr-10"
+                  />
+                  <button
+                    type="button"
+                    onClick={() => setShowPassword(!showPassword)}
+                    className="absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground transition-colors"
+                    data-testid="button-toggle-password"
+                    tabIndex={-1}
+                  >
+                    {showPassword ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
+                  </button>
+                </div>
+              </div>
+              {loginError && (
+                <p className="text-sm text-destructive text-center">
+                  ਗਲਤ ਯੂਜ਼ਰਨੇਮ ਜਾਂ ਪਾਸਵਰਡ
+                </p>
+              )}
+              <Button
+                type="submit"
+                className="w-full"
+                disabled={isLoggingIn}
+                data-testid="button-login"
+              >
+                {isLoggingIn ? (
+                  <>
+                    <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                    ਲੌਗਇਨ ਹੋ ਰਿਹਾ ਹੈ...
+                  </>
+                ) : (
+                  "ਲੌਗਇਨ ਕਰੋ"
+                )}
+              </Button>
+            </form>
+          </CardContent>
+        </Card>
+      </motion.div>
+    </div>
+  );
+}
+
 export default function Admin() {
-  const { user, isLoading: authLoading, isAuthenticated, logout } = useAuth();
+  const { isLoading: authLoading, isAuthenticated, logout } = useAuth();
   const { data: registrations, isLoading, error } = useRegistrations();
   const deleteRegistration = useDeleteRegistration();
   const downloadAll = useDownloadRegistrations();
-  const { toast } = useToast();
-
-  useEffect(() => {
-    if (!authLoading && !isAuthenticated) {
-      toast({
-        title: "ਅਣਅਧਿਕਾਰਤ",
-        description: "ਕਿਰਪਾ ਕਰਕੇ ਲੌਗਇਨ ਕਰੋ...",
-        variant: "destructive",
-      });
-      setTimeout(() => {
-        window.location.href = "/api/login";
-      }, 500);
-    }
-  }, [authLoading, isAuthenticated, toast]);
-
-  useEffect(() => {
-    if (error) {
-      const errMsg = (error as Error).message;
-      if (errMsg.includes("401") || errMsg.includes("403")) {
-        toast({
-          title: "ਪ੍ਰਸ਼ਾਸਕ ਪਹੁੰਚ ਲੋੜੀਂਦੀ ਹੈ",
-          description: "ਤੁਹਾਨੂੰ ਇਸ ਪੰਨੇ ਤੱਕ ਪਹੁੰਚਣ ਦੀ ਇਜਾਜ਼ਤ ਨਹੀਂ ਹੈ",
-          variant: "destructive",
-        });
-      }
-    }
-  }, [error, toast]);
 
   if (authLoading) {
     return (
@@ -73,7 +156,7 @@ export default function Admin() {
   }
 
   if (!isAuthenticated) {
-    return null;
+    return <LoginForm />;
   }
 
   return (
@@ -96,15 +179,6 @@ export default function Admin() {
           </div>
           
           <div className="flex items-center gap-4">
-            {user && (
-              <div className="flex items-center gap-3 bg-secondary/30 px-4 py-2 rounded-full">
-                <Avatar className="h-8 w-8">
-                  <AvatarImage src={user.profileImageUrl || undefined} />
-                  <AvatarFallback>{user.firstName?.[0] || 'A'}</AvatarFallback>
-                </Avatar>
-                <span className="text-sm font-medium">{user.firstName || user.email}</span>
-              </div>
-            )}
             <Button 
               variant="outline" 
               onClick={() => logout()}

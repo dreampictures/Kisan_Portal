@@ -1,46 +1,49 @@
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
-import type { User } from "@shared/models/auth";
+import { apiRequest } from "@/lib/queryClient";
 
-async function fetchUser(): Promise<User | null> {
-  const response = await fetch("/api/auth/user", {
+async function fetchAdminStatus(): Promise<{ isAdmin: boolean }> {
+  const response = await fetch("/api/admin/check", {
     credentials: "include",
   });
-
-  if (response.status === 401) {
-    return null;
-  }
-
-  if (!response.ok) {
-    throw new Error(`${response.status}: ${response.statusText}`);
-  }
-
+  if (!response.ok) return { isAdmin: false };
   return response.json();
-}
-
-async function logout(): Promise<void> {
-  window.location.href = "/api/logout";
 }
 
 export function useAuth() {
   const queryClient = useQueryClient();
-  const { data: user, isLoading } = useQuery<User | null>({
-    queryKey: ["/api/auth/user"],
-    queryFn: fetchUser,
+
+  const { data, isLoading } = useQuery<{ isAdmin: boolean }>({
+    queryKey: ["/api/admin/check"],
+    queryFn: fetchAdminStatus,
     retry: false,
-    staleTime: 1000 * 60 * 5, // 5 minutes
+    staleTime: 1000 * 60 * 5,
+  });
+
+  const loginMutation = useMutation({
+    mutationFn: async ({ username, password }: { username: string; password: string }) => {
+      const res = await apiRequest("POST", "/api/admin/login", { username, password });
+      return res.json();
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["/api/admin/check"] });
+    },
   });
 
   const logoutMutation = useMutation({
-    mutationFn: logout,
+    mutationFn: async () => {
+      await apiRequest("POST", "/api/admin/logout", {});
+    },
     onSuccess: () => {
-      queryClient.setQueryData(["/api/auth/user"], null);
+      queryClient.setQueryData(["/api/admin/check"], { isAdmin: false });
     },
   });
 
   return {
-    user,
     isLoading,
-    isAuthenticated: !!user,
+    isAuthenticated: !!data?.isAdmin,
+    login: loginMutation.mutate,
+    isLoggingIn: loginMutation.isPending,
+    loginError: loginMutation.error,
     logout: logoutMutation.mutate,
     isLoggingOut: logoutMutation.isPending,
   };

@@ -2,7 +2,7 @@ import type { Express } from "express";
 import type { Server } from "http";
 import multer from "multer";
 import { storage } from "./storage";
-import { setupAuth, registerAuthRoutes, isAuthenticated } from "./replit_integrations/auth";
+import { setupAuth, registerAuthRoutes } from "./replit_integrations/auth";
 import { api } from "@shared/routes";
 import { insertRegistrationSchema } from "@shared/schema";
 import { z } from "zod";
@@ -21,30 +21,50 @@ const upload = multer({
   },
 });
 
-// Admin emails that are allowed to access admin panel (lowercase only)
-const ADMIN_EMAILS = ['help.dreampictures@gmail.com'];
+// Simple admin credentials
+const ADMIN_USERNAME = '714752420017';
+const ADMIN_PASSWORD = 'Ba@606368';
 
-// Middleware to check admin access
-const isAdmin = (req: any, res: any, next: any) => {
-  const userEmail = req.user?.claims?.email?.toLowerCase();
-  if (!userEmail || !ADMIN_EMAILS.includes(userEmail)) {
-    return res.status(403).json({ message: "ਪ੍ਰਸ਼ਾਸਕ ਪਹੁੰਚ ਲੋੜੀਂਦੀ ਹੈ" });
+// Middleware to check simple session-based admin auth
+const isAdminAuth = (req: any, res: any, next: any) => {
+  if (req.session?.adminAuthenticated) {
+    return next();
   }
-  next();
+  return res.status(401).json({ message: "ਲੌਗਇਨ ਲੋੜੀਂਦਾ ਹੈ" });
 };
 
 export async function registerRoutes(
   httpServer: Server,
   app: Express
 ): Promise<Server> {
-  // Setup authentication
+  // Setup session middleware (keeps pg session store)
   await setupAuth(app);
   registerAuthRoutes(app);
+
+  // Admin login
+  app.post('/api/admin/login', (req: any, res: any) => {
+    const { username, password } = req.body;
+    if (username === ADMIN_USERNAME && password === ADMIN_PASSWORD) {
+      req.session.adminAuthenticated = true;
+      return res.json({ success: true });
+    }
+    return res.status(401).json({ message: "ਗਲਤ ਯੂਜ਼ਰਨੇਮ ਜਾਂ ਪਾਸਵਰਡ" });
+  });
+
+  // Admin logout
+  app.post('/api/admin/logout', (req: any, res: any) => {
+    req.session.adminAuthenticated = false;
+    res.json({ success: true });
+  });
+
+  // Check admin auth status
+  app.get('/api/admin/check', (req: any, res: any) => {
+    res.json({ isAdmin: !!req.session?.adminAuthenticated });
+  });
 
   // Public route: Submit registration (no auth required)
   app.post(api.registrations.submit.path, upload.single('photo'), async (req, res) => {
     try {
-      // Parse and validate form data
       const bodySchema = insertRegistrationSchema.extend({
         name: z.string().min(1, "ਨਾਮ ਲੋੜੀਂਦਾ ਹੈ"),
         village: z.string().min(1, "ਪਿੰਡ ਲੋੜੀਂਦਾ ਹੈ"),
@@ -54,7 +74,6 @@ export async function registerRoutes(
 
       const parsed = bodySchema.parse(req.body);
       
-      // Convert photo to base64 if provided
       let photoData: string | undefined;
       let photoMimeType: string | undefined;
       
@@ -85,8 +104,8 @@ export async function registerRoutes(
     }
   });
 
-  // Admin routes (require authentication + admin check)
-  app.get(api.registrations.list.path, isAuthenticated, isAdmin, async (req, res) => {
+  // Admin routes (require simple session auth)
+  app.get(api.registrations.list.path, isAdminAuth, async (req, res) => {
     try {
       const registrations = await storage.getRegistrations();
       res.json(registrations);
@@ -96,20 +115,18 @@ export async function registerRoutes(
     }
   });
 
-  app.get('/api/admin/registrations/download', isAuthenticated, isAdmin, async (req, res) => {
+  app.get('/api/admin/registrations/download', isAdminAuth, async (req, res) => {
     try {
       const allRegistrations = await storage.getRegistrations();
       
       const zip = new AdmZip();
       
-      // Create a summary text file
       let summaryContent = "ਕਿਸਾਨ ਯੂਨੀਅਨ ਪੰਜਾਬ - ਰਜਿਸਟ੍ਰੇਸ਼ਨ ਸੂਚੀ\n";
       summaryContent += "=".repeat(50) + "\n\n";
       
       for (const reg of allRegistrations) {
         const last4Aadhaar = reg.aadhaarNumber.slice(-4);
         
-        // Create individual text file for each registration
         let details = `ਨਾਮ: ${reg.name}\n`;
         details += `ਆਹੁਦਾ: ${reg.designation}\n`;
         details += `ਪਿੰਡ: ${reg.village}\n`;
@@ -121,17 +138,14 @@ export async function registerRoutes(
         
         const fileName = `${reg.village}_${reg.tehsil}_${reg.district}_${last4Aadhaar}`;
         
-        // Add text file
         zip.addFile(`${fileName}.txt`, Buffer.from(details, 'utf-8'));
         
-        // Add photo if available
         if (reg.photoData && reg.photoMimeType) {
           const ext = reg.photoMimeType.split('/')[1] || 'jpg';
           const photoBuffer = Buffer.from(reg.photoData, 'base64');
           zip.addFile(`${fileName}.${ext}`, photoBuffer);
         }
         
-        // Add to summary
         summaryContent += `${reg.id}. ${reg.name} - ${reg.village}, ${reg.district}\n`;
       }
       
@@ -148,7 +162,7 @@ export async function registerRoutes(
     }
   });
 
-  app.get('/api/admin/registrations/:id', isAuthenticated, isAdmin, async (req, res) => {
+  app.get('/api/admin/registrations/:id', isAdminAuth, async (req, res) => {
     try {
       const id = parseInt(req.params.id);
       const registration = await storage.getRegistration(id);
@@ -164,7 +178,7 @@ export async function registerRoutes(
     }
   });
 
-  app.delete('/api/admin/registrations/:id', isAuthenticated, isAdmin, async (req, res) => {
+  app.delete('/api/admin/registrations/:id', isAdminAuth, async (req, res) => {
     try {
       const id = parseInt(req.params.id);
       const deleted = await storage.deleteRegistration(id);
@@ -178,11 +192,6 @@ export async function registerRoutes(
       console.error('Error deleting registration:', err);
       res.status(500).json({ message: "ਮਿਟਾਉਣ ਵਿੱਚ ਗਲਤੀ" });
     }
-  });
-
-  // Check if user is admin
-  app.get('/api/admin/check', isAuthenticated, isAdmin, (req, res) => {
-    res.json({ isAdmin: true });
   });
 
   return httpServer;
