@@ -10,24 +10,27 @@ import Home from "@/pages/Home";
 import About from "@/pages/About";
 import Contact from "@/pages/Contact";
 import Admin from "@/pages/Admin";
+import Verify from "@/pages/Verify";
 
 function Router() {
   const [location] = useLocation();
-  const isAdminPage = location.startsWith('/admin');
+  const isAdminPage = location.startsWith("/admin");
+  const isVerifyPage = location.startsWith("/verify");
 
   return (
     <div className="flex flex-col min-h-screen">
-      {!isAdminPage && <Navbar />}
+      {!isAdminPage && !isVerifyPage && <Navbar />}
       <main className="flex-grow">
         <Switch>
           <Route path="/" component={Home} />
           <Route path="/about" component={About} />
           <Route path="/contact" component={Contact} />
           <Route path="/admin" component={Admin} />
+          <Route path="/verify/:cardNumber" component={Verify} />
           <Route component={NotFound} />
         </Switch>
       </main>
-      {!isAdminPage && <Footer />}
+      {!isAdminPage && !isVerifyPage && <Footer />}
     </div>
   );
 }

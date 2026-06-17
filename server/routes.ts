@@ -7,50 +7,43 @@ import { api } from "@shared/routes";
 import { insertRegistrationSchema } from "@shared/schema";
 import { z } from "zod";
 import AdmZip from "adm-zip";
+import { uploadPhotoToR2, deletePhotoFromR2 } from "./r2";
+import { generateQRCode, generateQRCodeBuffer } from "./qr";
 
-// Configure multer for memory storage
 const upload = multer({
   storage: multer.memoryStorage(),
-  limits: { fileSize: 5 * 1024 * 1024 }, // 5MB
+  limits: { fileSize: 5 * 1024 * 1024 },
   fileFilter: (req, file, cb) => {
-    if (file.mimetype.startsWith('image/')) {
-      cb(null, true);
-    } else {
-      cb(new Error('Only image files are allowed'));
-    }
+    if (file.mimetype.startsWith("image/")) cb(null, true);
+    else cb(new Error("Only image files are allowed"));
   },
 });
 
-// Simple admin credentials
-const ADMIN_USERNAME = '714752420017';
-const ADMIN_PASSWORD = 'Ba@606368';
+const ADMIN_USERNAME = "714752420017";
+const ADMIN_PASSWORD = "Ba@606368";
 
-// Middleware to check simple session-based admin auth
 const isAdminAuth = (req: any, res: any, next: any) => {
-  if (req.session?.adminAuthenticated) {
-    return next();
-  }
+  if (req.session?.adminAuthenticated) return next();
   return res.status(401).json({ message: "ਲੌਗਇਨ ਲੋੜੀਂਦਾ ਹੈ" });
 };
 
-export async function registerRoutes(
-  httpServer: Server,
-  app: Express
-): Promise<Server> {
-  // Setup session middleware (keeps pg session store)
+function getBaseUrl(req: any): string {
+  const host = req.get("host");
+  const protocol = req.secure || req.headers["x-forwarded-proto"] === "https" ? "https" : "http";
+  return `${protocol}://${host}`;
+}
+
+export async function registerRoutes(httpServer: Server, app: Express): Promise<Server> {
   await setupAuth(app);
   registerAuthRoutes(app);
 
-  // Admin login
-  app.post('/api/admin/login', (req: any, res: any) => {
+  // ── Admin login/logout ──────────────────────────────────────
+  app.post("/api/admin/login", (req: any, res: any) => {
     const { username, password } = req.body;
     if (username === ADMIN_USERNAME && password === ADMIN_PASSWORD) {
       req.session.adminAuthenticated = true;
       req.session.save((err: any) => {
-        if (err) {
-          console.error('Session save error:', err);
-          return res.status(500).json({ message: "Session error" });
-        }
+        if (err) return res.status(500).json({ message: "Session error" });
         return res.json({ success: true });
       });
     } else {
@@ -58,21 +51,52 @@ export async function registerRoutes(
     }
   });
 
-  // Admin logout
-  app.post('/api/admin/logout', (req: any, res: any) => {
+  app.post("/api/admin/logout", (req: any, res: any) => {
     req.session.destroy((err: any) => {
-      if (err) console.error('Session destroy error:', err);
+      if (err) console.error("Session destroy error:", err);
       res.json({ success: true });
     });
   });
 
-  // Check admin auth status
-  app.get('/api/admin/check', (req: any, res: any) => {
+  app.get("/api/admin/check", (req: any, res: any) => {
     res.json({ isAdmin: !!req.session?.adminAuthenticated });
   });
 
-  // Public route: Submit registration (no auth required)
-  app.post(api.registrations.submit.path, upload.single('photo'), async (req, res) => {
+  // ── Public: card verification ───────────────────────────────
+  app.get("/api/verify/:cardNumber", async (req, res) => {
+    try {
+      const reg = await storage.getRegistrationByCardNumber(req.params.cardNumber);
+      if (!reg) return res.status(404).json({ valid: false, message: "Card ਨਹੀਂ ਮਿਲਿਆ" });
+
+      const now = new Date();
+      const isExpired = reg.validUntil ? now > new Date(reg.validUntil) : false;
+      const isActive = reg.validFrom && reg.validUntil
+        ? now >= new Date(reg.validFrom) && now <= new Date(reg.validUntil)
+        : false;
+
+      res.json({
+        valid: isActive,
+        expired: isExpired,
+        cardNumber: reg.cardNumber,
+        name: reg.name,
+        designation: reg.designation,
+        village: reg.village,
+        tehsil: reg.tehsil,
+        district: reg.district,
+        mobileNumber: reg.mobileNumber || "*",
+        aadhaarNumber: reg.aadhaarNumber ? `**** **** ${reg.aadhaarNumber.slice(-4)}` : "*",
+        photoUrl: reg.photoUrl,
+        validFrom: reg.validFrom,
+        validUntil: reg.validUntil,
+      });
+    } catch (err) {
+      console.error("Verify error:", err);
+      res.status(500).json({ valid: false, message: "Server error" });
+    }
+  });
+
+  // ── Public: submit registration ────────────────────────────
+  app.post(api.registrations.submit.path, upload.single("photo"), async (req, res) => {
     try {
       const bodySchema = insertRegistrationSchema.extend({
         name: z.string().min(1, "ਨਾਮ ਲੋੜੀਂਦਾ ਹੈ"),
@@ -80,125 +104,151 @@ export async function registerRoutes(
         tehsil: z.string().min(1, "ਤਹਿਸੀਲ ਲੋੜੀਂਦੀ ਹੈ"),
         district: z.string().min(1, "ਜ਼ਿਲ੍ਹਾ ਲੋੜੀਂਦਾ ਹੈ"),
       });
-
       const parsed = bodySchema.parse(req.body);
-      
+
+      let photoUrl: string | undefined;
       let photoData: string | undefined;
       let photoMimeType: string | undefined;
-      
+
       if (req.file) {
-        photoData = req.file.buffer.toString('base64');
-        photoMimeType = req.file.mimetype;
+        const ext = req.file.mimetype.split("/")[1] || "jpg";
+        const fileName = `${Date.now()}-${Math.random().toString(36).slice(2)}.${ext}`;
+        try {
+          photoUrl = await uploadPhotoToR2(req.file.buffer, req.file.mimetype, fileName);
+        } catch (r2err) {
+          console.error("R2 upload failed, falling back to base64:", r2err);
+          photoData = req.file.buffer.toString("base64");
+          photoMimeType = req.file.mimetype;
+        }
       }
 
       const registration = await storage.createRegistration({
         ...parsed,
+        mobileNumber: parsed.mobileNumber || undefined,
+        aadhaarNumber: parsed.aadhaarNumber || undefined,
+        photoUrl,
         photoData,
         photoMimeType,
       });
 
-      res.status(201).json({ 
-        message: "ਰਜਿਸਟ੍ਰੇਸ਼ਨ ਸਫਲ! ਤੁਹਾਡਾ ਕਾਰਡ ਜਲਦੀ ਹੀ ਤਿਆਰ ਕੀਤਾ ਜਾਵੇਗਾ।", 
-        id: registration.id 
+      res.status(201).json({
+        message: "ਰਜਿਸਟ੍ਰੇਸ਼ਨ ਸਫਲ! ਤੁਹਾਡਾ ਕਾਰਡ ਜਲਦੀ ਹੀ ਤਿਆਰ ਕੀਤਾ ਜਾਵੇਗਾ।",
+        id: registration.id,
       });
     } catch (err) {
-      if (err instanceof z.ZodError) {
-        return res.status(400).json({
-          message: err.errors[0].message,
-          field: err.errors[0].path.join('.'),
-        });
-      }
-      console.error('Registration error:', err);
+      if (err instanceof z.ZodError)
+        return res.status(400).json({ message: err.errors[0].message, field: err.errors[0].path.join(".") });
+      console.error("Registration error:", err);
       res.status(500).json({ message: "ਰਜਿਸਟ੍ਰੇਸ਼ਨ ਫੇਲ੍ਹ ਹੋ ਗਈ" });
     }
   });
 
-  // Admin routes (require simple session auth)
+  // ── Admin: list registrations ───────────────────────────────
   app.get(api.registrations.list.path, isAdminAuth, async (req, res) => {
     try {
-      const registrations = await storage.getRegistrations();
-      res.json(registrations);
+      res.json(await storage.getRegistrations());
     } catch (err) {
-      console.error('Error fetching registrations:', err);
+      console.error(err);
       res.status(500).json({ message: "ਡਾਟਾ ਲੋਡ ਕਰਨ ਵਿੱਚ ਗਲਤੀ" });
     }
   });
 
-  app.get('/api/admin/registrations/download', isAdminAuth, async (req, res) => {
+  // ── Admin: update validity & get QR data URL ───────────────
+  app.post("/api/admin/registrations/:id/issue-card", isAdminAuth, async (req: any, res: any) => {
     try {
-      const allRegistrations = await storage.getRegistrations();
-      
-      const zip = new AdmZip();
-      
-      let summaryContent = "ਕਿਸਾਨ ਯੂਨੀਅਨ ਪੰਜਾਬ - ਰਜਿਸਟ੍ਰੇਸ਼ਨ ਸੂਚੀ\n";
-      summaryContent += "=".repeat(50) + "\n\n";
-      
-      for (const reg of allRegistrations) {
-        const last4Aadhaar = reg.aadhaarNumber.slice(-4);
-        
-        let details = `ਨਾਮ: ${reg.name}\n`;
-        details += `ਆਹੁਦਾ: ${reg.designation}\n`;
-        details += `ਪਿੰਡ: ${reg.village}\n`;
-        details += `ਤਹਿਸੀਲ: ${reg.tehsil}\n`;
-        details += `ਜ਼ਿਲ੍ਹਾ: ${reg.district}\n`;
-        details += `ਮੋਬਾਈਲ: ${reg.mobileNumber}\n`;
-        details += `ਆਧਾਰ (ਆਖਰੀ 4 ਅੰਕ): **** **** ${last4Aadhaar}\n`;
-        details += `ਰਜਿਸਟ੍ਰੇਸ਼ਨ ਮਿਤੀ: ${reg.createdAt?.toLocaleDateString('pa-IN') || 'N/A'}\n`;
-        
-        const fileName = `${reg.village}_${reg.tehsil}_${reg.district}_${last4Aadhaar}`;
-        
-        zip.addFile(`${fileName}.txt`, Buffer.from(details, 'utf-8'));
-        
-        if (reg.photoData && reg.photoMimeType) {
-          const ext = reg.photoMimeType.split('/')[1] || 'jpg';
-          const photoBuffer = Buffer.from(reg.photoData, 'base64');
-          zip.addFile(`${fileName}.${ext}`, photoBuffer);
-        }
-        
-        summaryContent += `${reg.id}. ${reg.name} - ${reg.village}, ${reg.district}\n`;
-      }
-      
-      zip.addFile("_summary.txt", Buffer.from(summaryContent, 'utf-8'));
-      
-      const zipBuffer = zip.toBuffer();
-      
-      res.setHeader('Content-Type', 'application/zip');
-      res.setHeader('Content-Disposition', 'attachment; filename=registrations.zip');
-      res.send(zipBuffer);
+      const id = parseInt(req.params.id);
+      const { validFrom, validUntil } = req.body;
+      if (!validFrom || !validUntil)
+        return res.status(400).json({ message: "validFrom ਅਤੇ validUntil ਲੋੜੀਂਦੇ ਹਨ" });
+
+      const updated = await storage.updateRegistrationCard(id, {
+        validFrom: new Date(validFrom),
+        validUntil: new Date(validUntil),
+      });
+      if (!updated) return res.status(404).json({ message: "ਰਜਿਸਟ੍ਰੇਸ਼ਨ ਨਹੀਂ ਮਿਲੀ" });
+
+      const base = getBaseUrl(req);
+      const qrDataUrl = await generateQRCode(updated.cardNumber!, base);
+      res.json({ registration: updated, qrDataUrl });
     } catch (err) {
-      console.error('Error downloading registrations:', err);
+      console.error("Issue card error:", err);
+      res.status(500).json({ message: "Card issue ਕਰਨ ਵਿੱਚ ਗਲਤੀ" });
+    }
+  });
+
+  // ── Admin: download QR PNG ─────────────────────────────────
+  app.get("/api/admin/registrations/:id/qr", isAdminAuth, async (req: any, res: any) => {
+    try {
+      const id = parseInt(req.params.id);
+      const reg = await storage.getRegistration(id);
+      if (!reg || !reg.cardNumber) return res.status(404).json({ message: "Card ਨਹੀਂ ਮਿਲਿਆ" });
+
+      const base = getBaseUrl(req);
+      const buf = await generateQRCodeBuffer(reg.cardNumber, base);
+      res.setHeader("Content-Type", "image/png");
+      res.setHeader("Content-Disposition", `attachment; filename=QR-${reg.cardNumber}.png`);
+      res.send(buf);
+    } catch (err) {
+      console.error("QR download error:", err);
+      res.status(500).json({ message: "QR ਡਾਊਨਲੋਡ ਫੇਲ੍ਹ" });
+    }
+  });
+
+  // ── Admin: get single registration ────────────────────────
+  app.get("/api/admin/registrations/download", isAdminAuth, async (req, res) => {
+    try {
+      const allRegs = await storage.getRegistrations();
+      const zip = new AdmZip();
+      let summary = "ਕਿਸਾਨ ਯੂਨੀਅਨ ਪੰਜਾਬ - ਰਜਿਸਟ੍ਰੇਸ਼ਨ ਸੂਚੀ\n" + "=".repeat(50) + "\n\n";
+
+      for (const reg of allRegs) {
+        const last4 = reg.aadhaarNumber ? reg.aadhaarNumber.slice(-4) : "****";
+        let details = `Card No: ${reg.cardNumber || "N/A"}\n`;
+        details += `ਨਾਮ: ${reg.name}\nਆਹੁਦਾ: ${reg.designation}\n`;
+        details += `ਪਿੰਡ: ${reg.village}\nਤਹਿਸੀਲ: ${reg.tehsil}\nਜ਼ਿਲ੍ਹਾ: ${reg.district}\n`;
+        details += `ਮੋਬਾਈਲ: ${reg.mobileNumber || "*"}\n`;
+        details += `ਆਧਾਰ: ${reg.aadhaarNumber ? `**** **** ${last4}` : "*"}\n`;
+        details += `Valid: ${reg.validFrom ? new Date(reg.validFrom).toLocaleDateString("pa-IN") : "N/A"} - ${reg.validUntil ? new Date(reg.validUntil).toLocaleDateString("pa-IN") : "N/A"}\n`;
+        const fn = `${reg.village}_${reg.tehsil}_${last4}`;
+        zip.addFile(`${fn}.txt`, Buffer.from(details, "utf-8"));
+        if (reg.photoData && reg.photoMimeType) {
+          const ext = reg.photoMimeType.split("/")[1] || "jpg";
+          zip.addFile(`${fn}.${ext}`, Buffer.from(reg.photoData, "base64"));
+        }
+        summary += `${reg.id}. ${reg.name} - ${reg.village}, ${reg.district} [${reg.cardNumber || "N/A"}]\n`;
+      }
+
+      zip.addFile("_summary.txt", Buffer.from(summary, "utf-8"));
+      res.setHeader("Content-Type", "application/zip");
+      res.setHeader("Content-Disposition", "attachment; filename=registrations.zip");
+      res.send(zip.toBuffer());
+    } catch (err) {
+      console.error(err);
       res.status(500).json({ message: "ਡਾਊਨਲੋਡ ਫੇਲ੍ਹ ਹੋ ਗਈ" });
     }
   });
 
-  app.get('/api/admin/registrations/:id', isAdminAuth, async (req, res) => {
+  app.get("/api/admin/registrations/:id", isAdminAuth, async (req, res) => {
     try {
-      const id = parseInt(req.params.id);
-      const registration = await storage.getRegistration(id);
-      
-      if (!registration) {
-        return res.status(404).json({ message: "ਰਜਿਸਟ੍ਰੇਸ਼ਨ ਨਹੀਂ ਮਿਲੀ" });
-      }
-      
-      res.json(registration);
+      const reg = await storage.getRegistration(parseInt(req.params.id));
+      if (!reg) return res.status(404).json({ message: "ਰਜਿਸਟ੍ਰੇਸ਼ਨ ਨਹੀਂ ਮਿਲੀ" });
+      res.json(reg);
     } catch (err) {
-      console.error('Error fetching registration:', err);
+      console.error(err);
       res.status(500).json({ message: "ਡਾਟਾ ਲੋਡ ਕਰਨ ਵਿੱਚ ਗਲਤੀ" });
     }
   });
 
-  app.delete('/api/admin/registrations/:id', isAdminAuth, async (req, res) => {
+  app.delete("/api/admin/registrations/:id", isAdminAuth, async (req, res) => {
     try {
       const id = parseInt(req.params.id);
+      const reg = await storage.getRegistration(id);
+      if (reg?.photoUrl) await deletePhotoFromR2(reg.photoUrl);
       const deleted = await storage.deleteRegistration(id);
-      
-      if (!deleted) {
-        return res.status(404).json({ message: "ਰਜਿਸਟ੍ਰੇਸ਼ਨ ਨਹੀਂ ਮਿਲੀ" });
-      }
-      
+      if (!deleted) return res.status(404).json({ message: "ਰਜਿਸਟ੍ਰੇਸ਼ਨ ਨਹੀਂ ਮਿਲੀ" });
       res.json({ message: "ਰਜਿਸਟ੍ਰੇਸ਼ਨ ਮਿਟਾਈ ਗਈ" });
     } catch (err) {
-      console.error('Error deleting registration:', err);
+      console.error(err);
       res.status(500).json({ message: "ਮਿਟਾਉਣ ਵਿੱਚ ਗਲਤੀ" });
     }
   });

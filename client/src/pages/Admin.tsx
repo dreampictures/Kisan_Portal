@@ -2,39 +2,27 @@ import { useState } from "react";
 import { useAuth } from "@/hooks/use-auth";
 import { useRegistrations, useDeleteRegistration, useDownloadRegistrations } from "@/hooks/use-registration";
 import { useToast } from "@/hooks/use-toast";
+import { useQueryClient } from "@tanstack/react-query";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Avatar, AvatarImage, AvatarFallback } from "@/components/ui/avatar";
-import { 
-  Table, 
-  TableBody, 
-  TableCell, 
-  TableHead, 
-  TableHeader, 
-  TableRow 
+import {
+  Table, TableBody, TableCell, TableHead, TableHeader, TableRow,
 } from "@/components/ui/table";
-import { 
-  Download, 
-  Trash2, 
-  Loader2, 
-  LogOut, 
-  Users, 
-  ShieldCheck,
-  Eye,
-  EyeOff,
-  Lock
+import {
+  Download, Trash2, Loader2, LogOut, Users, ShieldCheck,
+  Eye, EyeOff, Lock, QrCode, CheckCircle, Calendar, AlertTriangle,
 } from "lucide-react";
 import { motion } from "framer-motion";
 import {
-  Dialog,
-  DialogContent,
-  DialogHeader,
-  DialogTitle,
-  DialogTrigger,
+  Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger,
 } from "@/components/ui/dialog";
+import { apiRequest } from "@/lib/queryClient";
+import type { Registration } from "@shared/schema";
 
+// ─── Login Form ────────────────────────────────────────────
 function LoginForm() {
   const { login, isLoggingIn, loginError } = useAuth();
   const [username, setUsername] = useState("");
@@ -44,27 +32,14 @@ function LoginForm() {
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
-    login(
-      { username, password },
-      {
-        onError: () => {
-          toast({
-            title: "ਲੌਗਇਨ ਫੇਲ੍ਹ",
-            description: "ਗਲਤ ਯੂਜ਼ਰਨੇਮ ਜਾਂ ਪਾਸਵਰਡ",
-            variant: "destructive",
-          });
-        },
-      }
-    );
+    login({ username, password }, {
+      onError: () => toast({ title: "ਲੌਗਇਨ ਫੇਲ੍ਹ", description: "ਗਲਤ ਯੂਜ਼ਰਨੇਮ ਜਾਂ ਪਾਸਵਰਡ", variant: "destructive" }),
+    });
   };
 
   return (
     <div className="min-h-screen flex items-center justify-center bg-background px-4">
-      <motion.div
-        initial={{ opacity: 0, y: 20 }}
-        animate={{ opacity: 1, y: 0 }}
-        className="w-full max-w-sm"
-      >
+      <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} className="w-full max-w-sm">
         <Card className="shadow-lg">
           <CardHeader className="text-center space-y-3 pb-4">
             <div className="mx-auto bg-primary/10 p-4 rounded-full w-fit">
@@ -77,61 +52,24 @@ function LoginForm() {
             <form onSubmit={handleSubmit} className="space-y-4">
               <div className="space-y-2">
                 <Label htmlFor="username">ਯੂਜ਼ਰਨੇਮ</Label>
-                <Input
-                  id="username"
-                  type="text"
-                  value={username}
-                  onChange={(e) => setUsername(e.target.value)}
-                  placeholder="ਯੂਜ਼ਰਨੇਮ ਦਰਜ ਕਰੋ"
-                  required
-                  autoComplete="username"
-                  data-testid="input-username"
-                />
+                <Input id="username" type="text" value={username} onChange={(e) => setUsername(e.target.value)}
+                  placeholder="ਯੂਜ਼ਰਨੇਮ ਦਰਜ ਕਰੋ" required data-testid="input-username" />
               </div>
               <div className="space-y-2">
                 <Label htmlFor="password">ਪਾਸਵਰਡ</Label>
                 <div className="relative">
-                  <Input
-                    id="password"
-                    type={showPassword ? "text" : "password"}
-                    value={password}
-                    onChange={(e) => setPassword(e.target.value)}
-                    placeholder="ਪਾਸਵਰਡ ਦਰਜ ਕਰੋ"
-                    required
-                    autoComplete="current-password"
-                    data-testid="input-password"
-                    className="pr-10"
-                  />
-                  <button
-                    type="button"
-                    onClick={() => setShowPassword(!showPassword)}
-                    className="absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground transition-colors"
-                    data-testid="button-toggle-password"
-                    tabIndex={-1}
-                  >
+                  <Input id="password" type={showPassword ? "text" : "password"} value={password}
+                    onChange={(e) => setPassword(e.target.value)} placeholder="ਪਾਸਵਰਡ ਦਰਜ ਕਰੋ"
+                    required data-testid="input-password" className="pr-10" />
+                  <button type="button" onClick={() => setShowPassword(!showPassword)}
+                    className="absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground" tabIndex={-1}>
                     {showPassword ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
                   </button>
                 </div>
               </div>
-              {loginError && (
-                <p className="text-sm text-destructive text-center">
-                  ਗਲਤ ਯੂਜ਼ਰਨੇਮ ਜਾਂ ਪਾਸਵਰਡ
-                </p>
-              )}
-              <Button
-                type="submit"
-                className="w-full"
-                disabled={isLoggingIn}
-                data-testid="button-login"
-              >
-                {isLoggingIn ? (
-                  <>
-                    <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                    ਲੌਗਇਨ ਹੋ ਰਿਹਾ ਹੈ...
-                  </>
-                ) : (
-                  "ਲੌਗਇਨ ਕਰੋ"
-                )}
+              {loginError && <p className="text-sm text-destructive text-center">ਗਲਤ ਯੂਜ਼ਰਨੇਮ ਜਾਂ ਪਾਸਵਰਡ</p>}
+              <Button type="submit" className="w-full" disabled={isLoggingIn} data-testid="button-login">
+                {isLoggingIn ? <><Loader2 className="mr-2 h-4 w-4 animate-spin" />ਲੌਗਇਨ ਹੋ ਰਿਹਾ ਹੈ...</> : "ਲੌਗਇਨ ਕਰੋ"}
               </Button>
             </form>
           </CardContent>
@@ -141,6 +79,131 @@ function LoginForm() {
   );
 }
 
+// ─── Issue Card Dialog ─────────────────────────────────────
+function IssueCardDialog({ reg }: { reg: Registration }) {
+  const [open, setOpen] = useState(false);
+  const [validFrom, setValidFrom] = useState(() => new Date().toISOString().split("T")[0]);
+  const [validUntil, setValidUntil] = useState(() => {
+    const d = new Date(); d.setFullYear(d.getFullYear() + 1);
+    return d.toISOString().split("T")[0];
+  });
+  const [loading, setLoading] = useState(false);
+  const [qrDataUrl, setQrDataUrl] = useState<string | null>(null);
+  const { toast } = useToast();
+  const queryClient = useQueryClient();
+
+  const handleIssue = async () => {
+    setLoading(true);
+    try {
+      const res = await apiRequest("POST", `/api/admin/registrations/${reg.id}/issue-card`, { validFrom, validUntil });
+      const data = await res.json();
+      setQrDataUrl(data.qrDataUrl);
+      queryClient.invalidateQueries({ queryKey: ["/api/admin/registrations"] });
+      toast({ title: "Card Issue ਹੋ ਗਿਆ ✓", description: `Card No: ${data.registration.cardNumber}` });
+    } catch {
+      toast({ title: "ਗਲਤੀ", description: "Card issue ਕਰਨ ਵਿੱਚ ਸਮੱਸਿਆ", variant: "destructive" });
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const downloadQR = () => {
+    if (!qrDataUrl) return;
+    const a = document.createElement("a");
+    a.href = qrDataUrl;
+    a.download = `QR-${reg.cardNumber || reg.name}.png`;
+    a.click();
+  };
+
+  const downloadQRFromServer = async () => {
+    const res = await fetch(`/api/admin/registrations/${reg.id}/qr`, { credentials: "include" });
+    const blob = await res.blob();
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement("a");
+    a.href = url;
+    a.download = `QR-${reg.cardNumber || reg.name}.png`;
+    a.click();
+    URL.revokeObjectURL(url);
+  };
+
+  return (
+    <Dialog open={open} onOpenChange={setOpen}>
+      <DialogTrigger asChild>
+        <Button size="sm" variant="outline" className="gap-1.5 text-green-700 border-green-300 hover:bg-green-50" data-testid={`button-issue-${reg.id}`}>
+          <QrCode className="h-3.5 w-3.5" /> QR Card
+        </Button>
+      </DialogTrigger>
+      <DialogContent className="max-w-md">
+        <DialogHeader>
+          <DialogTitle className="flex items-center gap-2">
+            <QrCode className="h-5 w-5 text-green-700" /> Card Issue ਕਰੋ
+          </DialogTitle>
+        </DialogHeader>
+
+        <div className="space-y-4">
+          {/* Member Info */}
+          <div className="bg-muted/40 rounded-lg p-3 flex items-center gap-3">
+            <Avatar className="h-12 w-12">
+              {reg.photoUrl ? <AvatarImage src={reg.photoUrl} /> : reg.photoData ? <AvatarImage src={`data:${reg.photoMimeType};base64,${reg.photoData}`} /> : null}
+              <AvatarFallback>{reg.name[0]}</AvatarFallback>
+            </Avatar>
+            <div>
+              <p className="font-semibold">{reg.name}</p>
+              <p className="text-sm text-muted-foreground">{reg.designation} — {reg.village}, {reg.district}</p>
+              {reg.cardNumber && <p className="text-xs font-mono text-green-700 mt-0.5">{reg.cardNumber}</p>}
+            </div>
+          </div>
+
+          {/* Validity Dates */}
+          <div className="grid grid-cols-2 gap-3">
+            <div className="space-y-1.5">
+              <Label className="text-xs">Valid From</Label>
+              <Input type="date" value={validFrom} onChange={(e) => setValidFrom(e.target.value)} />
+            </div>
+            <div className="space-y-1.5">
+              <Label className="text-xs">Valid Until</Label>
+              <Input type="date" value={validUntil} onChange={(e) => setValidUntil(e.target.value)} />
+            </div>
+          </div>
+
+          <Button onClick={handleIssue} disabled={loading} className="w-full">
+            {loading ? <><Loader2 className="mr-2 h-4 w-4 animate-spin" />QR ਬਣ ਰਿਹਾ ਹੈ...</> : "Card Issue ਕਰੋ ਅਤੇ QR ਬਣਾਓ"}
+          </Button>
+
+          {/* QR Result */}
+          {qrDataUrl && (
+            <motion.div initial={{ opacity: 0, scale: 0.95 }} animate={{ opacity: 1, scale: 1 }}
+              className="border-2 border-green-300 rounded-xl p-4 text-center bg-green-50">
+              <CheckCircle className="h-5 w-5 text-green-600 mx-auto mb-2" />
+              <img src={qrDataUrl} alt="QR Code" className="w-40 h-40 mx-auto rounded-lg mb-3" />
+              <p className="text-xs text-muted-foreground mb-3">ਇਹ QR Code ਪ੍ਰਿੰਟ ਕੀਤੇ Card ਤੇ ਲਗਾਓ</p>
+              <Button onClick={downloadQR} variant="default" size="sm" className="w-full">
+                <Download className="mr-2 h-4 w-4" /> QR PNG ਡਾਊਨਲੋਡ ਕਰੋ
+              </Button>
+            </motion.div>
+          )}
+
+          {/* Download QR for already-issued cards */}
+          {!qrDataUrl && reg.cardNumber && reg.validUntil && (
+            <div className="border rounded-xl p-3 text-center bg-muted/30">
+              <div className="flex items-center justify-center gap-2 mb-2 text-sm text-muted-foreground">
+                <Calendar className="h-4 w-4" />
+                {reg.validUntil && new Date(reg.validUntil) < new Date()
+                  ? <span className="text-orange-600 flex items-center gap-1"><AlertTriangle className="h-3.5 w-3.5" />Expired</span>
+                  : <span className="text-green-700">Valid till {new Date(reg.validUntil).toLocaleDateString("en-IN", { day: "2-digit", month: "short", year: "numeric" })}</span>}
+              </div>
+              <Button onClick={downloadQRFromServer} variant="outline" size="sm" className="w-full">
+                <QrCode className="mr-2 h-4 w-4" /> ਪੁਰਾਣਾ QR ਡਾਊਨਲੋਡ ਕਰੋ
+              </Button>
+            </div>
+          )}
+        </div>
+      </DialogContent>
+    </Dialog>
+  );
+}
+
+// ─── Main Admin Panel ──────────────────────────────────────
 export default function Admin() {
   const { isLoading: authLoading, isAuthenticated, logout } = useAuth();
   const { data: registrations, isLoading, error } = useRegistrations();
@@ -148,105 +211,70 @@ export default function Admin() {
   const downloadAll = useDownloadRegistrations();
 
   if (authLoading) {
-    return (
-      <div className="min-h-screen flex items-center justify-center">
-        <Loader2 className="h-8 w-8 animate-spin text-primary" />
-      </div>
-    );
+    return <div className="min-h-screen flex items-center justify-center"><Loader2 className="h-8 w-8 animate-spin text-primary" /></div>;
   }
+  if (!isAuthenticated) return <LoginForm />;
 
-  if (!isAuthenticated) {
-    return <LoginForm />;
-  }
+  const totalCards = registrations?.length || 0;
+  const activeCards = registrations?.filter(r => r.validUntil && new Date(r.validUntil) > new Date()).length || 0;
+  const expiredCards = registrations?.filter(r => r.validUntil && new Date(r.validUntil) < new Date()).length || 0;
 
   return (
     <div className="min-h-screen bg-background py-8 px-4">
-      <motion.div
-        initial={{ opacity: 0, y: 20 }}
-        animate={{ opacity: 1, y: 0 }}
-        className="max-w-7xl mx-auto"
-      >
+      <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} className="max-w-7xl mx-auto">
+
         {/* Header */}
         <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-4 mb-8">
           <div className="flex items-center gap-4">
-            <div className="bg-primary/10 p-3 rounded-full">
-              <ShieldCheck className="h-8 w-8 text-primary" />
-            </div>
+            <div className="bg-primary/10 p-3 rounded-full"><ShieldCheck className="h-8 w-8 text-primary" /></div>
             <div>
               <h1 className="text-3xl font-display font-bold">ਪ੍ਰਸ਼ਾਸਕ ਪੈਨਲ</h1>
               <p className="text-muted-foreground">ਰਜਿਸਟ੍ਰੇਸ਼ਨਾਂ ਦਾ ਪ੍ਰਬੰਧਨ ਕਰੋ</p>
             </div>
           </div>
-          
-          <div className="flex items-center gap-4">
-            <Button 
-              variant="outline" 
-              onClick={() => logout()}
-              data-testid="button-logout"
-            >
-              <LogOut className="h-4 w-4 mr-2" />
-              ਲੌਗ ਆਊਟ
+          <Button variant="outline" onClick={() => logout()} data-testid="button-logout">
+            <LogOut className="h-4 w-4 mr-2" /> ਲੌਗ ਆਊਟ
+          </Button>
+        </div>
+
+        {/* Stats */}
+        <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mb-8">
+          {[
+            { label: "ਕੁੱਲ ਰਜਿਸਟ੍ਰੇਸ਼ਨਾਂ", value: isLoading ? "..." : totalCards, icon: <Users className="h-4 w-4" />, color: "text-primary" },
+            { label: "Active Cards", value: isLoading ? "..." : activeCards, icon: <CheckCircle className="h-4 w-4" />, color: "text-green-600" },
+            { label: "Expired Cards", value: isLoading ? "..." : expiredCards, icon: <AlertTriangle className="h-4 w-4" />, color: "text-orange-500" },
+            { label: "Pending Cards", value: isLoading ? "..." : totalCards - activeCards - expiredCards, icon: <QrCode className="h-4 w-4" />, color: "text-blue-500" },
+          ].map((s) => (
+            <Card key={s.label}>
+              <CardHeader className="flex flex-row items-center justify-between pb-2 gap-2">
+                <CardTitle className="text-xs font-medium text-muted-foreground">{s.label}</CardTitle>
+                <span className={s.color}>{s.icon}</span>
+              </CardHeader>
+              <CardContent><div className={`text-3xl font-bold ${s.color}`}>{s.value}</div></CardContent>
+            </Card>
+          ))}
+        </div>
+
+        {/* Download All */}
+        <Card className="mb-6">
+          <CardContent className="pt-4">
+            <Button onClick={() => downloadAll.mutate()} disabled={downloadAll.isPending || !registrations?.length} className="w-full md:w-auto" data-testid="button-download-all">
+              {downloadAll.isPending ? <><Loader2 className="mr-2 h-4 w-4 animate-spin" />ਡਾਊਨਲੋਡ ਹੋ ਰਿਹਾ ਹੈ...</> : <><Download className="mr-2 h-4 w-4" />ਸਾਰੀਆਂ ਰਜਿਸਟ੍ਰੇਸ਼ਨਾਂ ਡਾਊਨਲੋਡ ਕਰੋ (ZIP)</>}
             </Button>
-          </div>
-        </div>
+          </CardContent>
+        </Card>
 
-        {/* Stats Card */}
-        <div className="grid md:grid-cols-3 gap-6 mb-8">
-          <Card>
-            <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2 gap-2">
-              <CardTitle className="text-sm font-medium">ਕੁੱਲ ਰਜਿਸਟ੍ਰੇਸ਼ਨਾਂ</CardTitle>
-              <Users className="h-4 w-4 text-muted-foreground" />
-            </CardHeader>
-            <CardContent>
-              <div className="text-3xl font-bold text-primary">
-                {isLoading ? "..." : registrations?.length || 0}
-              </div>
-            </CardContent>
-          </Card>
-          
-          <Card className="md:col-span-2">
-            <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2 gap-2">
-              <CardTitle className="text-sm font-medium">ਡਾਊਨਲੋਡ</CardTitle>
-              <Download className="h-4 w-4 text-muted-foreground" />
-            </CardHeader>
-            <CardContent>
-              <Button 
-                onClick={() => downloadAll.mutate()}
-                disabled={downloadAll.isPending || !registrations?.length}
-                data-testid="button-download-all"
-                className="w-full"
-              >
-                {downloadAll.isPending ? (
-                  <>
-                    <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                    ਡਾਊਨਲੋਡ ਹੋ ਰਿਹਾ ਹੈ...
-                  </>
-                ) : (
-                  <>
-                    <Download className="mr-2 h-4 w-4" />
-                    ਸਾਰੀਆਂ ਰਜਿਸਟ੍ਰੇਸ਼ਨਾਂ ਡਾਊਨਲੋਡ ਕਰੋ (ZIP)
-                  </>
-                )}
-              </Button>
-            </CardContent>
-          </Card>
-        </div>
-
-        {/* Registrations Table */}
+        {/* Table */}
         <Card>
           <CardHeader>
             <CardTitle>ਰਜਿਸਟ੍ਰੇਸ਼ਨ ਸੂਚੀ</CardTitle>
-            <CardDescription>ਸਾਰੀਆਂ ਮੈਂਬਰ ਰਜਿਸਟ੍ਰੇਸ਼ਨਾਂ</CardDescription>
+            <CardDescription>ਸਾਰੀਆਂ ਮੈਂਬਰ ਰਜਿਸਟ੍ਰੇਸ਼ਨਾਂ — QR Card issue ਕਰੋ ਅਤੇ validity ਸੈੱਟ ਕਰੋ</CardDescription>
           </CardHeader>
           <CardContent>
             {isLoading ? (
-              <div className="flex justify-center py-12">
-                <Loader2 className="h-8 w-8 animate-spin text-primary" />
-              </div>
+              <div className="flex justify-center py-12"><Loader2 className="h-8 w-8 animate-spin text-primary" /></div>
             ) : error ? (
-              <div className="text-center py-12 text-destructive">
-                <p>ਡਾਟਾ ਲੋਡ ਕਰਨ ਵਿੱਚ ਗਲਤੀ</p>
-              </div>
+              <div className="text-center py-12 text-destructive"><p>ਡਾਟਾ ਲੋਡ ਕਰਨ ਵਿੱਚ ਗਲਤੀ</p></div>
             ) : !registrations?.length ? (
               <div className="text-center py-12 text-muted-foreground">
                 <Users className="h-12 w-12 mx-auto mb-4 opacity-50" />
@@ -258,102 +286,128 @@ export default function Admin() {
                   <TableHeader>
                     <TableRow>
                       <TableHead>ਫੋਟੋ</TableHead>
-                      <TableHead>ਨਾਮ</TableHead>
-                      <TableHead>ਪਿੰਡ</TableHead>
-                      <TableHead>ਤਹਿਸੀਲ</TableHead>
-                      <TableHead>ਜ਼ਿਲ੍ਹਾ</TableHead>
+                      <TableHead>ਨਾਮ / Card No.</TableHead>
+                      <TableHead>ਪਿੰਡ / ਜ਼ਿਲ੍ਹਾ</TableHead>
                       <TableHead>ਮੋਬਾਈਲ</TableHead>
                       <TableHead>ਆਧਾਰ</TableHead>
-                      <TableHead>ਮਿਤੀ</TableHead>
+                      <TableHead>Validity</TableHead>
+                      <TableHead>Status</TableHead>
                       <TableHead>ਕਾਰਵਾਈਆਂ</TableHead>
                     </TableRow>
                   </TableHeader>
                   <TableBody>
-                    {registrations.map((reg) => (
-                      <TableRow key={reg.id}>
-                        <TableCell>
-                          {reg.photoData ? (
+                    {registrations.map((reg) => {
+                      const isExpired = reg.validUntil && new Date(reg.validUntil) < new Date();
+                      const isActive = reg.validFrom && reg.validUntil && new Date() >= new Date(reg.validFrom) && new Date() <= new Date(reg.validUntil);
+
+                      return (
+                        <TableRow key={reg.id}>
+                          <TableCell>
                             <Dialog>
                               <DialogTrigger asChild>
                                 <Avatar className="cursor-pointer hover:ring-2 ring-primary transition-all">
-                                  <AvatarImage src={`data:${reg.photoMimeType};base64,${reg.photoData}`} />
+                                  {reg.photoUrl
+                                    ? <AvatarImage src={reg.photoUrl} />
+                                    : reg.photoData
+                                    ? <AvatarImage src={`data:${reg.photoMimeType};base64,${reg.photoData}`} />
+                                    : null}
                                   <AvatarFallback>{reg.name[0]}</AvatarFallback>
                                 </Avatar>
                               </DialogTrigger>
                               <DialogContent>
-                                <DialogHeader>
-                                  <DialogTitle>{reg.name}</DialogTitle>
-                                </DialogHeader>
-                                <img 
-                                  src={`data:${reg.photoMimeType};base64,${reg.photoData}`} 
-                                  alt={reg.name}
-                                  className="w-full max-w-md mx-auto rounded-lg"
-                                />
+                                <DialogHeader><DialogTitle>{reg.name}</DialogTitle></DialogHeader>
+                                {(reg.photoUrl || reg.photoData) && (
+                                  <img src={reg.photoUrl || `data:${reg.photoMimeType};base64,${reg.photoData}`}
+                                    alt={reg.name} className="w-full max-w-md mx-auto rounded-lg" />
+                                )}
                               </DialogContent>
                             </Dialog>
-                          ) : (
-                            <Avatar>
-                              <AvatarFallback>{reg.name[0]}</AvatarFallback>
-                            </Avatar>
-                          )}
-                        </TableCell>
-                        <TableCell className="font-medium">{reg.name}</TableCell>
-                        <TableCell>{reg.village}</TableCell>
-                        <TableCell>{reg.tehsil}</TableCell>
-                        <TableCell>{reg.district}</TableCell>
-                        <TableCell className="font-mono text-sm">{reg.mobileNumber}</TableCell>
-                        <TableCell className="font-mono text-sm">
-                          **** **** {reg.aadhaarNumber.slice(-4)}
-                        </TableCell>
-                        <TableCell className="text-sm text-muted-foreground">
-                          {reg.createdAt ? new Date(reg.createdAt).toLocaleDateString('pa-IN') : '-'}
-                        </TableCell>
-                        <TableCell>
-                          <div className="flex items-center gap-2">
-                            <Dialog>
-                              <DialogTrigger asChild>
-                                <Button size="icon" variant="ghost" data-testid={`button-view-${reg.id}`}>
-                                  <Eye className="h-4 w-4" />
-                                </Button>
-                              </DialogTrigger>
-                              <DialogContent>
-                                <DialogHeader>
-                                  <DialogTitle>ਮੈਂਬਰ ਵੇਰਵੇ</DialogTitle>
-                                </DialogHeader>
-                                <div className="space-y-4">
-                                  {reg.photoData && (
-                                    <img 
-                                      src={`data:${reg.photoMimeType};base64,${reg.photoData}`} 
-                                      alt={reg.name}
-                                      className="w-32 h-32 object-cover rounded-lg mx-auto"
-                                    />
-                                  )}
-                                  <div className="grid grid-cols-2 gap-4 text-sm">
-                                    <div><strong>ਨਾਮ:</strong> {reg.name}</div>
-                                    <div><strong>ਆਹੁਦਾ:</strong> {reg.designation}</div>
-                                    <div><strong>ਪਿੰਡ:</strong> {reg.village}</div>
-                                    <div><strong>ਤਹਿਸੀਲ:</strong> {reg.tehsil}</div>
-                                    <div><strong>ਜ਼ਿਲ੍ਹਾ:</strong> {reg.district}</div>
-                                    <div><strong>ਮੋਬਾਈਲ:</strong> {reg.mobileNumber}</div>
-                                    <div className="col-span-2"><strong>ਆਧਾਰ:</strong> **** **** {reg.aadhaarNumber.slice(-4)}</div>
+                          </TableCell>
+
+                          <TableCell>
+                            <p className="font-medium">{reg.name}</p>
+                            <p className="text-xs text-muted-foreground">{reg.designation}</p>
+                            {reg.cardNumber && <p className="text-xs font-mono text-green-700 mt-0.5">{reg.cardNumber}</p>}
+                          </TableCell>
+
+                          <TableCell>
+                            <p className="text-sm">{reg.village}</p>
+                            <p className="text-xs text-muted-foreground">{reg.tehsil}, {reg.district}</p>
+                          </TableCell>
+
+                          <TableCell className="font-mono text-sm">
+                            {reg.mobileNumber || <span className="text-muted-foreground">*</span>}
+                          </TableCell>
+
+                          <TableCell className="font-mono text-sm">
+                            {reg.aadhaarNumber
+                              ? `**** **** ${reg.aadhaarNumber.slice(-4)}`
+                              : <span className="text-muted-foreground">*</span>}
+                          </TableCell>
+
+                          <TableCell className="text-xs text-muted-foreground">
+                            {reg.validFrom && reg.validUntil ? (
+                              <div>
+                                <p>{new Date(reg.validFrom).toLocaleDateString("en-IN", { day: "2-digit", month: "short", year: "numeric" })}</p>
+                                <p>→ {new Date(reg.validUntil).toLocaleDateString("en-IN", { day: "2-digit", month: "short", year: "numeric" })}</p>
+                              </div>
+                            ) : <span className="text-orange-500">Not Set</span>}
+                          </TableCell>
+
+                          <TableCell>
+                            {isActive ? (
+                              <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full bg-green-100 text-green-700 text-xs font-medium">
+                                <CheckCircle className="h-3 w-3" /> Active
+                              </span>
+                            ) : isExpired ? (
+                              <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full bg-orange-100 text-orange-700 text-xs font-medium">
+                                <AlertTriangle className="h-3 w-3" /> Expired
+                              </span>
+                            ) : (
+                              <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full bg-gray-100 text-gray-600 text-xs font-medium">
+                                Pending
+                              </span>
+                            )}
+                          </TableCell>
+
+                          <TableCell>
+                            <div className="flex items-center gap-2 flex-wrap">
+                              <IssueCardDialog reg={reg} />
+                              <Dialog>
+                                <DialogTrigger asChild>
+                                  <Button size="icon" variant="ghost" data-testid={`button-view-${reg.id}`}><Eye className="h-4 w-4" /></Button>
+                                </DialogTrigger>
+                                <DialogContent>
+                                  <DialogHeader><DialogTitle>ਮੈਂਬਰ ਵੇਰਵੇ</DialogTitle></DialogHeader>
+                                  <div className="space-y-4">
+                                    {(reg.photoUrl || reg.photoData) && (
+                                      <img src={reg.photoUrl || `data:${reg.photoMimeType};base64,${reg.photoData}`}
+                                        alt={reg.name} className="w-32 h-32 object-cover rounded-lg mx-auto" />
+                                    )}
+                                    <div className="grid grid-cols-2 gap-3 text-sm">
+                                      <div><strong>ਨਾਮ:</strong> {reg.name}</div>
+                                      <div><strong>ਆਹੁਦਾ:</strong> {reg.designation}</div>
+                                      <div><strong>ਪਿੰਡ:</strong> {reg.village}</div>
+                                      <div><strong>ਤਹਿਸੀਲ:</strong> {reg.tehsil}</div>
+                                      <div><strong>ਜ਼ਿਲ੍ਹਾ:</strong> {reg.district}</div>
+                                      <div><strong>ਮੋਬਾਈਲ:</strong> {reg.mobileNumber || "*"}</div>
+                                      <div className="col-span-2"><strong>ਆਧਾਰ:</strong> {reg.aadhaarNumber ? `**** **** ${reg.aadhaarNumber.slice(-4)}` : "*"}</div>
+                                      <div><strong>Card No:</strong> {reg.cardNumber || "N/A"}</div>
+                                      <div><strong>Valid Until:</strong> {reg.validUntil ? new Date(reg.validUntil).toLocaleDateString("en-IN") : "N/A"}</div>
+                                    </div>
                                   </div>
-                                </div>
-                              </DialogContent>
-                            </Dialog>
-                            <Button 
-                              size="icon" 
-                              variant="ghost" 
-                              className="text-destructive hover:text-destructive"
-                              onClick={() => deleteRegistration.mutate(reg.id)}
-                              disabled={deleteRegistration.isPending}
-                              data-testid={`button-delete-${reg.id}`}
-                            >
-                              <Trash2 className="h-4 w-4" />
-                            </Button>
-                          </div>
-                        </TableCell>
-                      </TableRow>
-                    ))}
+                                </DialogContent>
+                              </Dialog>
+                              <Button size="icon" variant="ghost" className="text-destructive hover:text-destructive"
+                                onClick={() => deleteRegistration.mutate(reg.id)} disabled={deleteRegistration.isPending}
+                                data-testid={`button-delete-${reg.id}`}>
+                                <Trash2 className="h-4 w-4" />
+                              </Button>
+                            </div>
+                          </TableCell>
+                        </TableRow>
+                      );
+                    })}
                   </TableBody>
                 </Table>
               </div>
