@@ -1,11 +1,12 @@
 # fly.toml - Fly.io configuration
-# ਪਹਿਲੀ ਵਾਰ: fly apps create kisan-union-punjab
-# ਫਿਰ: fly deploy
 
 app = "kisan-union-punjab"
 primary_region = "bom"
 
 [build]
+
+[deploy]
+  release_command = "npm run db:push"
 
 [env]
   NODE_ENV = "production"
