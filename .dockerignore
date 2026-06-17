@@ -1,7 +1,11 @@
 node_modules
-dist
 .env
 *.log
 .git
 .gitignore
 attached_assets
+client
+server
+shared
+script
+migrations

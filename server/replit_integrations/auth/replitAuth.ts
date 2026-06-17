@@ -65,6 +65,12 @@ async function upsertUser(claims: any) {
 export async function setupAuth(app: Express) {
   app.set("trust proxy", 1);
   app.use(getSession());
+
+  if (!process.env.REPL_ID) {
+    console.log("[auth] REPL_ID not set — skipping Replit Auth (session auth still active)");
+    return;
+  }
+
   app.use(passport.initialize());
   app.use(passport.session());
 
