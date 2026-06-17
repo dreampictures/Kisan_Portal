@@ -9,11 +9,9 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Avatar, AvatarImage, AvatarFallback } from "@/components/ui/avatar";
 import {
-  Table, TableBody, TableCell, TableHead, TableHeader, TableRow,
-} from "@/components/ui/table";
-import {
   Download, Trash2, Loader2, LogOut, Users, ShieldCheck,
   Eye, EyeOff, Lock, QrCode, CheckCircle, Calendar, AlertTriangle,
+  MapPin, Phone, CreditCard,
 } from "lucide-react";
 import { motion } from "framer-motion";
 import {
@@ -127,10 +125,11 @@ function IssueCardDialog({ reg }: { reg: Registration }) {
   };
 
   return (
-    <Dialog open={open} onOpenChange={setOpen}>
+    <Dialog open={open} onOpenChange={(o) => { setOpen(o); if (!o) setQrDataUrl(null); }}>
       <DialogTrigger asChild>
-        <Button size="sm" variant="outline" className="gap-1.5 text-green-700 border-green-300 hover:bg-green-50" data-testid={`button-issue-${reg.id}`}>
-          <QrCode className="h-3.5 w-3.5" /> QR Card
+        <Button size="sm" className="gap-1.5 bg-green-600 hover:bg-green-700 text-white w-full" data-testid={`button-issue-${reg.id}`}>
+          <QrCode className="h-3.5 w-3.5" />
+          {reg.cardNumber ? "QR / ਨਵਿਆਓ" : "QR Card ਬਣਾਓ"}
         </Button>
       </DialogTrigger>
       <DialogContent className="max-w-md">
@@ -141,41 +140,45 @@ function IssueCardDialog({ reg }: { reg: Registration }) {
         </DialogHeader>
 
         <div className="space-y-4">
-          {/* Member Info */}
           <div className="bg-muted/40 rounded-lg p-3 flex items-center gap-3">
-            <Avatar className="h-12 w-12">
+            <Avatar className="h-14 w-14 border-2 border-primary/20">
               {reg.photoUrl ? <AvatarImage src={reg.photoUrl} /> : reg.photoData ? <AvatarImage src={`data:${reg.photoMimeType};base64,${reg.photoData}`} /> : null}
-              <AvatarFallback>{reg.name[0]}</AvatarFallback>
+              <AvatarFallback className="text-lg font-bold">{reg.name[0]}</AvatarFallback>
             </Avatar>
             <div>
-              <p className="font-semibold">{reg.name}</p>
-              <p className="text-sm text-muted-foreground">{reg.designation} — {reg.village}, {reg.district}</p>
-              {reg.cardNumber && <p className="text-xs font-mono text-green-700 mt-0.5">{reg.cardNumber}</p>}
+              <p className="font-semibold text-base">{reg.name}</p>
+              <p className="text-sm text-muted-foreground">{reg.designation}</p>
+              <p className="text-xs text-muted-foreground">{reg.village}, {reg.district}</p>
+              {reg.cardNumber && <p className="text-xs font-mono text-green-700 mt-0.5 font-semibold">{reg.cardNumber}</p>}
             </div>
           </div>
 
-          {/* Validity Dates */}
-          <div className="grid grid-cols-2 gap-3">
-            <div className="space-y-1.5">
-              <Label className="text-xs">Valid From</Label>
-              <Input type="date" value={validFrom} onChange={(e) => setValidFrom(e.target.value)} />
-            </div>
-            <div className="space-y-1.5">
-              <Label className="text-xs">Valid Until</Label>
-              <Input type="date" value={validUntil} onChange={(e) => setValidUntil(e.target.value)} />
+          <div className="space-y-2">
+            <p className="text-sm font-medium text-muted-foreground">Card Validity ਸੈੱਟ ਕਰੋ:</p>
+            <div className="grid grid-cols-2 gap-3">
+              <div className="space-y-1.5">
+                <Label className="text-xs">Valid From (ਤੋਂ)</Label>
+                <Input type="date" value={validFrom} onChange={(e) => setValidFrom(e.target.value)} />
+              </div>
+              <div className="space-y-1.5">
+                <Label className="text-xs">Valid Until (ਤੱਕ)</Label>
+                <Input type="date" value={validUntil} onChange={(e) => setValidUntil(e.target.value)} />
+              </div>
             </div>
           </div>
 
-          <Button onClick={handleIssue} disabled={loading} className="w-full">
-            {loading ? <><Loader2 className="mr-2 h-4 w-4 animate-spin" />QR ਬਣ ਰਿਹਾ ਹੈ...</> : "Card Issue ਕਰੋ ਅਤੇ QR ਬਣਾਓ"}
+          <Button onClick={handleIssue} disabled={loading} className="w-full bg-green-600 hover:bg-green-700">
+            {loading
+              ? <><Loader2 className="mr-2 h-4 w-4 animate-spin" />QR ਬਣ ਰਿਹਾ ਹੈ...</>
+              : <><QrCode className="mr-2 h-4 w-4" />Card Issue ਕਰੋ ਅਤੇ QR ਬਣਾਓ</>}
           </Button>
 
-          {/* QR Result */}
           {qrDataUrl && (
             <motion.div initial={{ opacity: 0, scale: 0.95 }} animate={{ opacity: 1, scale: 1 }}
               className="border-2 border-green-300 rounded-xl p-4 text-center bg-green-50">
               <CheckCircle className="h-5 w-5 text-green-600 mx-auto mb-2" />
-              <img src={qrDataUrl} alt="QR Code" className="w-40 h-40 mx-auto rounded-lg mb-3" />
+              <p className="text-sm font-semibold text-green-700 mb-2">QR Code ਤਿਆਰ ਹੈ!</p>
+              <img src={qrDataUrl} alt="QR Code" className="w-44 h-44 mx-auto rounded-lg mb-3 border border-green-200" />
               <p className="text-xs text-muted-foreground mb-3">ਇਹ QR Code ਪ੍ਰਿੰਟ ਕੀਤੇ Card ਤੇ ਲਗਾਓ</p>
               <Button onClick={downloadQR} variant="default" size="sm" className="w-full">
                 <Download className="mr-2 h-4 w-4" /> QR PNG ਡਾਊਨਲੋਡ ਕਰੋ
@@ -183,7 +186,6 @@ function IssueCardDialog({ reg }: { reg: Registration }) {
             </motion.div>
           )}
 
-          {/* Download QR for already-issued cards */}
           {!qrDataUrl && reg.cardNumber && reg.validUntil && (
             <div className="border rounded-xl p-3 text-center bg-muted/30">
               <div className="flex items-center justify-center gap-2 mb-2 text-sm text-muted-foreground">
@@ -203,12 +205,112 @@ function IssueCardDialog({ reg }: { reg: Registration }) {
   );
 }
 
+// ─── Member Card (Mobile) ──────────────────────────────────
+function MemberCard({ reg }: { reg: Registration }) {
+  const deleteRegistration = useDeleteRegistration();
+  const isExpired = reg.validUntil && new Date(reg.validUntil) < new Date();
+  const isActive = reg.validFrom && reg.validUntil
+    && new Date() >= new Date(reg.validFrom) && new Date() <= new Date(reg.validUntil);
+
+  return (
+    <Card className="overflow-hidden">
+      <CardContent className="p-4">
+        <div className="flex items-start gap-3">
+          <Dialog>
+            <DialogTrigger asChild>
+              <Avatar className="h-16 w-16 flex-shrink-0 cursor-pointer hover:ring-2 ring-primary transition-all border-2 border-muted">
+                {reg.photoUrl
+                  ? <AvatarImage src={reg.photoUrl} />
+                  : reg.photoData
+                  ? <AvatarImage src={`data:${reg.photoMimeType};base64,${reg.photoData}`} />
+                  : null}
+                <AvatarFallback className="text-xl font-bold">{reg.name[0]}</AvatarFallback>
+              </Avatar>
+            </DialogTrigger>
+            <DialogContent>
+              <DialogHeader><DialogTitle>{reg.name}</DialogTitle></DialogHeader>
+              {(reg.photoUrl || reg.photoData) && (
+                <img src={reg.photoUrl || `data:${reg.photoMimeType};base64,${reg.photoData}`}
+                  alt={reg.name} className="w-full max-w-md mx-auto rounded-lg" />
+              )}
+            </DialogContent>
+          </Dialog>
+
+          <div className="flex-1 min-w-0">
+            <div className="flex items-start justify-between gap-2">
+              <div>
+                <p className="font-semibold text-base leading-tight">{reg.name}</p>
+                <p className="text-sm text-muted-foreground">{reg.designation}</p>
+              </div>
+              <div className="flex-shrink-0">
+                {isActive ? (
+                  <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full bg-green-100 text-green-700 text-xs font-medium">
+                    <CheckCircle className="h-3 w-3" /> Active
+                  </span>
+                ) : isExpired ? (
+                  <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full bg-orange-100 text-orange-700 text-xs font-medium">
+                    <AlertTriangle className="h-3 w-3" /> Expired
+                  </span>
+                ) : (
+                  <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full bg-gray-100 text-gray-600 text-xs font-medium">
+                    Pending
+                  </span>
+                )}
+              </div>
+            </div>
+
+            <div className="mt-2 space-y-1 text-xs text-muted-foreground">
+              <div className="flex items-center gap-1.5">
+                <MapPin className="h-3 w-3 flex-shrink-0" />
+                <span>{reg.village}, {reg.tehsil}, {reg.district}</span>
+              </div>
+              {reg.mobileNumber && (
+                <div className="flex items-center gap-1.5">
+                  <Phone className="h-3 w-3 flex-shrink-0" />
+                  <span className="font-mono">{reg.mobileNumber}</span>
+                </div>
+              )}
+              {reg.cardNumber && (
+                <div className="flex items-center gap-1.5">
+                  <CreditCard className="h-3 w-3 flex-shrink-0" />
+                  <span className="font-mono text-green-700 font-semibold">{reg.cardNumber}</span>
+                </div>
+              )}
+              {reg.validFrom && reg.validUntil && (
+                <div className="flex items-center gap-1.5">
+                  <Calendar className="h-3 w-3 flex-shrink-0" />
+                  <span>
+                    {new Date(reg.validFrom).toLocaleDateString("en-IN", { day: "2-digit", month: "short", year: "numeric" })}
+                    {" → "}
+                    {new Date(reg.validUntil).toLocaleDateString("en-IN", { day: "2-digit", month: "short", year: "numeric" })}
+                  </span>
+                </div>
+              )}
+            </div>
+          </div>
+        </div>
+
+        <div className="mt-3 flex gap-2">
+          <div className="flex-1">
+            <IssueCardDialog reg={reg} />
+          </div>
+          <Button size="sm" variant="ghost" className="text-destructive hover:text-destructive hover:bg-destructive/10 flex-shrink-0"
+            onClick={() => deleteRegistration.mutate(reg.id)} disabled={deleteRegistration.isPending}
+            data-testid={`button-delete-${reg.id}`}>
+            <Trash2 className="h-4 w-4" />
+          </Button>
+        </div>
+      </CardContent>
+    </Card>
+  );
+}
+
 // ─── Main Admin Panel ──────────────────────────────────────
 export default function Admin() {
   const { isLoading: authLoading, isAuthenticated, logout } = useAuth();
   const { data: registrations, isLoading, error } = useRegistrations();
-  const deleteRegistration = useDeleteRegistration();
   const downloadAll = useDownloadRegistrations();
+  const [search, setSearch] = useState("");
 
   if (authLoading) {
     return <div className="min-h-screen flex items-center justify-center"><Loader2 className="h-8 w-8 animate-spin text-primary" /></div>;
@@ -218,202 +320,111 @@ export default function Admin() {
   const totalCards = registrations?.length || 0;
   const activeCards = registrations?.filter(r => r.validUntil && new Date(r.validUntil) > new Date()).length || 0;
   const expiredCards = registrations?.filter(r => r.validUntil && new Date(r.validUntil) < new Date()).length || 0;
+  const pendingCards = totalCards - activeCards - expiredCards;
+
+  const filtered = registrations?.filter(r =>
+    !search ||
+    r.name.toLowerCase().includes(search.toLowerCase()) ||
+    r.village.toLowerCase().includes(search.toLowerCase()) ||
+    r.district.toLowerCase().includes(search.toLowerCase()) ||
+    (r.mobileNumber || "").includes(search) ||
+    (r.cardNumber || "").toLowerCase().includes(search.toLowerCase())
+  ) || [];
 
   return (
-    <div className="min-h-screen bg-background py-8 px-4">
-      <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} className="max-w-7xl mx-auto">
+    <div className="min-h-screen bg-background py-6 px-4">
+      <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} className="max-w-5xl mx-auto">
 
         {/* Header */}
-        <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-4 mb-8">
-          <div className="flex items-center gap-4">
-            <div className="bg-primary/10 p-3 rounded-full"><ShieldCheck className="h-8 w-8 text-primary" /></div>
+        <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 mb-6">
+          <div className="flex items-center gap-3">
+            <div className="bg-primary/10 p-3 rounded-full"><ShieldCheck className="h-7 w-7 text-primary" /></div>
             <div>
-              <h1 className="text-3xl font-display font-bold">ਪ੍ਰਸ਼ਾਸਕ ਪੈਨਲ</h1>
-              <p className="text-muted-foreground">ਰਜਿਸਟ੍ਰੇਸ਼ਨਾਂ ਦਾ ਪ੍ਰਬੰਧਨ ਕਰੋ</p>
+              <h1 className="text-2xl font-display font-bold">ਪ੍ਰਸ਼ਾਸਕ ਪੈਨਲ</h1>
+              <p className="text-sm text-muted-foreground">ਕਿਸਾਨ ਯੂਨੀਅਨ ਪੰਜਾਬ</p>
             </div>
           </div>
-          <Button variant="outline" onClick={() => logout()} data-testid="button-logout">
+          <Button variant="outline" size="sm" onClick={() => logout()} data-testid="button-logout">
             <LogOut className="h-4 w-4 mr-2" /> ਲੌਗ ਆਊਟ
           </Button>
         </div>
 
         {/* Stats */}
-        <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mb-8">
+        <div className="grid grid-cols-2 md:grid-cols-4 gap-3 mb-6">
           {[
-            { label: "ਕੁੱਲ ਰਜਿਸਟ੍ਰੇਸ਼ਨਾਂ", value: isLoading ? "..." : totalCards, icon: <Users className="h-4 w-4" />, color: "text-primary" },
-            { label: "Active Cards", value: isLoading ? "..." : activeCards, icon: <CheckCircle className="h-4 w-4" />, color: "text-green-600" },
-            { label: "Expired Cards", value: isLoading ? "..." : expiredCards, icon: <AlertTriangle className="h-4 w-4" />, color: "text-orange-500" },
-            { label: "Pending Cards", value: isLoading ? "..." : totalCards - activeCards - expiredCards, icon: <QrCode className="h-4 w-4" />, color: "text-blue-500" },
+            { label: "ਕੁੱਲ", value: isLoading ? "..." : totalCards, icon: <Users className="h-4 w-4" />, color: "text-primary" },
+            { label: "Active", value: isLoading ? "..." : activeCards, icon: <CheckCircle className="h-4 w-4" />, color: "text-green-600" },
+            { label: "Expired", value: isLoading ? "..." : expiredCards, icon: <AlertTriangle className="h-4 w-4" />, color: "text-orange-500" },
+            { label: "Pending", value: isLoading ? "..." : pendingCards, icon: <QrCode className="h-4 w-4" />, color: "text-blue-500" },
           ].map((s) => (
-            <Card key={s.label}>
-              <CardHeader className="flex flex-row items-center justify-between pb-2 gap-2">
-                <CardTitle className="text-xs font-medium text-muted-foreground">{s.label}</CardTitle>
-                <span className={s.color}>{s.icon}</span>
-              </CardHeader>
-              <CardContent><div className={`text-3xl font-bold ${s.color}`}>{s.value}</div></CardContent>
+            <Card key={s.label} className="text-center">
+              <CardContent className="pt-4 pb-3">
+                <div className={`flex items-center justify-center gap-1.5 text-xs text-muted-foreground mb-1 ${s.color}`}>
+                  {s.icon} {s.label}
+                </div>
+                <div className={`text-3xl font-bold ${s.color}`}>{s.value}</div>
+              </CardContent>
             </Card>
           ))}
         </div>
 
-        {/* Download All */}
+        {/* Download + Search */}
         <Card className="mb-6">
-          <CardContent className="pt-4">
-            <Button onClick={() => downloadAll.mutate()} disabled={downloadAll.isPending || !registrations?.length} className="w-full md:w-auto" data-testid="button-download-all">
-              {downloadAll.isPending ? <><Loader2 className="mr-2 h-4 w-4 animate-spin" />ਡਾਊਨਲੋਡ ਹੋ ਰਿਹਾ ਹੈ...</> : <><Download className="mr-2 h-4 w-4" />ਸਾਰੀਆਂ ਰਜਿਸਟ੍ਰੇਸ਼ਨਾਂ ਡਾਊਨਲੋਡ ਕਰੋ (ZIP)</>}
-            </Button>
+          <CardContent className="pt-4 space-y-3">
+            <div className="flex flex-col sm:flex-row gap-3">
+              <Input
+                placeholder="ਖੋਜੋ — ਨਾਮ, ਪਿੰਡ, ਮੋਬਾਈਲ, Card No..."
+                value={search}
+                onChange={(e) => setSearch(e.target.value)}
+                className="flex-1"
+                data-testid="input-search"
+              />
+              <Button
+                onClick={() => downloadAll.mutate()}
+                disabled={downloadAll.isPending || !registrations?.length}
+                variant="outline"
+                className="flex-shrink-0"
+                data-testid="button-download-all"
+              >
+                {downloadAll.isPending
+                  ? <><Loader2 className="mr-2 h-4 w-4 animate-spin" />ਡਾਊਨਲੋਡ...</>
+                  : <><Download className="mr-2 h-4 w-4" />ZIP ਡਾਊਨਲੋਡ ({totalCards})</>}
+              </Button>
+            </div>
+            <p className="text-xs text-muted-foreground">
+              💡 ZIP ਡਾਊਨਲੋਡ ਕਰਨ ਨਾਲ ਕੋਈ ਡਾਟਾ ਨਹੀਂ ਮਿਟਦਾ — ਸਿਰਫ਼ copy ਡਾਊਨਲੋਡ ਹੁੰਦੀ ਹੈ।
+            </p>
           </CardContent>
         </Card>
 
-        {/* Table */}
-        <Card>
-          <CardHeader>
-            <CardTitle>ਰਜਿਸਟ੍ਰੇਸ਼ਨ ਸੂਚੀ</CardTitle>
-            <CardDescription>ਸਾਰੀਆਂ ਮੈਂਬਰ ਰਜਿਸਟ੍ਰੇਸ਼ਨਾਂ — QR Card issue ਕਰੋ ਅਤੇ validity ਸੈੱਟ ਕਰੋ</CardDescription>
-          </CardHeader>
-          <CardContent>
-            {isLoading ? (
-              <div className="flex justify-center py-12"><Loader2 className="h-8 w-8 animate-spin text-primary" /></div>
-            ) : error ? (
-              <div className="text-center py-12 text-destructive"><p>ਡਾਟਾ ਲੋਡ ਕਰਨ ਵਿੱਚ ਗਲਤੀ</p></div>
-            ) : !registrations?.length ? (
-              <div className="text-center py-12 text-muted-foreground">
-                <Users className="h-12 w-12 mx-auto mb-4 opacity-50" />
-                <p>ਕੋਈ ਰਜਿਸਟ੍ਰੇਸ਼ਨ ਨਹੀਂ ਮਿਲੀ</p>
-              </div>
-            ) : (
-              <div className="overflow-x-auto">
-                <Table>
-                  <TableHeader>
-                    <TableRow>
-                      <TableHead>ਫੋਟੋ</TableHead>
-                      <TableHead>ਨਾਮ / Card No.</TableHead>
-                      <TableHead>ਪਿੰਡ / ਜ਼ਿਲ੍ਹਾ</TableHead>
-                      <TableHead>ਮੋਬਾਈਲ</TableHead>
-                      <TableHead>ਆਧਾਰ</TableHead>
-                      <TableHead>Validity</TableHead>
-                      <TableHead>Status</TableHead>
-                      <TableHead>ਕਾਰਵਾਈਆਂ</TableHead>
-                    </TableRow>
-                  </TableHeader>
-                  <TableBody>
-                    {registrations.map((reg) => {
-                      const isExpired = reg.validUntil && new Date(reg.validUntil) < new Date();
-                      const isActive = reg.validFrom && reg.validUntil && new Date() >= new Date(reg.validFrom) && new Date() <= new Date(reg.validUntil);
+        {/* Member List */}
+        <div>
+          <div className="flex items-center justify-between mb-3">
+            <h2 className="text-lg font-semibold">ਮੈਂਬਰ ਸੂਚੀ</h2>
+            {search && <p className="text-sm text-muted-foreground">{filtered.length} ਮਿਲੇ</p>}
+          </div>
 
-                      return (
-                        <TableRow key={reg.id}>
-                          <TableCell>
-                            <Dialog>
-                              <DialogTrigger asChild>
-                                <Avatar className="cursor-pointer hover:ring-2 ring-primary transition-all">
-                                  {reg.photoUrl
-                                    ? <AvatarImage src={reg.photoUrl} />
-                                    : reg.photoData
-                                    ? <AvatarImage src={`data:${reg.photoMimeType};base64,${reg.photoData}`} />
-                                    : null}
-                                  <AvatarFallback>{reg.name[0]}</AvatarFallback>
-                                </Avatar>
-                              </DialogTrigger>
-                              <DialogContent>
-                                <DialogHeader><DialogTitle>{reg.name}</DialogTitle></DialogHeader>
-                                {(reg.photoUrl || reg.photoData) && (
-                                  <img src={reg.photoUrl || `data:${reg.photoMimeType};base64,${reg.photoData}`}
-                                    alt={reg.name} className="w-full max-w-md mx-auto rounded-lg" />
-                                )}
-                              </DialogContent>
-                            </Dialog>
-                          </TableCell>
-
-                          <TableCell>
-                            <p className="font-medium">{reg.name}</p>
-                            <p className="text-xs text-muted-foreground">{reg.designation}</p>
-                            {reg.cardNumber && <p className="text-xs font-mono text-green-700 mt-0.5">{reg.cardNumber}</p>}
-                          </TableCell>
-
-                          <TableCell>
-                            <p className="text-sm">{reg.village}</p>
-                            <p className="text-xs text-muted-foreground">{reg.tehsil}, {reg.district}</p>
-                          </TableCell>
-
-                          <TableCell className="font-mono text-sm">
-                            {reg.mobileNumber || <span className="text-muted-foreground">*</span>}
-                          </TableCell>
-
-                          <TableCell className="font-mono text-sm">
-                            {reg.aadhaarNumber
-                              ? `**** **** ${reg.aadhaarNumber.slice(-4)}`
-                              : <span className="text-muted-foreground">*</span>}
-                          </TableCell>
-
-                          <TableCell className="text-xs text-muted-foreground">
-                            {reg.validFrom && reg.validUntil ? (
-                              <div>
-                                <p>{new Date(reg.validFrom).toLocaleDateString("en-IN", { day: "2-digit", month: "short", year: "numeric" })}</p>
-                                <p>→ {new Date(reg.validUntil).toLocaleDateString("en-IN", { day: "2-digit", month: "short", year: "numeric" })}</p>
-                              </div>
-                            ) : <span className="text-orange-500">Not Set</span>}
-                          </TableCell>
-
-                          <TableCell>
-                            {isActive ? (
-                              <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full bg-green-100 text-green-700 text-xs font-medium">
-                                <CheckCircle className="h-3 w-3" /> Active
-                              </span>
-                            ) : isExpired ? (
-                              <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full bg-orange-100 text-orange-700 text-xs font-medium">
-                                <AlertTriangle className="h-3 w-3" /> Expired
-                              </span>
-                            ) : (
-                              <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full bg-gray-100 text-gray-600 text-xs font-medium">
-                                Pending
-                              </span>
-                            )}
-                          </TableCell>
-
-                          <TableCell>
-                            <div className="flex items-center gap-2 flex-wrap">
-                              <IssueCardDialog reg={reg} />
-                              <Dialog>
-                                <DialogTrigger asChild>
-                                  <Button size="icon" variant="ghost" data-testid={`button-view-${reg.id}`}><Eye className="h-4 w-4" /></Button>
-                                </DialogTrigger>
-                                <DialogContent>
-                                  <DialogHeader><DialogTitle>ਮੈਂਬਰ ਵੇਰਵੇ</DialogTitle></DialogHeader>
-                                  <div className="space-y-4">
-                                    {(reg.photoUrl || reg.photoData) && (
-                                      <img src={reg.photoUrl || `data:${reg.photoMimeType};base64,${reg.photoData}`}
-                                        alt={reg.name} className="w-32 h-32 object-cover rounded-lg mx-auto" />
-                                    )}
-                                    <div className="grid grid-cols-2 gap-3 text-sm">
-                                      <div><strong>ਨਾਮ:</strong> {reg.name}</div>
-                                      <div><strong>ਆਹੁਦਾ:</strong> {reg.designation}</div>
-                                      <div><strong>ਪਿੰਡ:</strong> {reg.village}</div>
-                                      <div><strong>ਤਹਿਸੀਲ:</strong> {reg.tehsil}</div>
-                                      <div><strong>ਜ਼ਿਲ੍ਹਾ:</strong> {reg.district}</div>
-                                      <div><strong>ਮੋਬਾਈਲ:</strong> {reg.mobileNumber || "*"}</div>
-                                      <div className="col-span-2"><strong>ਆਧਾਰ:</strong> {reg.aadhaarNumber ? `**** **** ${reg.aadhaarNumber.slice(-4)}` : "*"}</div>
-                                      <div><strong>Card No:</strong> {reg.cardNumber || "N/A"}</div>
-                                      <div><strong>Valid Until:</strong> {reg.validUntil ? new Date(reg.validUntil).toLocaleDateString("en-IN") : "N/A"}</div>
-                                    </div>
-                                  </div>
-                                </DialogContent>
-                              </Dialog>
-                              <Button size="icon" variant="ghost" className="text-destructive hover:text-destructive"
-                                onClick={() => deleteRegistration.mutate(reg.id)} disabled={deleteRegistration.isPending}
-                                data-testid={`button-delete-${reg.id}`}>
-                                <Trash2 className="h-4 w-4" />
-                              </Button>
-                            </div>
-                          </TableCell>
-                        </TableRow>
-                      );
-                    })}
-                  </TableBody>
-                </Table>
-              </div>
-            )}
-          </CardContent>
-        </Card>
+          {isLoading ? (
+            <div className="flex justify-center py-16"><Loader2 className="h-8 w-8 animate-spin text-primary" /></div>
+          ) : error ? (
+            <Card><CardContent className="text-center py-12 text-destructive">ਡਾਟਾ ਲੋਡ ਕਰਨ ਵਿੱਚ ਗਲਤੀ</CardContent></Card>
+          ) : !filtered.length ? (
+            <Card>
+              <CardContent className="text-center py-16 text-muted-foreground">
+                <Users className="h-12 w-12 mx-auto mb-4 opacity-40" />
+                <p className="text-base">{search ? "ਕੋਈ ਨਤੀਜਾ ਨਹੀਂ ਮਿਲਿਆ" : "ਕੋਈ ਰਜਿਸਟ੍ਰੇਸ਼ਨ ਨਹੀਂ"}</p>
+              </CardContent>
+            </Card>
+          ) : (
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+              {filtered.map((reg) => (
+                <motion.div key={reg.id} initial={{ opacity: 0, y: 8 }} animate={{ opacity: 1, y: 0 }}>
+                  <MemberCard reg={reg} />
+                </motion.div>
+              ))}
+            </div>
+          )}
+        </div>
       </motion.div>
     </div>
   );
