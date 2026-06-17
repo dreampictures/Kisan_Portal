@@ -1,9 +1,9 @@
 # fly.toml - Fly.io configuration
-# Run: fly launch --no-deploy (first time)
-# Then: fly deploy
+# ਪਹਿਲੀ ਵਾਰ: fly apps create kisan-union-punjab
+# ਫਿਰ: fly deploy
 
 app = "kisan-union-punjab"
-primary_region = "sin"
+primary_region = "bom"
 
 [build]
 
@@ -19,11 +19,11 @@ primary_region = "sin"
   min_machines_running = 0
 
   [[http_service.checks]]
-    grace_period = "10s"
+    grace_period = "15s"
     interval = "30s"
     method = "GET"
     path = "/"
-    timeout = "5s"
+    timeout = "10s"
 
 [[vm]]
   memory = "256mb"
