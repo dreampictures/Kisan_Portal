@@ -1,41 +1,50 @@
-import { Tractor } from "lucide-react";
+import { Link } from "wouter";
+import logoSrc from "@assets/image_1781766815229.png";
 
 export function Footer() {
   return (
     <footer className="bg-muted/30 border-t border-border mt-auto">
-      <div className="container mx-auto px-4 py-12">
+      <div className="container mx-auto px-4 py-10">
         <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
           <div className="space-y-4">
-            <div className="flex items-center space-x-2">
-              <Tractor className="h-6 w-6 text-primary" />
-              <span className="font-display font-bold text-lg">Kisan Union Punjab</span>
+            <div className="flex items-center space-x-3">
+              <img src={logoSrc} alt="Logo" className="h-10 w-10 rounded-full object-cover" />
+              <span className="font-display font-bold text-base">ਕਿਸਾਨ ਮਜ਼ਦੂਰ ਸੰਘਰਸ਼ ਕਮੇਟੀ ਪੰਜਾਬ</span>
             </div>
             <p className="text-sm text-muted-foreground leading-relaxed">
-              Dedicated to the welfare and rights of farmers in Punjab. Join us in our struggle for justice and prosperity.
+              ਕਿਸਾਨਾਂ ਦੇ ਹੱਕਾਂ ਅਤੇ ਭਲਾਈ ਲਈ ਸਮਰਪਿਤ। ਸਾਡੀ ਲਹਿਰ ਵਿੱਚ ਸ਼ਾਮਲ ਹੋਵੋ।
             </p>
           </div>
-          
+
           <div>
-            <h3 className="font-display font-bold text-lg mb-4">Contact</h3>
+            <h3 className="font-display font-bold text-base mb-4">ਸੰਪਰਕ</h3>
             <ul className="space-y-2 text-sm text-muted-foreground">
-              <li>Phone: +91 81465 54106</li>
+              <li>ਫ਼ੋਨ: +91 81465 54106</li>
               <li>Email: Sukdev3689@gmail.com</li>
-              <li>District: Tarn Taran, Punjab</li>
+              <li>ਜ਼ਿਲ੍ਹਾ: ਤਰਨ ਤਾਰਨ, ਪੰਜਾਬ</li>
             </ul>
           </div>
 
           <div>
-            <h3 className="font-display font-bold text-lg mb-4">Quick Links</h3>
+            <h3 className="font-display font-bold text-base mb-4">ਲਿੰਕ</h3>
             <ul className="space-y-2 text-sm text-muted-foreground">
-              <li><a href="/" className="hover:text-primary transition-colors">Home</a></li>
-              <li><a href="/about" className="hover:text-primary transition-colors">About Us</a></li>
-              <li><a href="/contact" className="hover:text-primary transition-colors">Get ID Card</a></li>
+              <li><Link href="/"><span className="hover:text-primary cursor-pointer transition-colors">ਮੁੱਖ ਪੰਨਾ</span></Link></li>
+              <li><Link href="/about"><span className="hover:text-primary cursor-pointer transition-colors">ਯੂਨੀਅਨ ਬਾਰੇ</span></Link></li>
+              <li><Link href="/updates"><span className="hover:text-primary cursor-pointer transition-colors">ਤਾਜ਼ੀਆਂ ਖ਼ਬਰਾਂ</span></Link></li>
+              <li><Link href="/contact"><span className="hover:text-primary cursor-pointer transition-colors">ਆਈਡੀ ਕਾਰਡ ਲਓ</span></Link></li>
             </ul>
           </div>
         </div>
-        
-        <div className="border-t border-border/50 mt-12 pt-8 text-center text-sm text-muted-foreground">
-          <p>&copy; {new Date().getFullYear()} Kisan Mazdoor Sangharsh Committee Punjab. All rights reserved.</p>
+
+        <div className="border-t border-border/50 mt-10 pt-6 flex flex-col sm:flex-row items-center justify-between gap-2 text-xs text-muted-foreground">
+          <p>&copy; {new Date().getFullYear()} ਕਿਸਾਨ ਮਜ਼ਦੂਰ ਸੰਘਰਸ਼ ਕਮੇਟੀ ਪੰਜਾਬ। ਸਾਰੇ ਅਧਿਕਾਰ ਸੁਰੱਖਿਅਤ।</p>
+          <p>
+            Managed by{" "}
+            <a href="https://thedreampictures.com" target="_blank" rel="noopener noreferrer"
+              className="text-primary hover:underline font-medium">
+              Dream Pictures
+            </a>
+          </p>
         </div>
       </div>
     </footer>

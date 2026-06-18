@@ -1,5 +1,5 @@
 import { db } from "./db";
-import { registrations, type Registration } from "@shared/schema";
+import { registrations, updates, type Registration, type Update } from "@shared/schema";
 import { eq, desc } from "drizzle-orm";
 
 function generateCardNumber(): string {
@@ -20,16 +20,25 @@ export interface IStorage {
     photoUrl?: string;
     photoData?: string;
     photoMimeType?: string;
+    status?: string;
   }): Promise<Registration>;
   updateRegistrationCard(id: number, data: {
     validFrom: Date;
     validUntil: Date;
     cardNumber?: string;
   }): Promise<Registration | undefined>;
+  approveRegistration(id: number): Promise<Registration | undefined>;
+  rejectRegistration(id: number): Promise<boolean>;
   getRegistrations(): Promise<Registration[]>;
+  getPendingRegistrations(): Promise<Registration[]>;
   getRegistration(id: number): Promise<Registration | undefined>;
   getRegistrationByCardNumber(cardNumber: string): Promise<Registration | undefined>;
   deleteRegistration(id: number): Promise<boolean>;
+
+  // Updates
+  getUpdates(): Promise<Update[]>;
+  createUpdate(data: { title: string; content: string; imageUrl?: string; eventDate?: Date }): Promise<Update>;
+  deleteUpdate(id: number): Promise<boolean>;
 }
 
 export class DatabaseStorage implements IStorage {
@@ -44,6 +53,7 @@ export class DatabaseStorage implements IStorage {
     photoUrl?: string;
     photoData?: string;
     photoMimeType?: string;
+    status?: string;
   }): Promise<Registration> {
     const cardNumber = generateCardNumber();
     const [registration] = await db
@@ -60,6 +70,7 @@ export class DatabaseStorage implements IStorage {
         photoUrl: data.photoUrl || null,
         photoData: data.photoData || null,
         photoMimeType: data.photoMimeType || null,
+        status: data.status || "pending",
       })
       .returning();
     return registration;
@@ -73,6 +84,7 @@ export class DatabaseStorage implements IStorage {
     const updateData: any = {
       validFrom: data.validFrom,
       validUntil: data.validUntil,
+      status: "approved",
     };
     if (data.cardNumber) updateData.cardNumber = data.cardNumber;
     const [updated] = await db
@@ -83,8 +95,28 @@ export class DatabaseStorage implements IStorage {
     return updated;
   }
 
+  async approveRegistration(id: number): Promise<Registration | undefined> {
+    const [updated] = await db
+      .update(registrations)
+      .set({ status: "approved" })
+      .where(eq(registrations.id, id))
+      .returning();
+    return updated;
+  }
+
+  async rejectRegistration(id: number): Promise<boolean> {
+    const result = await db.delete(registrations).where(eq(registrations.id, id)).returning();
+    return result.length > 0;
+  }
+
   async getRegistrations(): Promise<Registration[]> {
     return await db.select().from(registrations).orderBy(desc(registrations.createdAt));
+  }
+
+  async getPendingRegistrations(): Promise<Registration[]> {
+    return await db.select().from(registrations)
+      .where(eq(registrations.status, "pending"))
+      .orderBy(desc(registrations.createdAt));
   }
 
   async getRegistration(id: number): Promise<Registration | undefined> {
@@ -99,6 +131,26 @@ export class DatabaseStorage implements IStorage {
 
   async deleteRegistration(id: number): Promise<boolean> {
     const result = await db.delete(registrations).where(eq(registrations.id, id)).returning();
+    return result.length > 0;
+  }
+
+  // ── Updates ──────────────────────────────────────────────
+  async getUpdates(): Promise<Update[]> {
+    return await db.select().from(updates).orderBy(desc(updates.createdAt));
+  }
+
+  async createUpdate(data: { title: string; content: string; imageUrl?: string; eventDate?: Date }): Promise<Update> {
+    const [update] = await db.insert(updates).values({
+      title: data.title,
+      content: data.content,
+      imageUrl: data.imageUrl || null,
+      eventDate: data.eventDate || null,
+    }).returning();
+    return update;
+  }
+
+  async deleteUpdate(id: number): Promise<boolean> {
+    const result = await db.delete(updates).where(eq(updates.id, id)).returning();
     return result.length > 0;
   }
 }

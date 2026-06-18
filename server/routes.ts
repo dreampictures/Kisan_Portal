@@ -95,7 +95,7 @@ export async function registerRoutes(httpServer: Server, app: Express): Promise<
     }
   });
 
-  // ── Public: submit registration ────────────────────────────
+  // ── Public: submit registration (goes to pending) ──────────
   app.post(api.registrations.submit.path, upload.single("photo"), async (req, res) => {
     try {
       const bodySchema = insertRegistrationSchema.extend({
@@ -112,7 +112,7 @@ export async function registerRoutes(httpServer: Server, app: Express): Promise<
 
       if (req.file) {
         const ext = req.file.mimetype.split("/")[1] || "jpg";
-        const fileName = `${Date.now()}-${Math.random().toString(36).slice(2)}.${ext}`;
+        const fileName = `photos/${Date.now()}-${Math.random().toString(36).slice(2)}.${ext}`;
         try {
           photoUrl = await uploadPhotoToR2(req.file.buffer, req.file.mimetype, fileName);
         } catch (r2err) {
@@ -129,10 +129,11 @@ export async function registerRoutes(httpServer: Server, app: Express): Promise<
         photoUrl,
         photoData,
         photoMimeType,
+        status: "pending",
       });
 
       res.status(201).json({
-        message: "ਰਜਿਸਟ੍ਰੇਸ਼ਨ ਸਫਲ! ਤੁਹਾਡਾ ਕਾਰਡ ਜਲਦੀ ਹੀ ਤਿਆਰ ਕੀਤਾ ਜਾਵੇਗਾ।",
+        message: "ਰਜਿਸਟ੍ਰੇਸ਼ਨ ਸਫਲ! Admin ਵੱਲੋਂ ਅਪ੍ਰੂਵ ਹੋਣ ਤੋਂ ਬਾਅਦ ਤੁਹਾਡਾ ਕਾਰਡ ਤਿਆਰ ਕੀਤਾ ਜਾਵੇਗਾ।",
         id: registration.id,
       });
     } catch (err) {
@@ -143,7 +144,7 @@ export async function registerRoutes(httpServer: Server, app: Express): Promise<
     }
   });
 
-  // ── Admin: list registrations ───────────────────────────────
+  // ── Admin: list all registrations ───────────────────────────
   app.get(api.registrations.list.path, isAdminAuth, async (req, res) => {
     try {
       res.json(await storage.getRegistrations());
@@ -153,7 +154,90 @@ export async function registerRoutes(httpServer: Server, app: Express): Promise<
     }
   });
 
-  // ── Admin: update validity & get QR data URL ───────────────
+  // ── Admin: pending registrations ────────────────────────────
+  app.get("/api/admin/registrations/pending", isAdminAuth, async (req, res) => {
+    try {
+      res.json(await storage.getPendingRegistrations());
+    } catch (err) {
+      console.error(err);
+      res.status(500).json({ message: "ਡਾਟਾ ਲੋਡ ਕਰਨ ਵਿੱਚ ਗਲਤੀ" });
+    }
+  });
+
+  // ── Admin: approve registration ──────────────────────────────
+  app.post("/api/admin/registrations/:id/approve", isAdminAuth, async (req: any, res: any) => {
+    try {
+      const id = parseInt(req.params.id);
+      const updated = await storage.approveRegistration(id);
+      if (!updated) return res.status(404).json({ message: "ਰਜਿਸਟ੍ਰੇਸ਼ਨ ਨਹੀਂ ਮਿਲੀ" });
+      res.json({ message: "ਅਪ੍ਰੂਵ ਕੀਤਾ", registration: updated });
+    } catch (err) {
+      console.error(err);
+      res.status(500).json({ message: "ਅਪ੍ਰੂਵ ਕਰਨ ਵਿੱਚ ਗਲਤੀ" });
+    }
+  });
+
+  // ── Admin: reject registration (delete) ─────────────────────
+  app.delete("/api/admin/registrations/:id/reject", isAdminAuth, async (req: any, res: any) => {
+    try {
+      const id = parseInt(req.params.id);
+      const reg = await storage.getRegistration(id);
+      if (reg?.photoUrl) await deletePhotoFromR2(reg.photoUrl).catch(console.error);
+      const deleted = await storage.rejectRegistration(id);
+      if (!deleted) return res.status(404).json({ message: "ਰਜਿਸਟ੍ਰੇਸ਼ਨ ਨਹੀਂ ਮਿਲੀ" });
+      res.json({ message: "Reject ਕੀਤਾ ਅਤੇ Delete ਕੀਤਾ" });
+    } catch (err) {
+      console.error(err);
+      res.status(500).json({ message: "Reject ਕਰਨ ਵਿੱਚ ਗਲਤੀ" });
+    }
+  });
+
+  // ── Admin: direct entry (approved immediately) ──────────────
+  app.post("/api/admin/registrations/direct", isAdminAuth, upload.single("photo"), async (req: any, res: any) => {
+    try {
+      const bodySchema = insertRegistrationSchema.extend({
+        name: z.string().min(1, "ਨਾਮ ਲੋੜੀਂਦਾ ਹੈ"),
+        village: z.string().min(1, "ਪਿੰਡ ਲੋੜੀਂਦਾ ਹੈ"),
+        tehsil: z.string().min(1, "ਤਹਿਸੀਲ ਲੋੜੀਂਦੀ ਹੈ"),
+        district: z.string().min(1, "ਜ਼ਿਲ੍ਹਾ ਲੋੜੀਂਦਾ ਹੈ"),
+      });
+      const parsed = bodySchema.parse(req.body);
+
+      let photoUrl: string | undefined;
+      let photoData: string | undefined;
+      let photoMimeType: string | undefined;
+
+      if (req.file) {
+        const ext = req.file.mimetype.split("/")[1] || "jpg";
+        const fileName = `photos/${Date.now()}-${Math.random().toString(36).slice(2)}.${ext}`;
+        try {
+          photoUrl = await uploadPhotoToR2(req.file.buffer, req.file.mimetype, fileName);
+        } catch {
+          photoData = req.file.buffer.toString("base64");
+          photoMimeType = req.file.mimetype;
+        }
+      }
+
+      const registration = await storage.createRegistration({
+        ...parsed,
+        mobileNumber: parsed.mobileNumber || undefined,
+        aadhaarNumber: parsed.aadhaarNumber || undefined,
+        photoUrl,
+        photoData,
+        photoMimeType,
+        status: "approved",
+      });
+
+      res.status(201).json({ message: "ਐਂਟਰੀ ਸਫਲ!", registration });
+    } catch (err) {
+      if (err instanceof z.ZodError)
+        return res.status(400).json({ message: err.errors[0].message, field: err.errors[0].path.join(".") });
+      console.error("Direct entry error:", err);
+      res.status(500).json({ message: "ਐਂਟਰੀ ਫੇਲ੍ਹ ਹੋ ਗਈ" });
+    }
+  });
+
+  // ── Admin: issue card / QR ──────────────────────────────────
   app.post("/api/admin/registrations/:id/issue-card", isAdminAuth, async (req: any, res: any) => {
     try {
       const id = parseInt(req.params.id);
@@ -176,7 +260,7 @@ export async function registerRoutes(httpServer: Server, app: Express): Promise<
     }
   });
 
-  // ── Admin: download QR PNG ─────────────────────────────────
+  // ── Admin: download QR PNG ──────────────────────────────────
   app.get("/api/admin/registrations/:id/qr", isAdminAuth, async (req: any, res: any) => {
     try {
       const id = parseInt(req.params.id);
@@ -194,7 +278,7 @@ export async function registerRoutes(httpServer: Server, app: Express): Promise<
     }
   });
 
-  // ── Admin: get single registration ────────────────────────
+  // ── Admin: ZIP download ─────────────────────────────────────
   app.get("/api/admin/registrations/download", isAdminAuth, async (req, res) => {
     try {
       const allRegs = await storage.getRegistrations();
@@ -203,7 +287,7 @@ export async function registerRoutes(httpServer: Server, app: Express): Promise<
 
       for (const reg of allRegs) {
         const last4 = reg.aadhaarNumber ? reg.aadhaarNumber.slice(-4) : "****";
-        let details = `Card No: ${reg.cardNumber || "N/A"}\n`;
+        let details = `Card No: ${reg.cardNumber || "N/A"}\nStatus: ${reg.status}\n`;
         details += `ਨਾਮ: ${reg.name}\nਆਹੁਦਾ: ${reg.designation}\n`;
         details += `ਪਿੰਡ: ${reg.village}\nਤਹਿਸੀਲ: ${reg.tehsil}\nਜ਼ਿਲ੍ਹਾ: ${reg.district}\n`;
         details += `ਮੋਬਾਈਲ: ${reg.mobileNumber || "*"}\n`;
@@ -215,15 +299,13 @@ export async function registerRoutes(httpServer: Server, app: Express): Promise<
           const ext = reg.photoMimeType.split("/")[1] || "jpg";
           zip.addFile(`${fn}.${ext}`, Buffer.from(reg.photoData, "base64"));
         }
-        summary += `${reg.id}. ${reg.name} - ${reg.village}, ${reg.district} [${reg.cardNumber || "N/A"}]\n`;
+        summary += `${reg.id}. ${reg.name} - ${reg.village}, ${reg.district} [${reg.cardNumber || "N/A"}] [${reg.status}]\n`;
       }
 
       zip.addFile("_summary.txt", Buffer.from(summary, "utf-8"));
-      const zipBuffer = zip.toBuffer();
-
       res.setHeader("Content-Type", "application/zip");
       res.setHeader("Content-Disposition", `attachment; filename=registrations_${Date.now()}.zip`);
-      res.send(zipBuffer);
+      res.send(zip.toBuffer());
     } catch (err) {
       console.error(err);
       res.status(500).json({ message: "ਡਾਊਨਲੋਡ ਫੇਲ੍ਹ ਹੋ ਗਈ" });
@@ -245,13 +327,65 @@ export async function registerRoutes(httpServer: Server, app: Express): Promise<
     try {
       const id = parseInt(req.params.id);
       const reg = await storage.getRegistration(id);
-      if (reg?.photoUrl) await deletePhotoFromR2(reg.photoUrl);
+      if (reg?.photoUrl) await deletePhotoFromR2(reg.photoUrl).catch(console.error);
       const deleted = await storage.deleteRegistration(id);
       if (!deleted) return res.status(404).json({ message: "ਰਜਿਸਟ੍ਰੇਸ਼ਨ ਨਹੀਂ ਮਿਲੀ" });
       res.json({ message: "ਰਜਿਸਟ੍ਰੇਸ਼ਨ ਮਿਟਾਈ ਗਈ" });
     } catch (err) {
       console.error(err);
       res.status(500).json({ message: "ਮਿਟਾਉਣ ਵਿੱਚ ਗਲਤੀ" });
+    }
+  });
+
+  // ── Public: get updates ─────────────────────────────────────
+  app.get("/api/updates", async (req, res) => {
+    try {
+      res.json(await storage.getUpdates());
+    } catch (err) {
+      console.error(err);
+      res.status(500).json({ message: "ਡਾਟਾ ਲੋਡ ਕਰਨ ਵਿੱਚ ਗਲਤੀ" });
+    }
+  });
+
+  // ── Admin: create update ────────────────────────────────────
+  app.post("/api/admin/updates", isAdminAuth, upload.single("image"), async (req: any, res: any) => {
+    try {
+      const { title, content, eventDate } = req.body;
+      if (!title || !content) return res.status(400).json({ message: "title ਅਤੇ content ਲੋੜੀਂਦੇ ਹਨ" });
+
+      let imageUrl: string | undefined;
+      if (req.file) {
+        const ext = req.file.mimetype.split("/")[1] || "jpg";
+        const fileName = `updates/${Date.now()}-${Math.random().toString(36).slice(2)}.${ext}`;
+        try {
+          imageUrl = await uploadPhotoToR2(req.file.buffer, req.file.mimetype, fileName);
+        } catch (e) {
+          console.error("R2 upload failed for update image:", e);
+        }
+      }
+
+      const update = await storage.createUpdate({
+        title,
+        content,
+        imageUrl,
+        eventDate: eventDate ? new Date(eventDate) : undefined,
+      });
+      res.status(201).json(update);
+    } catch (err) {
+      console.error(err);
+      res.status(500).json({ message: "Update ਸੇਵ ਨਹੀਂ ਹੋਇਆ" });
+    }
+  });
+
+  // ── Admin: delete update ────────────────────────────────────
+  app.delete("/api/admin/updates/:id", isAdminAuth, async (req: any, res: any) => {
+    try {
+      const deleted = await storage.deleteUpdate(parseInt(req.params.id));
+      if (!deleted) return res.status(404).json({ message: "Update ਨਹੀਂ ਮਿਲਿਆ" });
+      res.json({ message: "Update Delete ਕੀਤਾ" });
+    } catch (err) {
+      console.error(err);
+      res.status(500).json({ message: "Delete ਕਰਨ ਵਿੱਚ ਗਲਤੀ" });
     }
   });
 

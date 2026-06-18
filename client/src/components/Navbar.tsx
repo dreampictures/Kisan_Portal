@@ -1,8 +1,9 @@
 import { Link, useLocation } from "wouter";
-import { Menu, X, Tractor } from "lucide-react";
+import { Menu, X } from "lucide-react";
 import { useState } from "react";
 import { Button } from "@/components/ui/button";
 import { motion, AnimatePresence } from "framer-motion";
+import logoSrc from "@assets/image_1781766815229.png";
 
 export function Navbar() {
   const [location] = useLocation();
@@ -11,18 +12,18 @@ export function Navbar() {
   const links = [
     { href: "/", label: "ਮੁੱਖ ਪੰਨਾ" },
     { href: "/about", label: "ਯੂਨੀਅਨ ਬਾਰੇ" },
+    { href: "/updates", label: "ਤਾਜ਼ੀਆਂ ਖ਼ਬਰਾਂ" },
     { href: "/contact", label: "ਸੰਪਰਕ ਕਰੋ" },
   ];
 
   return (
     <header className="sticky top-0 z-50 w-full border-b border-border/40 bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60">
       <div className="container mx-auto px-4 h-16 flex items-center justify-between">
-        <Link href="/" className="flex items-center space-x-2 group">
-          <div className="bg-primary/10 p-2 rounded-full group-hover:bg-primary/20 transition-colors">
-            <Tractor className="h-6 w-6 text-primary" />
-          </div>
-          <span className="font-display font-bold text-lg md:text-xl text-foreground">
-            ਕਿਸਾਨ ਯੂਨੀਅਨ ਪੰਜਾਬ
+        <Link href="/" className="flex items-center space-x-3 group">
+          <img src={logoSrc} alt="Logo"
+            className="h-10 w-10 rounded-full object-cover ring-2 ring-primary/20 group-hover:ring-primary/40 transition-all" />
+          <span className="font-display font-bold text-sm md:text-base text-foreground leading-tight">
+            ਕਿਸਾਨ ਮਜ਼ਦੂਰ ਸੰਘਰਸ਼ ਕਮੇਟੀ ਪੰਜਾਬ
           </span>
         </Link>
 

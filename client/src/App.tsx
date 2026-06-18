@@ -11,6 +11,7 @@ import About from "@/pages/About";
 import Contact from "@/pages/Contact";
 import Admin from "@/pages/Admin";
 import Verify from "@/pages/Verify";
+import Updates from "@/pages/Updates";
 
 function Router() {
   const [location] = useLocation();
@@ -24,6 +25,7 @@ function Router() {
         <Switch>
           <Route path="/" component={Home} />
           <Route path="/about" component={About} />
+          <Route path="/updates" component={Updates} />
           <Route path="/contact" component={Contact} />
           <Route path="/admin" component={Admin} />
           <Route path="/verify/:cardNumber" component={Verify} />
