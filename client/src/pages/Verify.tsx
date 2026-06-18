@@ -104,8 +104,8 @@ export default function Verify() {
                 <Shield className="h-7 w-7 text-yellow-300" />
               </div>
               <div>
-                <p className="text-white font-bold text-sm leading-tight">ਕਿਸਾਨ ਮਜ਼ਦੂਰ ਸੰਘਰਸ਼ ਕਮੇਟੀ</p>
-                <p className="text-green-300 text-xs">ਪੰਜਾਬ — ਮੈਂਬਰਸ਼ਿਪ ਕਾਰਡ</p>
+                <p className="text-white font-bold text-sm leading-tight">ਕਿਸਾਨ ਮਜ਼ਦੂਰ ਸੰਘਰਸ਼ ਕਮੇਟੀ ਪੰਜਾਬ ( ਕੋਟ ਬੁੱਢਾ)</p>
+                <p className="text-green-300 text-xs">ਮੈਂਬਰਸ਼ਿਪ ਕਾਰਡ</p>
               </div>
             </div>
             <div className="mt-3 border-t border-white/20 pt-2">

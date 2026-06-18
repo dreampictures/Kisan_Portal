@@ -93,7 +93,7 @@ function QRPanel({ qrDataUrl, reg }: { qrDataUrl: string; reg: Registration }) {
       .org{font-size:10px;color:#6b7280;margin-top:8px;}</style></head>
       <body><div class="wrap"><img class="qr" src="${qrDataUrl}"/>
       <p class="no">${reg.cardNumber}</p><p class="nm">${reg.name}</p>
-      <p class="org">ਕਿਸਾਨ ਮਜ਼ਦੂਰ ਸੰਘਰਸ਼ ਕਮੇਟੀ ਪੰਜਾਬ</p></div></body></html>`);
+      <p class="org">ਕਿਸਾਨ ਮਜ਼ਦੂਰ ਸੰਘਰਸ਼ ਕਮੇਟੀ ਪੰਜਾਬ ( ਕੋਟ ਬੁੱਢਾ)</p></div></body></html>`);
     win.document.close();
     setTimeout(() => { win.print(); win.close(); }, 300);
   };
@@ -108,7 +108,7 @@ function QRPanel({ qrDataUrl, reg }: { qrDataUrl: string; reg: Registration }) {
           <p className="text-xs text-gray-500">{reg.designation}</p>
         </div>
         <div className="w-full border-t border-gray-100 pt-2 text-center">
-          <p className="text-xs text-gray-400">Scan to Verify • ਕਿਸਾਨ ਮਜ਼ਦੂਰ ਸੰਘਰਸ਼ ਕਮੇਟੀ ਪੰਜਾਬ</p>
+          <p className="text-xs text-gray-400">Scan to Verify • ਕਿਸਾਨ ਮਜ਼ਦੂਰ ਸੰਘਰਸ਼ ਕਮੇਟੀ ਪੰਜਾਬ ( ਕੋਟ ਬੁੱਢਾ)</p>
         </div>
       </div>
       <div className="flex gap-2 w-full">
