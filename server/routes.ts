@@ -19,8 +19,8 @@ const upload = multer({
   },
 });
 
-const ADMIN_USERNAME = "714752420017";
-const ADMIN_PASSWORD = "Ba@606368";
+const ADMIN_USERNAME = process.env.ADMIN_USERNAME!;
+const ADMIN_PASSWORD = process.env.ADMIN_PASSWORD!;
 
 const isAdminAuth = (req: any, res: any, next: any) => {
   if (req.session?.adminAuthenticated) return next();
