@@ -221,16 +221,6 @@ export async function registerRoutes(httpServer: Server, app: Express): Promise<
       zip.addFile("_summary.txt", Buffer.from(summary, "utf-8"));
       const zipBuffer = zip.toBuffer();
 
-      // Auto-delete all registrations after ZIP is built
-      for (const reg of allRegs) {
-        try {
-          if (reg.photoUrl) await deletePhotoFromR2(reg.photoUrl);
-          await storage.deleteRegistration(reg.id);
-        } catch (delErr) {
-          console.error(`Delete error for reg ${reg.id}:`, delErr);
-        }
-      }
-
       res.setHeader("Content-Type", "application/zip");
       res.setHeader("Content-Disposition", `attachment; filename=registrations_${Date.now()}.zip`);
       res.send(zipBuffer);

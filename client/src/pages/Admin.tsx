@@ -11,7 +11,7 @@ import { Avatar, AvatarImage, AvatarFallback } from "@/components/ui/avatar";
 import {
   Download, Trash2, Loader2, LogOut, Users, ShieldCheck,
   Eye, EyeOff, Lock, QrCode, CheckCircle, Calendar, AlertTriangle,
-  MapPin, Phone, CreditCard, Printer, Shield,
+  MapPin, Phone, CreditCard,
 } from "lucide-react";
 import { motion } from "framer-motion";
 import {
@@ -77,118 +77,75 @@ function LoginForm() {
   );
 }
 
-// ─── Printable ID Card ─────────────────────────────────────
-function IDCard({ reg, qrDataUrl }: { reg: Registration; qrDataUrl?: string | null }) {
-  const fmtDate = (d: Date | string | null) =>
-    d ? new Date(d).toLocaleDateString("en-IN", { day: "2-digit", month: "short", year: "numeric" }) : "N/A";
+// ─── QR Code Panel ─────────────────────────────────────────
+function QRPanel({ qrDataUrl, reg }: { qrDataUrl: string; reg: Registration }) {
+  const printRef = useRef<HTMLDivElement>(null);
 
-  const isActive = reg.validFrom && reg.validUntil
-    && new Date() >= new Date(reg.validFrom) && new Date() <= new Date(reg.validUntil);
-  const isExpired = reg.validUntil && new Date(reg.validUntil) < new Date();
+  const handlePrintQR = () => {
+    const win = window.open("", "_blank", "width=400,height=500");
+    if (!win || !printRef.current) return;
+    win.document.write(`
+      <html><head><title>QR — ${reg.name}</title>
+      <style>
+        body { margin: 0; display: flex; align-items: center; justify-content: center; min-height: 100vh; background: #fff; font-family: sans-serif; }
+        .wrap { text-align: center; padding: 24px; }
+        .qr-img { width: 200px; height: 200px; display: block; margin: 0 auto 12px; }
+        .card-no { font-size: 11px; font-family: monospace; color: #15803d; font-weight: bold; letter-spacing: 0.1em; }
+        .name { font-size: 14px; font-weight: 700; color: #111; margin: 4px 0; }
+        .org { font-size: 10px; color: #6b7280; margin-top: 8px; }
+      </style>
+      </head><body>
+        <div class="wrap">
+          <img class="qr-img" src="${qrDataUrl}" />
+          <p class="card-no">${reg.cardNumber}</p>
+          <p class="name">${reg.name}</p>
+          <p class="org">ਕਿਸਾਨ ਮਜ਼ਦੂਰ ਸੰਘਰਸ਼ ਕਮੇਟੀ ਪੰਜਾਬ</p>
+        </div>
+      </body></html>
+    `);
+    win.document.close();
+    setTimeout(() => { win.print(); win.close(); }, 300);
+  };
+
+  const handleDownload = () => {
+    const a = document.createElement("a");
+    a.href = qrDataUrl;
+    a.download = `QR-${reg.cardNumber}.png`;
+    a.click();
+  };
 
   return (
-    <div style={{ width: "340px", fontFamily: "sans-serif", borderRadius: "14px", overflow: "hidden", boxShadow: "0 8px 32px rgba(0,0,0,0.18)", border: "1px solid #d1fae5" }}>
-      {/* Header */}
-      <div style={{ background: "linear-gradient(135deg, #14532d 0%, #166534 50%, #15803d 100%)", padding: "14px 16px", position: "relative", overflow: "hidden" }}>
-        <div style={{ position: "absolute", top: -20, right: -20, width: 80, height: 80, borderRadius: "50%", background: "rgba(255,255,255,0.06)" }} />
-        <div style={{ position: "absolute", bottom: -12, left: -12, width: 50, height: 50, borderRadius: "50%", background: "rgba(255,255,255,0.06)" }} />
-        <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
-          <div style={{ background: "rgba(255,255,255,0.15)", borderRadius: "50%", padding: 8 }}>
-            <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="#fde047" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-              <path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/>
-            </svg>
-          </div>
-          <div>
-            <p style={{ color: "#fff", fontWeight: 700, fontSize: 13, margin: 0, lineHeight: 1.3 }}>ਕਿਸਾਨ ਮਜ਼ਦੂਰ ਸੰਘਰਸ਼ ਕਮੇਟੀ</p>
-            <p style={{ color: "#86efac", fontSize: 10, margin: 0 }}>ਪੰਜਾਬ — ਮੈਂਬਰਸ਼ਿਪ ਕਾਰਡ</p>
-          </div>
+    <div className="flex flex-col items-center gap-4" ref={printRef}>
+      {/* QR Code */}
+      <div className="bg-white rounded-2xl p-5 shadow-lg border border-green-100 flex flex-col items-center gap-3">
+        <img src={qrDataUrl} alt="QR Code" className="w-52 h-52" />
+        <div className="text-center">
+          <p className="text-xs font-mono font-bold text-green-700 tracking-widest">{reg.cardNumber}</p>
+          <p className="text-sm font-semibold text-gray-800 mt-0.5">{reg.name}</p>
+          <p className="text-xs text-gray-500">{reg.designation}</p>
         </div>
-        <div style={{ marginTop: 8, paddingTop: 8, borderTop: "1px solid rgba(255,255,255,0.2)" }}>
-          <p style={{ color: "#fde047", fontSize: 10, fontFamily: "monospace", letterSpacing: "0.12em", margin: 0, fontWeight: 700 }}>
-            {reg.cardNumber || "PENDING"}
-          </p>
+        <div className="w-full border-t border-gray-100 pt-2 text-center">
+          <p className="text-xs text-gray-400">Scan to Verify • ਕਿਸਾਨ ਮਜ਼ਦੂਰ ਸੰਘਰਸ਼ ਕਮੇਟੀ ਪੰਜਾਬ</p>
         </div>
       </div>
 
-      {/* Body */}
-      <div style={{ background: "#fff", display: "flex" }}>
-        {/* Photo */}
-        <div style={{ background: "#f0fdf4", padding: 12, display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center", borderRight: "1px solid #d1fae5", minWidth: 100 }}>
-          {reg.photoUrl ? (
-            <img src={reg.photoUrl} alt={reg.name}
-              style={{ width: 80, height: 96, objectFit: "cover", borderRadius: 10, border: "2px solid #bbf7d0", boxShadow: "0 2px 8px rgba(0,0,0,0.1)" }} />
-          ) : reg.photoData ? (
-            <img src={`data:${reg.photoMimeType};base64,${reg.photoData}`} alt={reg.name}
-              style={{ width: 80, height: 96, objectFit: "cover", borderRadius: 10, border: "2px solid #bbf7d0" }} />
-          ) : (
-            <div style={{ width: 80, height: 96, borderRadius: 10, background: "#bbf7d0", display: "flex", alignItems: "center", justifyContent: "center", fontSize: 36, fontWeight: 700, color: "#15803d" }}>
-              {reg.name[0]}
-            </div>
-          )}
-        </div>
-
-        {/* Details */}
-        <div style={{ flex: 1, padding: "12px 14px", display: "flex", flexDirection: "column", gap: 6 }}>
-          <div>
-            <p style={{ fontSize: 9, color: "#9ca3af", textTransform: "uppercase", letterSpacing: "0.08em", margin: "0 0 1px" }}>ਨਾਮ / Name</p>
-            <p style={{ fontSize: 15, fontWeight: 700, color: "#111827", margin: 0, lineHeight: 1.2 }}>{reg.name}</p>
-          </div>
-          <div>
-            <p style={{ fontSize: 9, color: "#9ca3af", textTransform: "uppercase", letterSpacing: "0.08em", margin: "0 0 1px" }}>ਅਹੁਦਾ</p>
-            <p style={{ fontSize: 11, fontWeight: 600, color: "#15803d", margin: 0 }}>{reg.designation || "ਮੈਂਬਰ"}</p>
-          </div>
-          <div>
-            <p style={{ fontSize: 9, color: "#9ca3af", textTransform: "uppercase", letterSpacing: "0.08em", margin: "0 0 1px" }}>ਪਤਾ</p>
-            <p style={{ fontSize: 10, color: "#374151", margin: 0, lineHeight: 1.4 }}>{reg.village}, {reg.tehsil}</p>
-            <p style={{ fontSize: 10, color: "#374151", margin: 0 }}>{reg.district}</p>
-          </div>
-          {reg.mobileNumber && (
-            <div>
-              <p style={{ fontSize: 9, color: "#9ca3af", textTransform: "uppercase", letterSpacing: "0.08em", margin: "0 0 1px" }}>ਮੋਬਾਈਲ</p>
-              <p style={{ fontSize: 10, fontFamily: "monospace", color: "#374151", margin: 0 }}>{reg.mobileNumber}</p>
-            </div>
-          )}
-        </div>
+      {/* Action Buttons */}
+      <div className="flex gap-2 w-full">
+        <Button onClick={handleDownload} className="flex-1 bg-green-600 hover:bg-green-700" data-testid="button-download-qr">
+          <Download className="mr-2 h-4 w-4" /> PNG ਡਾਊਨਲੋਡ
+        </Button>
+        <Button onClick={handlePrintQR} variant="outline" className="flex-1" data-testid="button-print-qr">
+          🖨️ Print ਕਰੋ
+        </Button>
       </div>
-
-      {/* Validity + QR */}
-      <div style={{ background: isActive ? "#f0fdf4" : isExpired ? "#fff7ed" : "#f9fafb", borderTop: "1px solid #d1fae5", padding: "10px 14px", display: "flex", alignItems: "center", justifyContent: "space-between", gap: 8 }}>
-        <div style={{ flex: 1 }}>
-          <div style={{
-            display: "inline-block", padding: "3px 10px", borderRadius: 20, fontSize: 9, fontWeight: 700,
-            background: isActive ? "#dcfce7" : isExpired ? "#ffedd5" : "#f3f4f6",
-            color: isActive ? "#15803d" : isExpired ? "#c2410c" : "#6b7280",
-            marginBottom: 4
-          }}>
-            {isActive ? "✓ VALID" : isExpired ? "⚠ EXPIRED" : "● PENDING"}
-          </div>
-          <p style={{ fontSize: 9, color: "#6b7280", margin: 0 }}>
-            {reg.validFrom ? fmtDate(reg.validFrom) : "—"}
-            <br />{reg.validUntil ? `→ ${fmtDate(reg.validUntil)}` : ""}
-          </p>
-          {reg.aadhaarNumber && (
-            <p style={{ fontSize: 9, color: "#9ca3af", margin: "4px 0 0", fontFamily: "monospace" }}>
-              Aadhar: ****{reg.aadhaarNumber.slice(-4)}
-            </p>
-          )}
-        </div>
-        {qrDataUrl && (
-          <div style={{ background: "#fff", padding: 4, borderRadius: 8, border: "1px solid #d1fae5", boxShadow: "0 2px 8px rgba(0,0,0,0.06)" }}>
-            <img src={qrDataUrl} alt="QR" style={{ width: 70, height: 70, display: "block" }} />
-            <p style={{ fontSize: 7, color: "#9ca3af", textAlign: "center", margin: "2px 0 0" }}>Scan to Verify</p>
-          </div>
-        )}
-      </div>
-
-      {/* Footer */}
-      <div style={{ background: "#111827", padding: "6px 14px", textAlign: "center" }}>
-        <p style={{ fontSize: 8, color: "#6b7280", margin: 0 }}>Kisan Mazdoor Sangharsh Committee Punjab • kisan-union-punjab.fly.dev</p>
-      </div>
+      <p className="text-xs text-muted-foreground text-center">
+        ਇਸ QR ਨੂੰ Photoshop card ਤੇ ਲਾਓ — scan ਕਰਨ ਤੇ verification page ਖੁੱਲ੍ਹੇਗਾ
+      </p>
     </div>
   );
 }
 
-// ─── Issue Card + ID Card Dialog ───────────────────────────
+// ─── Issue Card Dialog ─────────────────────────────────────
 function IssueCardDialog({ reg }: { reg: Registration }) {
   const [open, setOpen] = useState(false);
   const [validFrom, setValidFrom] = useState(() => new Date().toISOString().split("T")[0]);
@@ -199,10 +156,8 @@ function IssueCardDialog({ reg }: { reg: Registration }) {
   const [loading, setLoading] = useState(false);
   const [qrDataUrl, setQrDataUrl] = useState<string | null>(null);
   const [issuedReg, setIssuedReg] = useState<Registration | null>(null);
-  const [showCard, setShowCard] = useState(false);
   const { toast } = useToast();
   const queryClient = useQueryClient();
-  const printRef = useRef<HTMLDivElement>(null);
 
   const handleIssue = async () => {
     setLoading(true);
@@ -211,7 +166,6 @@ function IssueCardDialog({ reg }: { reg: Registration }) {
       const data = await res.json();
       setQrDataUrl(data.qrDataUrl);
       setIssuedReg(data.registration);
-      setShowCard(true);
       queryClient.invalidateQueries({ queryKey: ["/api/admin/registrations"] });
       toast({ title: "Card Issue ਹੋ ਗਿਆ ✓", description: `Card No: ${data.registration.cardNumber}` });
     } catch {
@@ -221,63 +175,27 @@ function IssueCardDialog({ reg }: { reg: Registration }) {
     }
   };
 
-  const handlePrint = () => {
-    if (!printRef.current) return;
-    const win = window.open("", "_blank", "width=500,height=700");
-    if (!win) return;
-    win.document.write(`
-      <html><head><title>ID Card — ${(issuedReg || reg).name}</title>
-      <style>body{margin:0;display:flex;align-items:center;justify-content:center;min-height:100vh;background:#f3f4f6;}</style>
-      </head><body>${printRef.current.innerHTML}</body></html>
-    `);
-    win.document.close();
-    setTimeout(() => { win.print(); win.close(); }, 300);
-  };
-
-  const showExistingCard = reg.cardNumber && reg.validUntil && !showCard;
-  const cardReg = issuedReg || reg;
+  const close = () => { setOpen(false); setQrDataUrl(null); setIssuedReg(null); };
 
   return (
-    <Dialog open={open} onOpenChange={(o) => { setOpen(o); if (!o) { setQrDataUrl(null); setIssuedReg(null); setShowCard(false); } }}>
+    <Dialog open={open} onOpenChange={(o) => { if (!o) close(); setOpen(o); }}>
       <DialogTrigger asChild>
         <Button size="sm" className="gap-1.5 bg-green-600 hover:bg-green-700 text-white w-full" data-testid={`button-issue-${reg.id}`}>
           <QrCode className="h-3.5 w-3.5" />
-          {reg.cardNumber ? "Card / ਨਵਿਆਓ" : "Card ਬਣਾਓ"}
+          {reg.cardNumber ? "QR ਨਵਿਆਓ" : "QR ਬਣਾਓ"}
         </Button>
       </DialogTrigger>
-      <DialogContent className="max-w-lg">
+      <DialogContent className="max-w-sm">
         <DialogHeader>
           <DialogTitle className="flex items-center gap-2">
             <QrCode className="h-5 w-5 text-green-700" />
-            {showCard || showExistingCard ? "ID Card Preview" : "Card Issue ਕਰੋ"}
+            {qrDataUrl ? "QR Code ਤਿਆਰ ਹੈ" : "Card Issue ਕਰੋ"}
           </DialogTitle>
         </DialogHeader>
 
-        {/* Card Preview mode */}
-        {(showCard || showExistingCard) ? (
-          <div className="space-y-4">
-            <div className="flex justify-center" ref={printRef}>
-              <IDCard reg={cardReg} qrDataUrl={qrDataUrl} />
-            </div>
-            <div className="flex gap-2">
-              <Button onClick={handlePrint} className="flex-1 bg-green-600 hover:bg-green-700">
-                <Printer className="mr-2 h-4 w-4" /> Print Card
-              </Button>
-              <Button variant="outline" onClick={() => setShowCard(false)} className="flex-1">
-                ← ਵਾਪਸ
-              </Button>
-            </div>
-            {qrDataUrl && (
-              <Button variant="ghost" size="sm" className="w-full text-muted-foreground" onClick={() => {
-                const a = document.createElement("a"); a.href = qrDataUrl;
-                a.download = `QR-${cardReg.cardNumber}.png`; a.click();
-              }}>
-                <Download className="mr-2 h-4 w-4" /> QR PNG ਡਾਊਨਲੋਡ ਕਰੋ
-              </Button>
-            )}
-          </div>
+        {qrDataUrl && issuedReg ? (
+          <QRPanel qrDataUrl={qrDataUrl} reg={issuedReg} />
         ) : (
-          /* Issue mode */
           <div className="space-y-4">
             {/* Member Info */}
             <div className="bg-muted/40 rounded-lg p-3 flex items-center gap-3">
@@ -299,11 +217,11 @@ function IssueCardDialog({ reg }: { reg: Registration }) {
               <p className="text-sm font-medium">Card Validity ਸੈੱਟ ਕਰੋ:</p>
               <div className="grid grid-cols-2 gap-3">
                 <div className="space-y-1.5">
-                  <Label className="text-xs">Valid From (ਤੋਂ)</Label>
+                  <Label className="text-xs">Valid From</Label>
                   <Input type="date" value={validFrom} onChange={(e) => setValidFrom(e.target.value)} />
                 </div>
                 <div className="space-y-1.5">
-                  <Label className="text-xs">Valid Until (ਤੱਕ)</Label>
+                  <Label className="text-xs">Valid Until</Label>
                   <Input type="date" value={validUntil} onChange={(e) => setValidUntil(e.target.value)} />
                 </div>
               </div>
@@ -311,8 +229,8 @@ function IssueCardDialog({ reg }: { reg: Registration }) {
 
             <Button onClick={handleIssue} disabled={loading} className="w-full bg-green-600 hover:bg-green-700">
               {loading
-                ? <><Loader2 className="mr-2 h-4 w-4 animate-spin" />Card ਬਣ ਰਿਹਾ ਹੈ...</>
-                : <><QrCode className="mr-2 h-4 w-4" />Card Issue ਕਰੋ ਅਤੇ QR ਬਣਾਓ</>}
+                ? <><Loader2 className="mr-2 h-4 w-4 animate-spin" />QR ਬਣ ਰਿਹਾ ਹੈ...</>
+                : <><QrCode className="mr-2 h-4 w-4" />QR Code ਬਣਾਓ</>}
             </Button>
           </div>
         )}
@@ -321,70 +239,48 @@ function IssueCardDialog({ reg }: { reg: Registration }) {
   );
 }
 
-// ─── View Existing Card Dialog ─────────────────────────────
-function ViewCardDialog({ reg }: { reg: Registration }) {
+// ─── View QR Dialog (existing card) ────────────────────────
+function ViewQRDialog({ reg }: { reg: Registration }) {
   const [open, setOpen] = useState(false);
   const [qrDataUrl, setQrDataUrl] = useState<string | null>(null);
-  const [loadingQR, setLoadingQR] = useState(false);
-  const printRef = useRef<HTMLDivElement>(null);
+  const [loading, setLoading] = useState(false);
 
   const loadQR = async () => {
-    if (qrDataUrl || !reg.cardNumber) return;
-    setLoadingQR(true);
+    if (qrDataUrl) return;
+    setLoading(true);
     try {
       const res = await fetch(`/api/admin/registrations/${reg.id}/qr`, { credentials: "include" });
       const blob = await res.blob();
-      const url = URL.createObjectURL(blob);
-      const img = new Image();
-      img.onload = () => { };
       const reader = new FileReader();
       reader.onload = (e) => setQrDataUrl(e.target?.result as string);
       reader.readAsDataURL(blob);
-    } catch { } finally { setLoadingQR(false); }
-  };
-
-  const handlePrint = () => {
-    if (!printRef.current) return;
-    const win = window.open("", "_blank", "width=500,height=700");
-    if (!win) return;
-    win.document.write(`<html><head><title>ID Card — ${reg.name}</title>
-      <style>body{margin:0;display:flex;align-items:center;justify-content:center;min-height:100vh;background:#f3f4f6;}</style>
-      </head><body>${printRef.current.innerHTML}</body></html>`);
-    win.document.close();
-    setTimeout(() => { win.print(); win.close(); }, 300);
+    } catch { } finally { setLoading(false); }
   };
 
   return (
     <Dialog open={open} onOpenChange={(o) => { setOpen(o); if (o) loadQR(); }}>
       <DialogTrigger asChild>
-        <Button size="sm" variant="outline" className="gap-1.5 w-full" data-testid={`button-view-card-${reg.id}`}>
-          <Eye className="h-3.5 w-3.5" /> Card ਦੇਖੋ
+        <Button size="sm" variant="outline" className="gap-1.5 w-full" data-testid={`button-view-qr-${reg.id}`}>
+          <Eye className="h-3.5 w-3.5" /> QR ਦੇਖੋ
         </Button>
       </DialogTrigger>
-      <DialogContent className="max-w-lg">
+      <DialogContent className="max-w-sm">
         <DialogHeader>
-          <DialogTitle>ID Card — {reg.name}</DialogTitle>
+          <DialogTitle>QR Code — {reg.name}</DialogTitle>
         </DialogHeader>
-        <div className="space-y-4">
-          {loadingQR ? (
-            <div className="flex justify-center py-8"><Loader2 className="h-8 w-8 animate-spin text-green-600" /></div>
-          ) : (
-            <div className="flex justify-center" ref={printRef}>
-              <IDCard reg={reg} qrDataUrl={qrDataUrl} />
-            </div>
-          )}
-          <div className="flex gap-2">
-            <Button onClick={handlePrint} className="flex-1 bg-green-600 hover:bg-green-700">
-              <Printer className="mr-2 h-4 w-4" /> Print Card
-            </Button>
-          </div>
-        </div>
+        {loading ? (
+          <div className="flex justify-center py-10"><Loader2 className="h-8 w-8 animate-spin text-green-600" /></div>
+        ) : qrDataUrl ? (
+          <QRPanel qrDataUrl={qrDataUrl} reg={reg} />
+        ) : (
+          <p className="text-center text-muted-foreground py-8">QR load ਨਹੀਂ ਹੋਇਆ</p>
+        )}
       </DialogContent>
     </Dialog>
   );
 }
 
-// ─── Member Card (grid item) ────────────────────────────────
+// ─── Member Card ────────────────────────────────────────────
 function MemberCard({ reg }: { reg: Registration }) {
   const deleteRegistration = useDeleteRegistration();
   const isExpired = reg.validUntil && new Date(reg.validUntil) < new Date();
@@ -433,7 +329,7 @@ function MemberCard({ reg }: { reg: Registration }) {
 
         <div className="mt-3 grid grid-cols-2 gap-2">
           <IssueCardDialog reg={reg} />
-          {reg.cardNumber && reg.validUntil && <ViewCardDialog reg={reg} />}
+          {reg.cardNumber && reg.validFrom && <ViewQRDialog reg={reg} />}
         </div>
         <div className="mt-2">
           <Button size="sm" variant="ghost" className="w-full text-destructive hover:text-destructive hover:bg-destructive/10 text-xs"
@@ -458,7 +354,7 @@ export default function Admin() {
   if (!isAuthenticated) return <LoginForm />;
 
   const totalCards = registrations?.length || 0;
-  const activeCards = registrations?.filter(r => r.validUntil && new Date(r.validUntil) > new Date()).length || 0;
+  const activeCards = registrations?.filter(r => r.validFrom && r.validUntil && new Date() >= new Date(r.validFrom) && new Date() <= new Date(r.validUntil)).length || 0;
   const expiredCards = registrations?.filter(r => r.validUntil && new Date(r.validUntil) < new Date()).length || 0;
 
   const filtered = registrations?.filter(r =>
@@ -491,10 +387,10 @@ export default function Admin() {
         {/* Stats */}
         <div className="grid grid-cols-2 md:grid-cols-4 gap-3 mb-6">
           {[
-            { label: "ਕੁੱਲ", value: isLoading ? "..." : totalCards, color: "text-primary" },
+            { label: "ਕੁੱਲ ਮੈਂਬਰ", value: isLoading ? "..." : totalCards, color: "text-primary" },
             { label: "Active", value: isLoading ? "..." : activeCards, color: "text-green-600" },
             { label: "Expired", value: isLoading ? "..." : expiredCards, color: "text-orange-500" },
-            { label: "Pending", value: isLoading ? "..." : totalCards - activeCards - expiredCards, color: "text-blue-500" },
+            { label: "Pending QR", value: isLoading ? "..." : totalCards - activeCards - expiredCards, color: "text-blue-500" },
           ].map((s) => (
             <Card key={s.label}>
               <CardContent className="pt-4 pb-3 text-center">
@@ -518,16 +414,15 @@ export default function Admin() {
                   : <><Download className="mr-2 h-4 w-4" />ZIP ਡਾਊਨਲੋਡ ({totalCards})</>}
               </Button>
             </div>
-            <p className="text-xs text-amber-600 bg-amber-50 border border-amber-200 rounded-lg px-3 py-2">
-              ⚠️ ZIP ਡਾਊਨਲੋਡ ਕਰਨ ਤੋਂ ਬਾਅਦ portal ਦੀਆਂ ਸਾਰੀਆਂ ਰਜਿਸਟ੍ਰੇਸ਼ਨਾਂ ਆਪਣੇ ਆਪ delete ਹੋ ਜਾਣਗੀਆਂ।
-            </p>
           </CardContent>
         </Card>
 
         {/* Member Grid */}
         <div>
           <div className="flex items-center justify-between mb-3">
-            <h2 className="text-lg font-semibold">ਮੈਂਬਰ ਸੂਚੀ</h2>
+            <h2 className="text-lg font-semibold flex items-center gap-2">
+              <Users className="h-5 w-5 text-primary" /> ਮੈਂਬਰ ਸੂਚੀ
+            </h2>
             {search && <p className="text-sm text-muted-foreground">{filtered.length} ਮਿਲੇ</p>}
           </div>
 
