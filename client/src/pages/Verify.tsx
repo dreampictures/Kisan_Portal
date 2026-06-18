@@ -1,8 +1,7 @@
 import { useEffect, useState } from "react";
 import { useParams } from "wouter";
 import { motion } from "framer-motion";
-import { CheckCircle2, XCircle, AlertTriangle, Loader2, ShieldCheck, Calendar, User, MapPin, Phone, CreditCard } from "lucide-react";
-import { Card, CardContent, CardHeader } from "@/components/ui/card";
+import { CheckCircle2, XCircle, AlertTriangle, Loader2, Shield } from "lucide-react";
 
 interface VerifyData {
   valid: boolean;
@@ -39,20 +38,25 @@ export default function Verify() {
 
   if (loading) {
     return (
-      <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-green-50 to-emerald-50">
-        <Loader2 className="h-10 w-10 animate-spin text-green-700" />
+      <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-green-900 via-green-800 to-emerald-900">
+        <div className="text-center text-white">
+          <Loader2 className="h-12 w-12 animate-spin mx-auto mb-4" />
+          <p className="text-green-200 text-sm">Card ਤਸਦੀਕ ਕੀਤੀ ਜਾ ਰਹੀ ਹੈ...</p>
+        </div>
       </div>
     );
   }
 
   if (notFound || !data) {
     return (
-      <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-red-50 to-orange-50 px-4">
+      <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-red-900 to-red-800 px-4">
         <motion.div initial={{ opacity: 0, scale: 0.9 }} animate={{ opacity: 1, scale: 1 }} className="text-center max-w-sm">
-          <XCircle className="h-20 w-20 text-red-500 mx-auto mb-4" />
-          <h1 className="text-2xl font-bold text-red-700 mb-2">Card ਨਹੀਂ ਮਿਲਿਆ</h1>
-          <p className="text-red-600">ਇਹ Card Number ਸਾਡੇ ਰਿਕਾਰਡ ਵਿੱਚ ਨਹੀਂ ਹੈ।</p>
-          <p className="text-sm text-gray-500 mt-2 font-mono">{cardNumber}</p>
+          <div className="w-24 h-24 rounded-full bg-red-700/50 flex items-center justify-center mx-auto mb-6">
+            <XCircle className="h-14 w-14 text-red-300" />
+          </div>
+          <h1 className="text-3xl font-bold text-white mb-3">Card ਨਹੀਂ ਮਿਲਿਆ</h1>
+          <p className="text-red-200 mb-2">ਇਹ Card Number ਸਾਡੇ ਰਿਕਾਰਡ ਵਿੱਚ ਨਹੀਂ ਹੈ।</p>
+          <p className="text-sm text-red-400 font-mono bg-red-900/50 px-3 py-1.5 rounded-lg inline-block">{cardNumber}</p>
         </motion.div>
       </div>
     );
@@ -61,94 +65,130 @@ export default function Verify() {
   const isValid = data.valid;
   const isExpired = data.expired;
 
-  const bgClass = isValid
-    ? "from-green-50 to-emerald-50"
-    : isExpired
-    ? "from-orange-50 to-amber-50"
-    : "from-red-50 to-rose-50";
-
-  const statusColor = isValid ? "text-green-700" : isExpired ? "text-orange-600" : "text-red-600";
-  const borderColor = isValid ? "border-green-400" : isExpired ? "border-orange-400" : "border-red-400";
-  const badgeBg = isValid ? "bg-green-100 text-green-800" : isExpired ? "bg-orange-100 text-orange-800" : "bg-red-100 text-red-800";
-
-  const StatusIcon = isValid ? CheckCircle2 : isExpired ? AlertTriangle : XCircle;
+  const fmtDate = (d: string) => d ? new Date(d).toLocaleDateString("en-IN", { day: "2-digit", month: "short", year: "numeric" }) : "N/A";
 
   return (
-    <div className={`min-h-screen bg-gradient-to-br ${bgClass} px-4 py-10`}>
-      <motion.div initial={{ opacity: 0, y: 30 }} animate={{ opacity: 1, y: 0 }} className="max-w-md mx-auto space-y-4">
+    <div className="min-h-screen bg-gradient-to-br from-green-950 via-green-900 to-emerald-950 flex items-center justify-center px-4 py-10">
+      <motion.div initial={{ opacity: 0, y: 40 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.5 }} className="w-full max-w-sm">
 
-        {/* Header */}
-        <div className="text-center mb-6">
-          <ShieldCheck className="h-10 w-10 text-green-700 mx-auto mb-2" />
-          <p className="text-sm text-gray-600">ਕਿਸਾਨ ਮਜ਼ਦੂਰ ਸੰਘਰਸ਼ ਕਮੇਟੀ ਪੰਜਾਬ</p>
-          <p className="text-xs text-gray-400 font-mono mt-1">Card Verification System</p>
+        {/* Status badge */}
+        <div className="flex justify-center mb-5">
+          {isValid ? (
+            <motion.div initial={{ scale: 0 }} animate={{ scale: 1 }} transition={{ delay: 0.3, type: "spring" }}
+              className="flex items-center gap-2 bg-green-500 text-white px-5 py-2 rounded-full shadow-lg shadow-green-500/30 font-bold text-sm">
+              <CheckCircle2 className="h-5 w-5" /> VERIFIED — ਵੈਧ CARD
+            </motion.div>
+          ) : isExpired ? (
+            <div className="flex items-center gap-2 bg-orange-500 text-white px-5 py-2 rounded-full font-bold text-sm">
+              <AlertTriangle className="h-5 w-5" /> EXPIRED — ਮਿਆਦ ਪੁੱਗੀ
+            </div>
+          ) : (
+            <div className="flex items-center gap-2 bg-red-500 text-white px-5 py-2 rounded-full font-bold text-sm">
+              <XCircle className="h-5 w-5" /> NOT ACTIVE
+            </div>
+          )}
         </div>
 
-        {/* Status Banner */}
-        <div className={`rounded-2xl border-2 ${borderColor} p-5 text-center bg-white/80 backdrop-blur-sm shadow-lg`}>
-          <StatusIcon className={`h-16 w-16 mx-auto mb-3 ${statusColor}`} />
-          <div className={`inline-block px-4 py-1.5 rounded-full text-sm font-bold ${badgeBg} mb-2`}>
-            {isValid ? "✓ VALID CARD" : isExpired ? "⚠ EXPIRED" : "✗ NOT ACTIVE"}
-          </div>
-          <h2 className={`text-xl font-bold ${statusColor}`}>
-            {isValid ? "ਇਹ Card ਵੈਧ ਹੈ" : isExpired ? "ਇਹ Card Expire ਹੋ ਗਿਆ ਹੈ" : "ਇਹ Card ਅਜੇ Active ਨਹੀਂ ਹੈ"}
-          </h2>
-        </div>
+        {/* ID CARD */}
+        <motion.div initial={{ opacity: 0, scale: 0.95 }} animate={{ opacity: 1, scale: 1 }} transition={{ delay: 0.15 }}
+          className="rounded-2xl overflow-hidden shadow-2xl shadow-black/50">
 
-        {/* Member Details */}
-        <Card className="shadow-lg border-0 overflow-hidden">
-          <CardHeader className="bg-green-700 text-white py-4 px-5">
-            <div className="flex items-center gap-4">
-              {data.photoUrl ? (
-                <img src={data.photoUrl} alt={data.name} className="w-16 h-16 rounded-full object-cover border-2 border-white/50" />
-              ) : (
-                <div className="w-16 h-16 rounded-full bg-white/20 flex items-center justify-center text-2xl font-bold text-white">
-                  {data.name[0]}
-                </div>
-              )}
+          {/* Card Top — Green Header */}
+          <div className="bg-gradient-to-r from-green-800 to-green-700 px-5 py-4 relative overflow-hidden">
+            {/* Decorative circles */}
+            <div className="absolute -top-6 -right-6 w-24 h-24 rounded-full bg-white/5" />
+            <div className="absolute -bottom-4 -left-4 w-16 h-16 rounded-full bg-white/5" />
+
+            <div className="flex items-center gap-3 relative">
+              <div className="bg-white/15 rounded-full p-2">
+                <Shield className="h-7 w-7 text-yellow-300" />
+              </div>
               <div>
-                <p className="text-lg font-bold">{data.name}</p>
-                <p className="text-green-200 text-sm">{data.designation}</p>
-                <p className="text-green-300 text-xs font-mono mt-0.5">{data.cardNumber}</p>
+                <p className="text-white font-bold text-sm leading-tight">ਕਿਸਾਨ ਮਜ਼ਦੂਰ ਸੰਘਰਸ਼ ਕਮੇਟੀ</p>
+                <p className="text-green-300 text-xs">ਪੰਜਾਬ — ਮੈਂਬਰਸ਼ਿਪ ਕਾਰਡ</p>
               </div>
             </div>
-          </CardHeader>
-          <CardContent className="p-5 space-y-3">
-            <InfoRow icon={<MapPin className="h-4 w-4" />} label="ਪਤਾ" value={`${data.village}, ${data.tehsil}, ${data.district}`} />
-            <InfoRow icon={<Phone className="h-4 w-4" />} label="ਮੋਬਾਈਲ" value={data.mobileNumber} />
-            <InfoRow icon={<CreditCard className="h-4 w-4" />} label="ਆਧਾਰ" value={data.aadhaarNumber} />
-            <div className="border-t pt-3 mt-3">
-              <InfoRow
-                icon={<Calendar className="h-4 w-4" />}
-                label="Valid From"
-                value={data.validFrom ? new Date(data.validFrom).toLocaleDateString("en-IN", { day: "2-digit", month: "short", year: "numeric" }) : "N/A"}
-              />
-              <InfoRow
-                icon={<Calendar className="h-4 w-4" />}
-                label="Valid Until"
-                value={data.validUntil ? new Date(data.validUntil).toLocaleDateString("en-IN", { day: "2-digit", month: "short", year: "numeric" }) : "N/A"}
-                className={isExpired ? "text-red-600 font-semibold" : ""}
-              />
+            <div className="mt-3 border-t border-white/20 pt-2">
+              <p className="text-yellow-300 text-xs font-mono tracking-widest font-semibold">{data.cardNumber}</p>
             </div>
-          </CardContent>
-        </Card>
+          </div>
 
-        <p className="text-center text-xs text-gray-400 pb-4">
-          Verified by Kisan Mazdoor Sangharsh Committee Punjab
+          {/* Card Body — White */}
+          <div className="bg-white">
+            {/* Photo + Name */}
+            <div className="flex items-stretch">
+              {/* Left — Photo */}
+              <div className="bg-green-50 p-4 flex items-center justify-center border-r border-green-100" style={{ minWidth: "110px" }}>
+                {data.photoUrl ? (
+                  <img src={data.photoUrl} alt={data.name}
+                    className="w-24 h-28 object-cover rounded-xl shadow-md border-2 border-green-200" />
+                ) : (
+                  <div className="w-24 h-28 rounded-xl bg-green-200 flex items-center justify-center text-4xl font-bold text-green-700 border-2 border-green-300">
+                    {data.name[0]}
+                  </div>
+                )}
+              </div>
+
+              {/* Right — Details */}
+              <div className="flex-1 p-4 space-y-2">
+                <div>
+                  <p className="text-xs text-gray-400 uppercase tracking-wider">ਨਾਮ / Name</p>
+                  <p className="text-lg font-bold text-gray-900 leading-tight">{data.name}</p>
+                </div>
+                <div>
+                  <p className="text-xs text-gray-400 uppercase tracking-wider">ਅਹੁਦਾ / Designation</p>
+                  <p className="text-sm font-semibold text-green-700">{data.designation}</p>
+                </div>
+                <div>
+                  <p className="text-xs text-gray-400 uppercase tracking-wider">ਪਤਾ / Address</p>
+                  <p className="text-sm text-gray-700 leading-tight">{data.village}, {data.tehsil}</p>
+                  <p className="text-sm text-gray-700">{data.district}</p>
+                </div>
+                {data.mobileNumber && data.mobileNumber !== "*" && (
+                  <div>
+                    <p className="text-xs text-gray-400 uppercase tracking-wider">ਮੋਬਾਈਲ</p>
+                    <p className="text-sm font-mono text-gray-800">{data.mobileNumber}</p>
+                  </div>
+                )}
+              </div>
+            </div>
+
+            {/* Validity Bar */}
+            <div className={`px-4 py-3 border-t flex items-center justify-between gap-2 ${
+              isValid ? "bg-green-50 border-green-100" : isExpired ? "bg-orange-50 border-orange-100" : "bg-red-50 border-red-100"
+            }`}>
+              <div className="text-xs text-gray-500">
+                <span className="block font-semibold text-gray-700">Valid Period</span>
+                <span className="font-mono">{fmtDate(data.validFrom)} → {fmtDate(data.validUntil)}</span>
+              </div>
+              <div className={`text-xs font-bold px-3 py-1.5 rounded-full ${
+                isValid ? "bg-green-200 text-green-800" : isExpired ? "bg-orange-200 text-orange-800" : "bg-red-200 text-red-800"
+              }`}>
+                {isValid ? "✓ VALID" : isExpired ? "EXPIRED" : "INACTIVE"}
+              </div>
+            </div>
+          </div>
+
+          {/* Card Footer — Dark */}
+          <div className="bg-gray-900 px-4 py-3 text-center">
+            <p className="text-gray-400 text-xs">Kisan Mazdoor Sangharsh Committee Punjab</p>
+            <p className="text-gray-600 text-xs font-mono mt-0.5">kisan-union-punjab.fly.dev</p>
+          </div>
+        </motion.div>
+
+        {/* Aadhaar (masked) below card */}
+        {data.aadhaarNumber && data.aadhaarNumber !== "*" && (
+          <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} transition={{ delay: 0.4 }}
+            className="mt-4 bg-white/10 backdrop-blur rounded-xl px-4 py-3 text-center">
+            <p className="text-green-300 text-xs mb-1">ਆਧਾਰ ਨੰਬਰ (Masked)</p>
+            <p className="text-white font-mono font-bold tracking-widest">{data.aadhaarNumber}</p>
+          </motion.div>
+        )}
+
+        <p className="text-center text-green-700 text-xs mt-5 opacity-60">
+          Verified by KMSC Punjab Digital System
         </p>
       </motion.div>
-    </div>
-  );
-}
-
-function InfoRow({ icon, label, value, className = "" }: { icon: React.ReactNode; label: string; value: string; className?: string }) {
-  return (
-    <div className="flex items-start gap-3">
-      <span className="text-green-600 mt-0.5 flex-shrink-0">{icon}</span>
-      <div className="flex-1 min-w-0">
-        <p className="text-xs text-gray-500">{label}</p>
-        <p className={`text-sm font-medium text-gray-800 break-words ${className}`}>{value}</p>
-      </div>
     </div>
   );
 }

@@ -209,7 +209,7 @@ export async function registerRoutes(httpServer: Server, app: Express): Promise<
         details += `ਮੋਬਾਈਲ: ${reg.mobileNumber || "*"}\n`;
         details += `ਆਧਾਰ: ${reg.aadhaarNumber ? `**** **** ${last4}` : "*"}\n`;
         details += `Valid: ${reg.validFrom ? new Date(reg.validFrom).toLocaleDateString("pa-IN") : "N/A"} - ${reg.validUntil ? new Date(reg.validUntil).toLocaleDateString("pa-IN") : "N/A"}\n`;
-        const fn = `${reg.village}_${reg.tehsil}_${last4}`;
+        const fn = `${reg.id}_${reg.name.replace(/[^a-zA-Z0-9ਅ-ੴ]/g, "_")}_${reg.village}`;
         zip.addFile(`${fn}.txt`, Buffer.from(details, "utf-8"));
         if (reg.photoData && reg.photoMimeType) {
           const ext = reg.photoMimeType.split("/")[1] || "jpg";
@@ -219,9 +219,21 @@ export async function registerRoutes(httpServer: Server, app: Express): Promise<
       }
 
       zip.addFile("_summary.txt", Buffer.from(summary, "utf-8"));
+      const zipBuffer = zip.toBuffer();
+
+      // Auto-delete all registrations after ZIP is built
+      for (const reg of allRegs) {
+        try {
+          if (reg.photoUrl) await deletePhotoFromR2(reg.photoUrl);
+          await storage.deleteRegistration(reg.id);
+        } catch (delErr) {
+          console.error(`Delete error for reg ${reg.id}:`, delErr);
+        }
+      }
+
       res.setHeader("Content-Type", "application/zip");
-      res.setHeader("Content-Disposition", "attachment; filename=registrations.zip");
-      res.send(zip.toBuffer());
+      res.setHeader("Content-Disposition", `attachment; filename=registrations_${Date.now()}.zip`);
+      res.send(zipBuffer);
     } catch (err) {
       console.error(err);
       res.status(500).json({ message: "ਡਾਊਨਲੋਡ ਫੇਲ੍ਹ ਹੋ ਗਈ" });
