@@ -3,7 +3,7 @@ import { Menu, X } from "lucide-react";
 import { useState } from "react";
 import { Button } from "@/components/ui/button";
 import { motion, AnimatePresence } from "framer-motion";
-import logoSrc from "@assets/image_1781766815229.png";
+import logoSrc from "@assets/image_1781776016550.png";
 
 export function Navbar() {
   const [location] = useLocation();
