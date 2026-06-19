@@ -1,5 +1,6 @@
 import { motion } from "framer-motion";
 import { BadgeCheck, Leaf, HeartHandshake, User } from "lucide-react";
+import inderjitPhoto from "@assets/IMG_1715_1781841729335.jpeg";
 
 export default function About() {
   return (
@@ -69,8 +70,8 @@ export default function About() {
               <div className="grid grid-cols-2 gap-4">
                 {/* President */}
                 <div className="bg-gradient-to-b from-primary/10 to-primary/5 rounded-2xl p-5 text-center border border-primary/20 shadow-sm">
-                  <div className="w-24 h-24 rounded-full mx-auto mb-3 overflow-hidden border-4 border-primary/30 bg-primary/10 flex items-center justify-center">
-                    <User className="w-12 h-12 text-primary/40" />
+                  <div className="w-24 h-24 rounded-full mx-auto mb-3 overflow-hidden border-4 border-primary/30">
+                    <img src={inderjitPhoto} alt="ਇੰਦਰਜੀਤ ਸਿੰਘ" className="w-full h-full object-cover object-top" />
                   </div>
                   <p className="font-bold text-foreground text-sm leading-tight">ਇੰਦਰਜੀਤ ਸਿੰਘ</p>
                   <p className="text-xs text-primary font-semibold mt-1">ਸੂਬਾ ਪ੍ਰਧਾਨ</p>
@@ -98,8 +99,8 @@ export default function About() {
           <h2 className="text-2xl font-display font-bold text-center mb-8">ਕਮੇਟੀ ਦੇ ਸੰਸਥਾਪਕ</h2>
           <div className="grid md:grid-cols-2 gap-6">
             <div className="flex flex-col items-center gap-4 p-6 rounded-2xl bg-gradient-to-b from-primary/10 to-primary/5 border border-primary/20">
-              <div className="w-36 h-36 rounded-full overflow-hidden border-4 border-primary/40 bg-primary/10 flex items-center justify-center shadow-lg">
-                <User className="w-20 h-20 text-primary/30" />
+              <div className="w-36 h-36 rounded-full overflow-hidden border-4 border-primary/40 shadow-lg">
+                <img src={inderjitPhoto} alt="ਇੰਦਰਜੀਤ ਸਿੰਘ" className="w-full h-full object-cover object-top" />
               </div>
               <div className="text-center">
                 <h3 className="text-xl font-bold text-foreground">ਇੰਦਰਜੀਤ ਸਿੰਘ</h3>

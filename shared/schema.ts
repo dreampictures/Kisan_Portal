@@ -1,4 +1,4 @@
-import { pgTable, text, serial, timestamp, integer } from "drizzle-orm/pg-core";
+import { pgTable, text, serial, timestamp, integer, date } from "drizzle-orm/pg-core";
 import { createInsertSchema } from "drizzle-zod";
 import { z } from "zod";
 
@@ -31,6 +31,14 @@ export const updates = pgTable("updates", {
   eventDate: timestamp("event_date"),
   createdAt: timestamp("created_at").defaultNow(),
 });
+
+export const pageViews = pgTable("page_views", {
+  id: serial("id").primaryKey(),
+  page: text("page").notNull(),
+  viewedAt: timestamp("viewed_at").defaultNow(),
+});
+
+export type PageView = typeof pageViews.$inferSelect;
 
 export const insertRegistrationSchema = createInsertSchema(registrations)
   .omit({ id: true, createdAt: true, photoData: true, photoMimeType: true, cardNumber: true, photoUrl: true, validFrom: true, validUntil: true, status: true })

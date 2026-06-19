@@ -13,7 +13,7 @@ import {
   Download, Trash2, Loader2, LogOut, Users, ShieldCheck,
   Eye, EyeOff, Lock, QrCode, CheckCircle, Calendar, AlertTriangle,
   MapPin, Phone, CreditCard, UserPlus, Newspaper, Plus, X,
-  Clock, ThumbsUp, ThumbsDown,
+  Clock, ThumbsUp, ThumbsDown, BarChart2, Globe, TrendingUp,
 } from "lucide-react";
 import { motion } from "framer-motion";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
@@ -447,6 +447,108 @@ function UpdatesManager() {
   );
 }
 
+// ─── Analytics Dashboard ───────────────────────────────────
+function AnalyticsDashboard() {
+  const { data, isLoading } = useQuery<{
+    pageStats: { page: string; count: number }[];
+    totalVisits: number;
+    last7Days: { date: string; count: number }[];
+  }>({ queryKey: ["/api/admin/analytics"] });
+
+  const pageLabels: Record<string, string> = {
+    "/": "ਮੁੱਖ ਪੰਨਾ",
+    "/about": "ਯੂਨੀਅਨ ਬਾਰੇ",
+    "/updates": "ਤਾਜ਼ੀਆਂ ਖ਼ਬਰਾਂ",
+    "/contact": "ਪਛਾਣ ਪੱਤਰ",
+    "/admin": "ਐਡਮਿਨ",
+  };
+
+  const maxCount = data?.pageStats?.[0]?.count || 1;
+
+  if (isLoading) return <div className="flex justify-center py-16"><Loader2 className="h-8 w-8 animate-spin text-primary" /></div>;
+
+  return (
+    <div className="space-y-6">
+      {/* Summary cards */}
+      <div className="grid grid-cols-2 md:grid-cols-3 gap-4">
+        <Card className="md:col-span-1">
+          <CardContent className="pt-5 pb-4 text-center">
+            <Globe className="h-6 w-6 text-primary mx-auto mb-2" />
+            <p className="text-xs text-muted-foreground mb-1">ਕੁੱਲ ਵਿਜ਼ਿਟ</p>
+            <div className="text-3xl font-bold text-primary">{data?.totalVisits ?? 0}</div>
+          </CardContent>
+        </Card>
+        <Card className="md:col-span-1">
+          <CardContent className="pt-5 pb-4 text-center">
+            <BarChart2 className="h-6 w-6 text-blue-500 mx-auto mb-2" />
+            <p className="text-xs text-muted-foreground mb-1">ਪੰਨੇ ਟਰੈਕ</p>
+            <div className="text-3xl font-bold text-blue-500">{data?.pageStats?.length ?? 0}</div>
+          </CardContent>
+        </Card>
+        <Card className="col-span-2 md:col-span-1">
+          <CardContent className="pt-5 pb-4 text-center">
+            <TrendingUp className="h-6 w-6 text-green-500 mx-auto mb-2" />
+            <p className="text-xs text-muted-foreground mb-1">ਅੱਜ (7 ਦਿਨ ਦਾ ਕੁੱਲ)</p>
+            <div className="text-3xl font-bold text-green-500">
+              {data?.last7Days?.reduce((s, d) => s + d.count, 0) ?? 0}
+            </div>
+          </CardContent>
+        </Card>
+      </div>
+
+      {/* Page breakdown */}
+      <Card>
+        <CardHeader><CardTitle className="text-base flex items-center gap-2"><BarChart2 className="h-5 w-5 text-primary" /> ਪੰਨੇ ਅਨੁਸਾਰ ਵਿਜ਼ਿਟ</CardTitle></CardHeader>
+        <CardContent className="space-y-3">
+          {!data?.pageStats?.length ? (
+            <p className="text-center text-muted-foreground py-6">ਅਜੇ ਕੋਈ ਡੇਟਾ ਨਹੀਂ</p>
+          ) : data.pageStats.map((row) => (
+            <div key={row.page}>
+              <div className="flex justify-between text-sm mb-1">
+                <span className="font-medium">{pageLabels[row.page] ?? row.page}</span>
+                <span className="text-muted-foreground font-mono">{row.count}</span>
+              </div>
+              <div className="h-2 bg-muted rounded-full overflow-hidden">
+                <div
+                  className="h-full bg-primary rounded-full transition-all"
+                  style={{ width: `${Math.round((row.count / maxCount) * 100)}%` }}
+                />
+              </div>
+            </div>
+          ))}
+        </CardContent>
+      </Card>
+
+      {/* Last 7 days */}
+      <Card>
+        <CardHeader><CardTitle className="text-base flex items-center gap-2"><TrendingUp className="h-5 w-5 text-green-500" /> ਪਿਛਲੇ 7 ਦਿਨ</CardTitle></CardHeader>
+        <CardContent>
+          {!data?.last7Days?.length ? (
+            <p className="text-center text-muted-foreground py-6">ਅਜੇ ਕੋਈ ਡੇਟਾ ਨਹੀਂ</p>
+          ) : (
+            <div className="space-y-2">
+              {data.last7Days.map((row) => {
+                const dayMax = Math.max(...data.last7Days.map(d => d.count), 1);
+                return (
+                  <div key={row.date} className="flex items-center gap-3">
+                    <span className="text-xs text-muted-foreground w-24 shrink-0 font-mono">
+                      {new Date(row.date).toLocaleDateString("pa-IN", { day: "2-digit", month: "short" })}
+                    </span>
+                    <div className="flex-1 h-2 bg-muted rounded-full overflow-hidden">
+                      <div className="h-full bg-green-500 rounded-full" style={{ width: `${Math.round((row.count / dayMax) * 100)}%` }} />
+                    </div>
+                    <span className="text-xs font-mono text-muted-foreground w-8 text-right">{row.count}</span>
+                  </div>
+                );
+              })}
+            </div>
+          )}
+        </CardContent>
+      </Card>
+    </div>
+  );
+}
+
 // ─── Main Admin Panel ──────────────────────────────────────
 export default function Admin() {
   const { isLoading: authLoading, isAuthenticated, logout } = useAuth();
@@ -502,7 +604,7 @@ export default function Admin() {
 
         {/* Tabs */}
         <Tabs defaultValue="pending">
-          <TabsList className="grid grid-cols-4 mb-6 h-auto">
+          <TabsList className="grid grid-cols-5 mb-6 h-auto">
             <TabsTrigger value="pending" className="flex items-center gap-1.5 py-2.5 text-xs">
               <Clock className="h-3.5 w-3.5" />
               Pending {pending.length > 0 && <span className="ml-1 bg-amber-500 text-white rounded-full w-5 h-5 flex items-center justify-center text-[10px] font-bold">{pending.length}</span>}
@@ -515,6 +617,9 @@ export default function Admin() {
             </TabsTrigger>
             <TabsTrigger value="updates" className="flex items-center gap-1.5 py-2.5 text-xs">
               <Newspaper className="h-3.5 w-3.5" /> ਖ਼ਬਰਾਂ
+            </TabsTrigger>
+            <TabsTrigger value="analytics" className="flex items-center gap-1.5 py-2.5 text-xs">
+              <BarChart2 className="h-3.5 w-3.5" /> ਅਨੈਲਿਟਿਕਸ
             </TabsTrigger>
           </TabsList>
 
@@ -560,6 +665,9 @@ export default function Admin() {
 
           {/* UPDATES TAB */}
           <TabsContent value="updates"><UpdatesManager /></TabsContent>
+
+          {/* ANALYTICS TAB */}
+          <TabsContent value="analytics"><AnalyticsDashboard /></TabsContent>
         </Tabs>
       </motion.div>
     </div>

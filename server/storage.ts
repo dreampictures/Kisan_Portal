@@ -1,6 +1,6 @@
 import { db } from "./db";
-import { registrations, updates, type Registration, type Update } from "@shared/schema";
-import { eq, desc } from "drizzle-orm";
+import { registrations, updates, pageViews, type Registration, type Update } from "@shared/schema";
+import { eq, desc, sql } from "drizzle-orm";
 
 function generateCardNumber(): string {
   const year = new Date().getFullYear();
@@ -39,6 +39,12 @@ export interface IStorage {
   getUpdates(): Promise<Update[]>;
   createUpdate(data: { title: string; content: string; imageUrl?: string; eventDate?: Date }): Promise<Update>;
   deleteUpdate(id: number): Promise<boolean>;
+
+  // Analytics
+  recordPageView(page: string): Promise<void>;
+  getPageViewStats(): Promise<{ page: string; count: number }[]>;
+  getTotalVisits(): Promise<number>;
+  getVisitsLast7Days(): Promise<{ date: string; count: number }[]>;
 }
 
 export class DatabaseStorage implements IStorage {
@@ -152,6 +158,40 @@ export class DatabaseStorage implements IStorage {
   async deleteUpdate(id: number): Promise<boolean> {
     const result = await db.delete(updates).where(eq(updates.id, id)).returning();
     return result.length > 0;
+  }
+
+  // ── Analytics ─────────────────────────────────────────────
+  async recordPageView(page: string): Promise<void> {
+    await db.insert(pageViews).values({ page });
+  }
+
+  async getPageViewStats(): Promise<{ page: string; count: number }[]> {
+    const rows = await db
+      .select({ page: pageViews.page, count: sql<number>`count(*)::int` })
+      .from(pageViews)
+      .groupBy(pageViews.page)
+      .orderBy(sql`count(*) desc`);
+    return rows;
+  }
+
+  async getTotalVisits(): Promise<number> {
+    const [row] = await db
+      .select({ count: sql<number>`count(*)::int` })
+      .from(pageViews);
+    return row?.count ?? 0;
+  }
+
+  async getVisitsLast7Days(): Promise<{ date: string; count: number }[]> {
+    const rows = await db
+      .select({
+        date: sql<string>`date_trunc('day', ${pageViews.viewedAt})::date::text`,
+        count: sql<number>`count(*)::int`,
+      })
+      .from(pageViews)
+      .where(sql`${pageViews.viewedAt} >= now() - interval '7 days'`)
+      .groupBy(sql`date_trunc('day', ${pageViews.viewedAt})`)
+      .orderBy(sql`date_trunc('day', ${pageViews.viewedAt})`);
+    return rows;
   }
 }
 

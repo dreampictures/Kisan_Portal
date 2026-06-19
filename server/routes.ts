@@ -1,4 +1,4 @@
-import type { Express } from "express";
+import type { Express, Request, Response, NextFunction } from "express";
 import type { Server } from "http";
 import multer from "multer";
 import { storage } from "./storage";
@@ -36,6 +36,15 @@ function getBaseUrl(req: any): string {
 export async function registerRoutes(httpServer: Server, app: Express): Promise<Server> {
   await setupAuth(app);
   registerAuthRoutes(app);
+
+  // ── Page view tracking middleware ────────────────────────
+  app.use((req: Request, res: Response, next: NextFunction) => {
+    if (!req.path.startsWith("/api") && !req.path.includes(".")) {
+      const page = req.path || "/";
+      storage.recordPageView(page).catch(() => {});
+    }
+    next();
+  });
 
   // ── Admin login/logout ──────────────────────────────────────
   app.post("/api/admin/login", (req: any, res: any) => {
@@ -386,6 +395,21 @@ export async function registerRoutes(httpServer: Server, app: Express): Promise<
     } catch (err) {
       console.error(err);
       res.status(500).json({ message: "Delete ਕਰਨ ਵਿੱਚ ਗਲਤੀ" });
+    }
+  });
+
+  // ── Admin: analytics ────────────────────────────────────────
+  app.get("/api/admin/analytics", isAdminAuth, async (req: any, res: any) => {
+    try {
+      const [pageStats, totalVisits, last7Days] = await Promise.all([
+        storage.getPageViewStats(),
+        storage.getTotalVisits(),
+        storage.getVisitsLast7Days(),
+      ]);
+      res.json({ pageStats, totalVisits, last7Days });
+    } catch (err) {
+      console.error(err);
+      res.status(500).json({ message: "Analytics ਲੋਡ ਨਹੀਂ ਹੋਈ" });
     }
   });
 
