@@ -9,7 +9,7 @@ export function Footer() {
           <div className="space-y-4">
             <div className="flex items-center space-x-3">
               <img src={logoSrc} alt="Logo" className="h-10 w-10 rounded-full object-cover" />
-              <span className="font-display font-bold text-base">ਕਿਸਾਨ ਮਜ਼ਦੂਰ ਸੰਘਰਸ਼ ਕਮੇਟੀ ਪੰਜਾਬ ( ਕੋਟ ਬੁੱਢਾ)</span>
+              <span className="font-display font-bold text-base">ਕਿਸਾਨ ਸੰਘਰਸ਼ ਕਮੇਟੀ ਪੰਜਾਬ ( ਕੋਟ ਬੁੱਢਾ)</span>
             </div>
             <p className="text-sm text-muted-foreground leading-relaxed">
               ਕਿਸਾਨਾਂ ਦੇ ਹੱਕਾਂ ਅਤੇ ਭਲਾਈ ਲਈ ਸਮਰਪਿਤ। ਸਾਡੀ ਲਹਿਰ ਵਿੱਚ ਸ਼ਾਮਲ ਹੋਵੋ।
@@ -37,7 +37,7 @@ export function Footer() {
         </div>
 
         <div className="border-t border-border/50 mt-10 pt-6 flex flex-col sm:flex-row items-center justify-between gap-2 text-xs text-muted-foreground">
-          <p>&copy; {new Date().getFullYear()} ਕਿਸਾਨ ਮਜ਼ਦੂਰ ਸੰਘਰਸ਼ ਕਮੇਟੀ ਪੰਜਾਬ ( ਕੋਟ ਬੁੱਢਾ)। ਸਾਰੇ ਅਧਿਕਾਰ ਸੁਰੱਖਿਅਤ।</p>
+          <p>&copy; {new Date().getFullYear()} ਕਿਸਾਨ ਸੰਘਰਸ਼ ਕਮੇਟੀ ਪੰਜਾਬ ( ਕੋਟ ਬੁੱਢਾ)। ਸਾਰੇ ਅਧਿਕਾਰ ਸੁਰੱਖਿਅਤ।</p>
           <p>
             Managed by{" "}
             <a href="https://thedreampictures.com" target="_blank" rel="noopener noreferrer"

@@ -18,7 +18,7 @@ export default function Updates() {
             <Megaphone className="h-8 w-8 text-primary" />
           </div>
           <h1 className="text-4xl font-display font-bold text-primary mb-2">ਤਾਜ਼ੀਆਂ ਖ਼ਬਰਾਂ</h1>
-          <p className="text-muted-foreground text-lg">ਕਿਸਾਨ ਮਜ਼ਦੂਰ ਸੰਘਰਸ਼ ਕਮੇਟੀ ਪੰਜਾਬ ਦੀਆਂ ਅੱਪਡੇਟਸ</p>
+          <p className="text-muted-foreground text-lg">ਕਿਸਾਨ ਸੰਘਰਸ਼ ਕਮੇਟੀ ਪੰਜਾਬ ਦੀਆਂ ਅੱਪਡੇਟਸ</p>
         </motion.div>
       </div>
 

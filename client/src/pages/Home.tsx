@@ -36,7 +36,7 @@ export default function Home() {
               ਕਿਸਾਨਾਂ ਦੀ ਆਵਾਜ਼
             </span>
             <h1 className="text-5xl md:text-7xl font-display font-bold text-primary leading-tight">
-              ਕਿਸਾਨ ਮਜ਼ਦੂਰ <br/>
+              ਕਿਸਾਨ <br/>
               <span className="text-foreground">ਸੰਘਰਸ਼ ਕਮੇਟੀ</span>
             </h1>
             <p className="text-xl text-muted-foreground max-w-2xl mx-auto leading-relaxed">

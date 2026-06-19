@@ -83,7 +83,7 @@ export default function Contact() {
         <div className="text-center mb-10">
           <h1 className="text-4xl font-display font-bold mb-4">ਪਛਾਣ ਪੱਤਰ ਰਜਿਸਟ੍ਰੇਸ਼ਨ</h1>
           <p className="text-muted-foreground text-lg max-w-2xl mx-auto">
-            ਆਪਣਾ ਅਧਿਕਾਰਤ ਕਿਸਾਨ ਮਜ਼ਦੂਰ ਸੰਘਰਸ਼ ਕਮੇਟੀ ਪਛਾਣ ਪੱਤਰ ਲਈ ਰਜਿਸਟਰ ਕਰੋ।
+            ਆਪਣਾ ਅਧਿਕਾਰਤ ਕਿਸਾਨ ਸੰਘਰਸ਼ ਕਮੇਟੀ ਪਛਾਣ ਪੱਤਰ ਲਈ ਰਜਿਸਟਰ ਕਰੋ।
           </p>
         </div>
 

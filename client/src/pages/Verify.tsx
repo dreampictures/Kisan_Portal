@@ -104,7 +104,7 @@ export default function Verify() {
                 <Shield className="h-7 w-7 text-yellow-300" />
               </div>
               <div>
-                <p className="text-white font-bold text-sm leading-tight">ਕਿਸਾਨ ਮਜ਼ਦੂਰ ਸੰਘਰਸ਼ ਕਮੇਟੀ ਪੰਜਾਬ ( ਕੋਟ ਬੁੱਢਾ)</p>
+                <p className="text-white font-bold text-sm leading-tight">ਕਿਸਾਨ ਸੰਘਰਸ਼ ਕਮੇਟੀ ਪੰਜਾਬ ( ਕੋਟ ਬੁੱਢਾ)</p>
                 <p className="text-green-300 text-xs">ਮੈਂਬਰਸ਼ਿਪ ਕਾਰਡ</p>
               </div>
             </div>
@@ -171,7 +171,7 @@ export default function Verify() {
 
           {/* Card Footer — Dark */}
           <div className="bg-gray-900 px-4 py-3 text-center">
-            <p className="text-gray-400 text-xs">Kisan Mazdoor Sangharsh Committee Punjab</p>
+            <p className="text-gray-400 text-xs">Kisan Sangharsh Committee Punjab</p>
             <p className="text-gray-600 text-xs font-mono mt-0.5">kisan-union-punjab.fly.dev</p>
           </div>
         </motion.div>

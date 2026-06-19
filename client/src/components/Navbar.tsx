@@ -23,7 +23,7 @@ export function Navbar() {
           <img src={logoSrc} alt="Logo"
             className="h-10 w-10 rounded-full object-cover ring-2 ring-primary/20 group-hover:ring-primary/40 transition-all" />
           <span className="font-display font-bold text-sm md:text-base text-foreground leading-tight">
-            ਕਿਸਾਨ ਮਜ਼ਦੂਰ ਸੰਘਰਸ਼ ਕਮੇਟੀ ਪੰਜਾਬ ( ਕੋਟ ਬੁੱਢਾ)
+            ਕਿਸਾਨ ਸੰਘਰਸ਼ ਕਮੇਟੀ ਪੰਜਾਬ ( ਕੋਟ ਬੁੱਢਾ)
           </span>
         </Link>
 

@@ -1,5 +1,5 @@
 import { motion } from "framer-motion";
-import { BadgeCheck, Leaf, HeartHandshake } from "lucide-react";
+import { BadgeCheck, Leaf, HeartHandshake, User } from "lucide-react";
 
 export default function About() {
   return (
@@ -14,7 +14,7 @@ export default function About() {
           >
             <h1 className="text-4xl md:text-5xl font-display font-bold mb-6">ਸਾਡੀ ਯੂਨੀਅਨ ਬਾਰੇ</h1>
             <p className="text-lg text-muted-foreground">
-              ਕਿਸਾਨ ਮਜ਼ਦੂਰ ਸੰਘਰਸ਼ ਕਮੇਟੀ ਪੰਜਾਬ ਖੇਤੀਬਾੜੀ ਭਾਈਚਾਰੇ ਲਈ ਇੱਕ ਮਜ਼ਬੂਤ ਥੰਮ੍ਹ ਵਾਂਗ ਖੜ੍ਹੀ ਹੈ।
+              ਕਿਸਾਨ ਸੰਘਰਸ਼ ਕਮੇਟੀ ਪੰਜਾਬ ਖੇਤੀਬਾੜੀ ਭਾਈਚਾਰੇ ਲਈ ਇੱਕ ਮਜ਼ਬੂਤ ਥੰਮ੍ਹ ਵਾਂਗ ਖੜ੍ਹੀ ਹੈ।
             </p>
           </motion.div>
         </div>
@@ -64,21 +64,63 @@ export default function About() {
               </div>
             </div>
             
-            <div className="relative">
-              {/* Decorative image placeholder using a gradient div since we don't have a specific image */}
-              <div className="aspect-[4/3] rounded-2xl bg-gradient-to-br from-primary/20 to-secondary/50 flex items-center justify-center relative overflow-hidden">
-                 <div className="absolute inset-0 opacity-20 bg-[radial-gradient(#065f46_1px,transparent_1px)] [background-size:16px_16px]"></div>
-                 <div className="text-center p-8">
-                   <h3 className="text-2xl font-display font-bold text-primary mb-2">ਅਗਵਾਈ</h3>
-                   <p className="font-semibold">ਸੁਖਦੇਵ ਸਿੰਘ ਮੰਡ</p>
-                   <p className="text-sm text-muted-foreground">ਸੂਬਾ ਮੀਤ ਪ੍ਰਧਾਨ</p>
-                 </div>
+            <div className="space-y-4">
+              <h2 className="text-2xl font-display font-bold text-foreground text-center">ਸੂਬਾਈ ਅਗਵਾਈ</h2>
+              <div className="grid grid-cols-2 gap-4">
+                {/* President */}
+                <div className="bg-gradient-to-b from-primary/10 to-primary/5 rounded-2xl p-5 text-center border border-primary/20 shadow-sm">
+                  <div className="w-24 h-24 rounded-full mx-auto mb-3 overflow-hidden border-4 border-primary/30 bg-primary/10 flex items-center justify-center">
+                    <User className="w-12 h-12 text-primary/40" />
+                  </div>
+                  <p className="font-bold text-foreground text-sm leading-tight">ਇੰਦਰਜੀਤ ਸਿੰਘ</p>
+                  <p className="text-xs text-primary font-semibold mt-1">ਸੂਬਾ ਪ੍ਰਧਾਨ</p>
+                </div>
+                {/* Vice President */}
+                <div className="bg-gradient-to-b from-secondary/30 to-secondary/10 rounded-2xl p-5 text-center border border-border shadow-sm">
+                  <div className="w-24 h-24 rounded-full mx-auto mb-3 overflow-hidden border-4 border-border bg-secondary/20 flex items-center justify-center">
+                    <User className="w-12 h-12 text-muted-foreground/40" />
+                  </div>
+                  <p className="font-bold text-foreground text-sm leading-tight">ਸੁਖਦੇਵ ਸਿੰਘ ਮੰਡ</p>
+                  <p className="text-xs text-primary font-semibold mt-1">ਸੂਬਾ ਮੀਤ ਪ੍ਰਧਾਨ</p>
+                </div>
+              </div>
+            </div>
+          </div>
+        </motion.div>
+
+        {/* Leadership section - photos placeholder */}
+        <motion.div
+          initial={{ opacity: 0, y: 20 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ delay: 0.2 }}
+          className="mt-10 bg-card rounded-3xl p-8 md:p-10 shadow-xl border border-border"
+        >
+          <h2 className="text-2xl font-display font-bold text-center mb-8">ਕਮੇਟੀ ਦੇ ਸੰਸਥਾਪਕ</h2>
+          <div className="grid md:grid-cols-2 gap-6">
+            <div className="flex flex-col items-center gap-4 p-6 rounded-2xl bg-gradient-to-b from-primary/10 to-primary/5 border border-primary/20">
+              <div className="w-36 h-36 rounded-full overflow-hidden border-4 border-primary/40 bg-primary/10 flex items-center justify-center shadow-lg">
+                <User className="w-20 h-20 text-primary/30" />
+              </div>
+              <div className="text-center">
+                <h3 className="text-xl font-bold text-foreground">ਇੰਦਰਜੀਤ ਸਿੰਘ</h3>
+                <p className="text-primary font-semibold mt-1">ਸੂਬਾ ਪ੍ਰਧਾਨ</p>
+                <p className="text-sm text-muted-foreground mt-2">ਕਿਸਾਨ ਸੰਘਰਸ਼ ਕਮੇਟੀ ਪੰਜਾਬ ( ਕੋਟ ਬੁੱਢਾ)</p>
+              </div>
+            </div>
+            <div className="flex flex-col items-center gap-4 p-6 rounded-2xl bg-gradient-to-b from-secondary/30 to-secondary/10 border border-border">
+              <div className="w-36 h-36 rounded-full overflow-hidden border-4 border-border bg-secondary/20 flex items-center justify-center shadow-lg">
+                <User className="w-20 h-20 text-muted-foreground/30" />
+              </div>
+              <div className="text-center">
+                <h3 className="text-xl font-bold text-foreground">ਸੁਖਦੇਵ ਸਿੰਘ ਮੰਡ</h3>
+                <p className="text-primary font-semibold mt-1">ਸੂਬਾ ਮੀਤ ਪ੍ਰਧਾਨ</p>
+                <p className="text-sm text-muted-foreground mt-2">ਕਿਸਾਨ ਸੰਘਰਸ਼ ਕਮੇਟੀ ਪੰਜਾਬ ( ਕੋਟ ਬੁੱਢਾ)</p>
               </div>
             </div>
           </div>
         </motion.div>
         
-        <div className="mt-16 text-center max-w-2xl mx-auto">
+        <div className="mt-10 text-center max-w-2xl mx-auto">
           <h3 className="text-2xl font-bold mb-4">ਸੰਪਰਕ ਜਾਣਕਾਰੀ</h3>
           <p className="text-muted-foreground mb-8">
             ਕਿਸੇ ਵੀ ਪੁੱਛਗਿੱਛ ਜਾਂ ਸਹਾਇਤਾ ਲਈ, ਕਿਰਪਾ ਕਰਕੇ ਸਾਡੇ ਮੁੱਖ ਦਫਤਰ ਨਾਲ ਸੰਪਰਕ ਕਰੋ।
