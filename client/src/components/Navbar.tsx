@@ -44,7 +44,7 @@ export function Navbar() {
           ))}
           <Link href="/contact">
             <Button size="sm" className="bg-primary hover:bg-primary/90 text-white shadow-lg shadow-primary/20">
-              ਆਈਡੀ ਕਾਰਡ ਪ੍ਰਾਪਤ ਕਰੋ
+              ਮੈਂਬਰ ਬਣੋ
             </Button>
           </Link>
         </nav>
@@ -84,7 +84,7 @@ export function Navbar() {
               ))}
               <Link href="/contact">
                 <Button className="w-full bg-primary hover:bg-primary/90" onClick={() => setIsOpen(false)}>
-                  ਆਈਡੀ ਕਾਰਡ ਪ੍ਰਾਪਤ ਕਰੋ
+                  ਮੈਂਬਰ ਬਣੋ
                 </Button>
               </Link>
             </div>

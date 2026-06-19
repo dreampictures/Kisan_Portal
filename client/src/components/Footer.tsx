@@ -31,7 +31,7 @@ export function Footer() {
               <li><Link href="/"><span className="hover:text-primary cursor-pointer transition-colors">ਮੁੱਖ ਪੰਨਾ</span></Link></li>
               <li><Link href="/about"><span className="hover:text-primary cursor-pointer transition-colors">ਯੂਨੀਅਨ ਬਾਰੇ</span></Link></li>
               <li><Link href="/updates"><span className="hover:text-primary cursor-pointer transition-colors">ਤਾਜ਼ੀਆਂ ਖ਼ਬਰਾਂ</span></Link></li>
-              <li><Link href="/contact"><span className="hover:text-primary cursor-pointer transition-colors">ਆਈਡੀ ਕਾਰਡ ਲਓ</span></Link></li>
+              <li><Link href="/contact"><span className="hover:text-primary cursor-pointer transition-colors">ਮੈਂਬਰ ਬਣੋ</span></Link></li>
             </ul>
           </div>
         </div>
