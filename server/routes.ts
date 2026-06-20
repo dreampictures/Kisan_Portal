@@ -21,8 +21,14 @@ const upload = multer({
 
 const ADMIN_USERNAME = process.env.ADMIN_USERNAME!;
 const ADMIN_PASSWORD = process.env.ADMIN_PASSWORD!;
+const ADMIN_PIN = "1103";
 
 const isAdminAuth = (req: any, res: any, next: any) => {
+  if (req.session?.adminAuthenticated && req.session?.pinVerified) return next();
+  return res.status(401).json({ message: "ਲੌਗਇਨ ਲੋੜੀਂਦਾ ਹੈ" });
+};
+
+const isPasswordAuth = (req: any, res: any, next: any) => {
   if (req.session?.adminAuthenticated) return next();
   return res.status(401).json({ message: "ਲੌਗਇਨ ਲੋੜੀਂਦਾ ਹੈ" });
 };
@@ -51,12 +57,26 @@ export async function registerRoutes(httpServer: Server, app: Express): Promise<
     const { username, password } = req.body;
     if (username === ADMIN_USERNAME && password === ADMIN_PASSWORD) {
       req.session.adminAuthenticated = true;
+      req.session.pinVerified = false;
+      req.session.save((err: any) => {
+        if (err) return res.status(500).json({ message: "Session error" });
+        return res.json({ success: true, needsPin: true });
+      });
+    } else {
+      return res.status(401).json({ message: "ਗਲਤ ਯੂਜ਼ਰਨੇਮ ਜਾਂ ਪਾਸਵਰਡ" });
+    }
+  });
+
+  app.post("/api/admin/verify-pin", isPasswordAuth, (req: any, res: any) => {
+    const { pin } = req.body;
+    if (pin === ADMIN_PIN) {
+      req.session.pinVerified = true;
       req.session.save((err: any) => {
         if (err) return res.status(500).json({ message: "Session error" });
         return res.json({ success: true });
       });
     } else {
-      return res.status(401).json({ message: "ਗਲਤ ਯੂਜ਼ਰਨੇਮ ਜਾਂ ਪਾਸਵਰਡ" });
+      return res.status(401).json({ message: "ਗਲਤ PIN" });
     }
   });
 
@@ -68,7 +88,12 @@ export async function registerRoutes(httpServer: Server, app: Express): Promise<
   });
 
   app.get("/api/admin/check", (req: any, res: any) => {
-    res.json({ isAdmin: !!req.session?.adminAuthenticated });
+    const authenticated = !!req.session?.adminAuthenticated;
+    const pinVerified = !!req.session?.pinVerified;
+    res.json({
+      isAdmin: authenticated && pinVerified,
+      needsPin: authenticated && !pinVerified,
+    });
   });
 
   // ── Public: card verification ───────────────────────────────
@@ -109,7 +134,7 @@ export async function registerRoutes(httpServer: Server, app: Express): Promise<
     try {
       const bodySchema = insertRegistrationSchema.extend({
         name: z.string().min(1, "ਨਾਮ ਲੋੜੀਂਦਾ ਹੈ"),
-        village: z.string().min(1, "ਪਿੰਡ ਲੋੜੀਂਦਾ ਹੈ"),
+        village: z.string().min(1, "ਪਿੰਡ/ਸ਼ਹਿਰ ਲੋੜੀਂਦਾ ਹੈ"),
         tehsil: z.string().min(1, "ਤਹਿਸੀਲ ਲੋੜੀਂਦੀ ਹੈ"),
         district: z.string().min(1, "ਜ਼ਿਲ੍ਹਾ ਲੋੜੀਂਦਾ ਹੈ"),
       });
@@ -135,6 +160,9 @@ export async function registerRoutes(httpServer: Server, app: Express): Promise<
         ...parsed,
         mobileNumber: parsed.mobileNumber || undefined,
         aadhaarNumber: parsed.aadhaarNumber || undefined,
+        areaType: parsed.areaType || "rural",
+        wardNumber: parsed.wardNumber || undefined,
+        mohalla: parsed.mohalla || undefined,
         photoUrl,
         photoData,
         photoMimeType,
@@ -206,7 +234,7 @@ export async function registerRoutes(httpServer: Server, app: Express): Promise<
     try {
       const bodySchema = insertRegistrationSchema.extend({
         name: z.string().min(1, "ਨਾਮ ਲੋੜੀਂਦਾ ਹੈ"),
-        village: z.string().min(1, "ਪਿੰਡ ਲੋੜੀਂਦਾ ਹੈ"),
+        village: z.string().min(1, "ਪਿੰਡ/ਸ਼ਹਿਰ ਲੋੜੀਂਦਾ ਹੈ"),
         tehsil: z.string().min(1, "ਤਹਿਸੀਲ ਲੋੜੀਂਦੀ ਹੈ"),
         district: z.string().min(1, "ਜ਼ਿਲ੍ਹਾ ਲੋੜੀਂਦਾ ਹੈ"),
       });
@@ -231,6 +259,9 @@ export async function registerRoutes(httpServer: Server, app: Express): Promise<
         ...parsed,
         mobileNumber: parsed.mobileNumber || undefined,
         aadhaarNumber: parsed.aadhaarNumber || undefined,
+        areaType: parsed.areaType || "rural",
+        wardNumber: parsed.wardNumber || undefined,
+        mohalla: parsed.mohalla || undefined,
         photoUrl,
         photoData,
         photoMimeType,
@@ -243,6 +274,34 @@ export async function registerRoutes(httpServer: Server, app: Express): Promise<
         return res.status(400).json({ message: err.errors[0].message, field: err.errors[0].path.join(".") });
       console.error("Direct entry error:", err);
       res.status(500).json({ message: "ਐਂਟਰੀ ਫੇਲ੍ਹ ਹੋ ਗਈ" });
+    }
+  });
+
+  // ── Admin: edit registration ─────────────────────────────────
+  app.patch("/api/admin/registrations/:id", isAdminAuth, async (req: any, res: any) => {
+    try {
+      const id = parseInt(req.params.id);
+      const editSchema = z.object({
+        name: z.string().min(1).optional(),
+        designation: z.string().optional(),
+        village: z.string().min(1).optional(),
+        tehsil: z.string().min(1).optional(),
+        district: z.string().min(1).optional(),
+        areaType: z.enum(["rural", "urban"]).optional(),
+        wardNumber: z.string().optional(),
+        mohalla: z.string().optional(),
+        mobileNumber: z.string().optional(),
+        aadhaarNumber: z.string().optional(),
+      });
+      const parsed = editSchema.parse(req.body);
+      const updated = await storage.updateRegistration(id, parsed);
+      if (!updated) return res.status(404).json({ message: "ਰਜਿਸਟ੍ਰੇਸ਼ਨ ਨਹੀਂ ਮਿਲੀ" });
+      res.json({ message: "ਅੱਪਡੇਟ ਹੋ ਗਿਆ", registration: updated });
+    } catch (err) {
+      if (err instanceof z.ZodError)
+        return res.status(400).json({ message: err.errors[0].message });
+      console.error("Edit error:", err);
+      res.status(500).json({ message: "ਅੱਪਡੇਟ ਕਰਨ ਵਿੱਚ ਗਲਤੀ" });
     }
   });
 
@@ -299,6 +358,9 @@ export async function registerRoutes(httpServer: Server, app: Express): Promise<
         let details = `Card No: ${reg.cardNumber || "N/A"}\nStatus: ${reg.status}\n`;
         details += `ਨਾਮ: ${reg.name}\nਆਹੁਦਾ: ${reg.designation}\n`;
         details += `ਪਿੰਡ: ${reg.village}\nਤਹਿਸੀਲ: ${reg.tehsil}\nਜ਼ਿਲ੍ਹਾ: ${reg.district}\n`;
+        details += `ਖੇਤਰ: ${reg.areaType || "rural"}\n`;
+        if (reg.wardNumber) details += `ਵਾਰਡ: ${reg.wardNumber}\n`;
+        if (reg.mohalla) details += `ਮੁਹੱਲਾ: ${reg.mohalla}\n`;
         details += `ਮੋਬਾਈਲ: ${reg.mobileNumber || "*"}\n`;
         details += `ਆਧਾਰ: ${reg.aadhaarNumber ? `**** **** ${last4}` : "*"}\n`;
         details += `Valid: ${reg.validFrom ? new Date(reg.validFrom).toLocaleDateString("pa-IN") : "N/A"} - ${reg.validUntil ? new Date(reg.validUntil).toLocaleDateString("pa-IN") : "N/A"}\n`;

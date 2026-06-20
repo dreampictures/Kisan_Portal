@@ -12,6 +12,9 @@ export const registrations = pgTable("registrations", {
   village: text("village").notNull(),
   tehsil: text("tehsil").notNull(),
   district: text("district").notNull(),
+  areaType: text("area_type").default("rural"),
+  wardNumber: text("ward_number"),
+  mohalla: text("mohalla"),
   mobileNumber: text("mobile_number"),
   aadhaarNumber: text("aadhaar_number"),
   photoUrl: text("photo_url"),
@@ -45,6 +48,9 @@ export const insertRegistrationSchema = createInsertSchema(registrations)
   .extend({
     aadhaarNumber: z.string().length(12, "ਆਧਾਰ ਨੰਬਰ 12 ਅੰਕ ਹੋਣਾ ਚਾਹੀਦਾ ਹੈ").optional().or(z.literal("")),
     mobileNumber: z.string().min(10, "ਮੋਬਾਈਲ ਨੰਬਰ 10 ਅੰਕ ਹੋਣਾ ਚਾਹੀਦਾ ਹੈ").optional().or(z.literal("")),
+    areaType: z.enum(["rural", "urban"]).default("rural"),
+    wardNumber: z.string().optional().or(z.literal("")),
+    mohalla: z.string().optional().or(z.literal("")),
   });
 
 export const insertUpdateSchema = createInsertSchema(updates)

@@ -8,20 +8,26 @@ function generateCardNumber(): string {
   return `KUP-${year}-${rand}`;
 }
 
+type RegistrationData = {
+  name: string;
+  designation?: string;
+  village: string;
+  tehsil: string;
+  district: string;
+  areaType?: string;
+  wardNumber?: string;
+  mohalla?: string;
+  mobileNumber?: string;
+  aadhaarNumber?: string;
+  photoUrl?: string;
+  photoData?: string;
+  photoMimeType?: string;
+  status?: string;
+};
+
 export interface IStorage {
-  createRegistration(data: {
-    name: string;
-    designation?: string;
-    village: string;
-    tehsil: string;
-    district: string;
-    mobileNumber?: string;
-    aadhaarNumber?: string;
-    photoUrl?: string;
-    photoData?: string;
-    photoMimeType?: string;
-    status?: string;
-  }): Promise<Registration>;
+  createRegistration(data: RegistrationData): Promise<Registration>;
+  updateRegistration(id: number, data: Partial<RegistrationData>): Promise<Registration | undefined>;
   updateRegistrationCard(id: number, data: {
     validFrom: Date;
     validUntil: Date;
@@ -48,19 +54,7 @@ export interface IStorage {
 }
 
 export class DatabaseStorage implements IStorage {
-  async createRegistration(data: {
-    name: string;
-    designation?: string;
-    village: string;
-    tehsil: string;
-    district: string;
-    mobileNumber?: string;
-    aadhaarNumber?: string;
-    photoUrl?: string;
-    photoData?: string;
-    photoMimeType?: string;
-    status?: string;
-  }): Promise<Registration> {
+  async createRegistration(data: RegistrationData): Promise<Registration> {
     const cardNumber = generateCardNumber();
     const [registration] = await db
       .insert(registrations)
@@ -71,6 +65,9 @@ export class DatabaseStorage implements IStorage {
         village: data.village,
         tehsil: data.tehsil,
         district: data.district,
+        areaType: data.areaType || "rural",
+        wardNumber: data.wardNumber || null,
+        mohalla: data.mohalla || null,
         mobileNumber: data.mobileNumber || null,
         aadhaarNumber: data.aadhaarNumber || null,
         photoUrl: data.photoUrl || null,
@@ -80,6 +77,26 @@ export class DatabaseStorage implements IStorage {
       })
       .returning();
     return registration;
+  }
+
+  async updateRegistration(id: number, data: Partial<RegistrationData>): Promise<Registration | undefined> {
+    const updateData: any = {};
+    if (data.name !== undefined) updateData.name = data.name;
+    if (data.designation !== undefined) updateData.designation = data.designation;
+    if (data.village !== undefined) updateData.village = data.village;
+    if (data.tehsil !== undefined) updateData.tehsil = data.tehsil;
+    if (data.district !== undefined) updateData.district = data.district;
+    if (data.areaType !== undefined) updateData.areaType = data.areaType;
+    if (data.wardNumber !== undefined) updateData.wardNumber = data.wardNumber || null;
+    if (data.mohalla !== undefined) updateData.mohalla = data.mohalla || null;
+    if (data.mobileNumber !== undefined) updateData.mobileNumber = data.mobileNumber || null;
+    if (data.aadhaarNumber !== undefined) updateData.aadhaarNumber = data.aadhaarNumber || null;
+    const [updated] = await db
+      .update(registrations)
+      .set(updateData)
+      .where(eq(registrations.id, id))
+      .returning();
+    return updated;
   }
 
   async updateRegistrationCard(id: number, data: {

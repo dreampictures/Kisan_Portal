@@ -14,18 +14,23 @@ import {
   Eye, EyeOff, Lock, QrCode, CheckCircle, Calendar, AlertTriangle,
   MapPin, Phone, CreditCard, UserPlus, Newspaper, Plus, X,
   Clock, ThumbsUp, ThumbsDown, BarChart2, Globe, TrendingUp,
+  Pencil, KeyRound,
 } from "lucide-react";
 import { motion } from "framer-motion";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { apiRequest } from "@/lib/queryClient";
 import type { Registration, Update } from "@shared/schema";
+import { PUNJAB_DISTRICTS } from "@/lib/punjab-data";
+
+const selectCls = "flex h-9 w-full rounded-md border border-input bg-background px-3 py-1 text-sm shadow-sm focus:outline-none focus:ring-1 focus:ring-ring";
 
 // ─── Login Form ────────────────────────────────────────────
 function LoginForm() {
   const { login, isLoggingIn, loginError } = useAuth();
   const [username, setUsername] = useState("");
   const [password, setPassword] = useState("");
+  const [showUsername, setShowUsername] = useState(false);
   const [showPassword, setShowPassword] = useState(false);
   const { toast } = useToast();
 
@@ -51,8 +56,15 @@ function LoginForm() {
             <form onSubmit={handleSubmit} className="space-y-4">
               <div className="space-y-2">
                 <Label htmlFor="username">ਯੂਜ਼ਰਨੇਮ</Label>
-                <Input id="username" value={username} onChange={(e) => setUsername(e.target.value)}
-                  placeholder="ਯੂਜ਼ਰਨੇਮ" required data-testid="input-username" />
+                <div className="relative">
+                  <Input id="username" type={showUsername ? "text" : "password"} value={username}
+                    onChange={(e) => setUsername(e.target.value)} placeholder="ਯੂਜ਼ਰਨੇਮ"
+                    required data-testid="input-username" className="pr-10" />
+                  <button type="button" onClick={() => setShowUsername(!showUsername)}
+                    className="absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground" tabIndex={-1}>
+                    {showUsername ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
+                  </button>
+                </div>
               </div>
               <div className="space-y-2">
                 <Label htmlFor="password">ਪਾਸਵਰਡ</Label>
@@ -69,6 +81,71 @@ function LoginForm() {
               {loginError && <p className="text-sm text-destructive text-center">ਗਲਤ ਯੂਜ਼ਰਨੇਮ ਜਾਂ ਪਾਸਵਰਡ</p>}
               <Button type="submit" className="w-full" disabled={isLoggingIn} data-testid="button-login">
                 {isLoggingIn ? <><Loader2 className="mr-2 h-4 w-4 animate-spin" />ਲੌਗਇਨ...</> : "ਲੌਗਇਨ ਕਰੋ"}
+              </Button>
+            </form>
+          </CardContent>
+        </Card>
+      </motion.div>
+    </div>
+  );
+}
+
+// ─── PIN Form ──────────────────────────────────────────────
+function PinForm() {
+  const { verifyPin, isVerifyingPin, pinError, logout } = useAuth();
+  const [pin, setPin] = useState("");
+  const [showPin, setShowPin] = useState(false);
+  const { toast } = useToast();
+
+  const handleSubmit = (e: React.FormEvent) => {
+    e.preventDefault();
+    if (pin.length !== 4) return;
+    verifyPin(pin, {
+      onError: () => toast({ title: "ਗਲਤ PIN", description: "4 ਅੰਕਾਂ ਦਾ PIN ਦੁਬਾਰਾ ਦਾਖਲ ਕਰੋ", variant: "destructive" }),
+    });
+  };
+
+  return (
+    <div className="min-h-screen flex items-center justify-center bg-background px-4">
+      <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} className="w-full max-w-sm">
+        <Card className="shadow-lg">
+          <CardHeader className="text-center space-y-3 pb-4">
+            <div className="mx-auto bg-amber-100 p-4 rounded-full w-fit">
+              <KeyRound className="h-8 w-8 text-amber-600" />
+            </div>
+            <CardTitle className="text-2xl font-display">ਸੁਰੱਖਿਆ PIN</CardTitle>
+            <p className="text-sm text-muted-foreground">4 ਅੰਕਾਂ ਦਾ PIN ਦਾਖਲ ਕਰੋ</p>
+          </CardHeader>
+          <CardContent>
+            <form onSubmit={handleSubmit} className="space-y-4">
+              <div className="space-y-2">
+                <Label htmlFor="pin">PIN</Label>
+                <div className="relative">
+                  <Input
+                    id="pin"
+                    type={showPin ? "text" : "password"}
+                    inputMode="numeric"
+                    maxLength={4}
+                    value={pin}
+                    onChange={(e) => setPin(e.target.value.replace(/\D/g, "").slice(0, 4))}
+                    placeholder="••••"
+                    required
+                    data-testid="input-pin"
+                    className="pr-10 text-center text-2xl tracking-[0.5em] font-mono"
+                    autoFocus
+                  />
+                  <button type="button" onClick={() => setShowPin(!showPin)}
+                    className="absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground" tabIndex={-1}>
+                    {showPin ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
+                  </button>
+                </div>
+              </div>
+              {pinError && <p className="text-sm text-destructive text-center">ਗਲਤ PIN — ਦੁਬਾਰਾ ਕੋਸ਼ਿਸ਼ ਕਰੋ</p>}
+              <Button type="submit" className="w-full" disabled={isVerifyingPin || pin.length !== 4} data-testid="button-verify-pin">
+                {isVerifyingPin ? <><Loader2 className="mr-2 h-4 w-4 animate-spin" />ਚੈੱਕ ਕਰ ਰਿਹਾ...</> : "PIN ਦਾਖਲ ਕਰੋ"}
+              </Button>
+              <Button type="button" variant="ghost" className="w-full text-muted-foreground text-xs" onClick={() => logout()}>
+                ਵਾਪਸ ਜਾਓ
               </Button>
             </form>
           </CardContent>
@@ -192,6 +269,135 @@ function IssueQRDialog({ reg }: { reg: Registration }) {
   );
 }
 
+// ─── Edit Dialog ───────────────────────────────────────────
+function EditDialog({ reg }: { reg: Registration }) {
+  const [open, setOpen] = useState(false);
+  const { toast } = useToast();
+  const queryClient = useQueryClient();
+  const [form, setForm] = useState({
+    name: reg.name,
+    designation: reg.designation || "ਮੈਂਬਰ",
+    district: reg.district,
+    tehsil: reg.tehsil,
+    village: reg.village,
+    areaType: (reg.areaType || "rural") as "rural" | "urban",
+    wardNumber: reg.wardNumber || "",
+    mohalla: reg.mohalla || "",
+    mobileNumber: reg.mobileNumber || "",
+    aadhaarNumber: reg.aadhaarNumber || "",
+  });
+
+  const tehsilsForDistrict = PUNJAB_DISTRICTS.find(d => d.name === form.district)?.tehsils || [];
+
+  const editMut = useMutation({
+    mutationFn: async (data: typeof form) => {
+      const res = await apiRequest("PATCH", `/api/admin/registrations/${reg.id}`, data);
+      if (!res.ok) { const err = await res.json(); throw new Error(err.message); }
+      return res.json();
+    },
+    onSuccess: () => {
+      toast({ title: "✓ ਅੱਪਡੇਟ ਹੋ ਗਿਆ" });
+      queryClient.invalidateQueries({ queryKey: ["/api/admin/registrations"] });
+      setOpen(false);
+    },
+    onError: (err: any) => toast({ title: "ਗਲਤੀ", description: err.message, variant: "destructive" }),
+  });
+
+  const f = (label: string, key: keyof typeof form, placeholder = "", type = "text") => (
+    <div className="space-y-1">
+      <Label className="text-xs">{label}</Label>
+      <Input type={type} value={form[key] as string}
+        onChange={(e) => setForm(p => ({ ...p, [key]: e.target.value }))}
+        placeholder={placeholder || label} className="h-8 text-sm" />
+    </div>
+  );
+
+  return (
+    <Dialog open={open} onOpenChange={(o) => {
+      setOpen(o);
+      if (o) setForm({
+        name: reg.name, designation: reg.designation || "ਮੈਂਬਰ",
+        district: reg.district, tehsil: reg.tehsil, village: reg.village,
+        areaType: (reg.areaType || "rural") as "rural" | "urban",
+        wardNumber: reg.wardNumber || "", mohalla: reg.mohalla || "",
+        mobileNumber: reg.mobileNumber || "", aadhaarNumber: reg.aadhaarNumber || "",
+      });
+    }}>
+      <DialogTrigger asChild>
+        <Button size="sm" variant="outline" className="w-full gap-1.5 text-xs" data-testid={`button-edit-${reg.id}`}>
+          <Pencil className="h-3.5 w-3.5" /> ਸੋਧ ਕਰੋ
+        </Button>
+      </DialogTrigger>
+      <DialogContent className="max-w-md max-h-[90vh] overflow-y-auto">
+        <DialogHeader>
+          <DialogTitle className="flex items-center gap-2"><Pencil className="h-4 w-4 text-primary" /> ਮੈਂਬਰ ਸੋਧ ਕਰੋ</DialogTitle>
+        </DialogHeader>
+        <div className="space-y-3 py-2">
+          <div className="grid grid-cols-2 gap-3">
+            {f("ਨਾਮ *", "name", "ਪੂਰਾ ਨਾਮ")}
+            {f("ਆਹੁਦਾ", "designation", "ਮੈਂਬਰ / ਪ੍ਰਧਾਨ...")}
+          </div>
+
+          <div className="space-y-1">
+            <Label className="text-xs">ਖੇਤਰ</Label>
+            <div className="grid grid-cols-2 gap-2">
+              {(["rural", "urban"] as const).map(t => (
+                <button key={t} type="button"
+                  onClick={() => setForm(p => ({ ...p, areaType: t, wardNumber: "", mohalla: "" }))}
+                  className={`py-1.5 rounded-md border text-xs font-medium transition-colors ${form.areaType === t ? "bg-primary text-primary-foreground border-primary" : "border-input hover:bg-muted"}`}>
+                  {t === "rural" ? "🌾 ਪੇਂਡੂ" : "🏙️ ਸ਼ਹਿਰੀ"}
+                </button>
+              ))}
+            </div>
+          </div>
+
+          <div className="space-y-1">
+            <Label className="text-xs">ਜ਼ਿਲ੍ਹਾ *</Label>
+            <select value={form.district}
+              onChange={(e) => setForm(p => ({ ...p, district: e.target.value, tehsil: "" }))}
+              className={selectCls}>
+              <option value="">ਜ਼ਿਲ੍ਹਾ ਚੁਣੋ</option>
+              {PUNJAB_DISTRICTS.map(d => <option key={d.name} value={d.name}>{d.name}</option>)}
+            </select>
+          </div>
+
+          <div className="space-y-1">
+            <Label className="text-xs">ਤਹਿਸੀਲ *</Label>
+            <select value={form.tehsil}
+              onChange={(e) => setForm(p => ({ ...p, tehsil: e.target.value }))}
+              className={selectCls} disabled={!form.district}>
+              <option value="">ਤਹਿਸੀਲ ਚੁਣੋ</option>
+              {tehsilsForDistrict.map(t => <option key={t} value={t}>{t}</option>)}
+              {form.tehsil && !tehsilsForDistrict.includes(form.tehsil) && (
+                <option value={form.tehsil}>{form.tehsil} (ਮੌਜੂਦਾ)</option>
+              )}
+            </select>
+          </div>
+
+          {f(form.areaType === "urban" ? "ਸ਼ਹਿਰ/ਨਗਰ *" : "ਪਿੰਡ *", "village", form.areaType === "urban" ? "ਸ਼ਹਿਰ ਦਾ ਨਾਮ" : "ਪਿੰਡ ਦਾ ਨਾਮ")}
+
+          {form.areaType === "urban" && (
+            <div className="grid grid-cols-2 gap-3">
+              {f("ਵਾਰਡ ਨੰਬਰ", "wardNumber", "ਵਿਕਲਪਿਕ")}
+              {f("ਮੁਹੱਲਾ", "mohalla", "ਵਿਕਲਪਿਕ")}
+            </div>
+          )}
+
+          <div className="grid grid-cols-2 gap-3">
+            {f("ਮੋਬਾਈਲ", "mobileNumber", "10 ਅੰਕ")}
+            {f("ਆਧਾਰ ਨੰਬਰ", "aadhaarNumber", "12 ਅੰਕ")}
+          </div>
+        </div>
+        <Button onClick={() => editMut.mutate(form)}
+          disabled={editMut.isPending || !form.name || !form.village || !form.tehsil || !form.district}
+          className="w-full">
+          {editMut.isPending ? <><Loader2 className="mr-2 h-4 w-4 animate-spin" />ਸੇਵ ਹੋ ਰਿਹਾ...</> : <><Pencil className="mr-2 h-4 w-4" />ਸੇਵ ਕਰੋ</>}
+        </Button>
+      </DialogContent>
+    </Dialog>
+  );
+}
+
 // ─── Member Card (Approved) ────────────────────────────────
 function MemberCard({ reg }: { reg: Registration }) {
   const deleteRegistration = useDeleteRegistration();
@@ -225,8 +431,9 @@ function MemberCard({ reg }: { reg: Registration }) {
             </div>
           </div>
         </div>
-        <div className="mt-3"><IssueQRDialog reg={reg} /></div>
-        <div className="mt-2">
+        <div className="mt-3 space-y-2">
+          <IssueQRDialog reg={reg} />
+          <EditDialog reg={reg} />
           <Button size="sm" variant="ghost" className="w-full text-destructive hover:bg-destructive/10 text-xs"
             onClick={() => deleteRegistration.mutate(reg.id)} disabled={deleteRegistration.isPending}>
             <Trash2 className="h-3.5 w-3.5 mr-1" /> ਮਿਟਾਓ
@@ -278,13 +485,16 @@ function PendingCard({ reg }: { reg: Registration }) {
             </div>
           </div>
         </div>
-        <div className="mt-3 grid grid-cols-2 gap-2">
-          <Button size="sm" className="bg-green-600 hover:bg-green-700 gap-1.5" onClick={() => approveMut.mutate()} disabled={approveMut.isPending}>
-            {approveMut.isPending ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : <ThumbsUp className="h-3.5 w-3.5" />} ਅਪ੍ਰੂਵ ਕਰੋ
-          </Button>
-          <Button size="sm" variant="destructive" className="gap-1.5" onClick={() => rejectMut.mutate()} disabled={rejectMut.isPending}>
-            {rejectMut.isPending ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : <ThumbsDown className="h-3.5 w-3.5" />} Reject ਕਰੋ
-          </Button>
+        <div className="mt-3 space-y-2">
+          <div className="grid grid-cols-2 gap-2">
+            <Button size="sm" className="bg-green-600 hover:bg-green-700 gap-1.5" onClick={() => approveMut.mutate()} disabled={approveMut.isPending}>
+              {approveMut.isPending ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : <ThumbsUp className="h-3.5 w-3.5" />} ਅਪ੍ਰੂਵ ਕਰੋ
+            </Button>
+            <Button size="sm" variant="destructive" className="gap-1.5" onClick={() => rejectMut.mutate()} disabled={rejectMut.isPending}>
+              {rejectMut.isPending ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : <ThumbsDown className="h-3.5 w-3.5" />} Reject ਕਰੋ
+            </Button>
+          </div>
+          <EditDialog reg={reg} />
         </div>
       </CardContent>
     </Card>
@@ -295,9 +505,15 @@ function PendingCard({ reg }: { reg: Registration }) {
 function DirectEntryForm() {
   const { toast } = useToast();
   const queryClient = useQueryClient();
-  const [form, setForm] = useState({ name: "", designation: "ਮੈਂਬਰ", village: "", tehsil: "", district: "", mobileNumber: "", aadhaarNumber: "" });
+  const [form, setForm] = useState({
+    name: "", designation: "ਮੈਂਬਰ", village: "", tehsil: "", district: "",
+    areaType: "rural" as "rural" | "urban",
+    wardNumber: "", mohalla: "", mobileNumber: "", aadhaarNumber: "",
+  });
   const [photo, setPhoto] = useState<File | null>(null);
   const [loading, setLoading] = useState(false);
+
+  const tehsilsForDistrict = PUNJAB_DISTRICTS.find(d => d.name === form.district)?.tehsils || [];
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -310,7 +526,7 @@ function DirectEntryForm() {
       const data = await res.json();
       if (!res.ok) throw new Error(data.message);
       toast({ title: "✓ ਐਂਟਰੀ ਸਫਲ!", description: `Card: ${data.registration.cardNumber}` });
-      setForm({ name: "", designation: "ਮੈਂਬਰ", village: "", tehsil: "", district: "", mobileNumber: "", aadhaarNumber: "" });
+      setForm({ name: "", designation: "ਮੈਂਬਰ", village: "", tehsil: "", district: "", areaType: "rural", wardNumber: "", mohalla: "", mobileNumber: "", aadhaarNumber: "" });
       setPhoto(null);
       queryClient.invalidateQueries({ queryKey: ["/api/admin/registrations"] });
     } catch (err: any) {
@@ -318,10 +534,10 @@ function DirectEntryForm() {
     } finally { setLoading(false); }
   };
 
-  const field = (label: string, key: keyof typeof form, placeholder = "") => (
+  const textField = (label: string, key: keyof typeof form, placeholder = "") => (
     <div className="space-y-1.5">
       <Label className="text-sm">{label}</Label>
-      <Input value={form[key]} onChange={(e) => setForm(f => ({ ...f, [key]: e.target.value }))} placeholder={placeholder || label} />
+      <Input value={form[key] as string} onChange={(e) => setForm(f => ({ ...f, [key]: e.target.value }))} placeholder={placeholder || label} />
     </div>
   );
 
@@ -331,14 +547,55 @@ function DirectEntryForm() {
       <CardContent>
         <form onSubmit={handleSubmit} className="space-y-4">
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-            {field("ਨਾਮ *", "name", "ਪੂਰਾ ਨਾਮ")}
-            {field("ਅਹੁਦਾ", "designation", "ਮੈਂਬਰ / ਪ੍ਰਧਾਨ...")}
-            {field("ਪਿੰਡ *", "village")}
-            {field("ਤਹਿਸੀਲ *", "tehsil")}
-            {field("ਜ਼ਿਲ੍ਹਾ *", "district")}
-            {field("ਮੋਬਾਈਲ", "mobileNumber", "10 ਅੰਕ")}
-            {field("ਆਧਾਰ ਨੰਬਰ", "aadhaarNumber", "12 ਅੰਕ")}
+            {textField("ਨਾਮ *", "name", "ਪੂਰਾ ਨਾਮ")}
+            {textField("ਅਹੁਦਾ", "designation", "ਮੈਂਬਰ / ਪ੍ਰਧਾਨ...")}
+            {textField("ਮੋਬਾਈਲ", "mobileNumber", "10 ਅੰਕ")}
+            {textField("ਆਧਾਰ ਨੰਬਰ", "aadhaarNumber", "12 ਅੰਕ")}
           </div>
+
+          <div className="space-y-1.5">
+            <Label className="text-sm">ਖੇਤਰ ਦੀ ਕਿਸਮ</Label>
+            <div className="grid grid-cols-2 gap-2">
+              {(["rural", "urban"] as const).map(t => (
+                <button key={t} type="button"
+                  onClick={() => setForm(f => ({ ...f, areaType: t, wardNumber: "", mohalla: "" }))}
+                  className={`py-2 rounded-md border text-sm font-medium transition-colors ${form.areaType === t ? "bg-primary text-primary-foreground border-primary" : "border-input hover:bg-muted"}`}>
+                  {t === "rural" ? "🌾 ਪੇਂਡੂ (Rural)" : "🏙️ ਸ਼ਹਿਰੀ (Urban)"}
+                </button>
+              ))}
+            </div>
+          </div>
+
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+            <div className="space-y-1.5">
+              <Label className="text-sm">ਜ਼ਿਲ੍ਹਾ *</Label>
+              <select value={form.district}
+                onChange={(e) => setForm(f => ({ ...f, district: e.target.value, tehsil: "" }))}
+                className={selectCls + " h-9"}>
+                <option value="">ਜ਼ਿਲ੍ਹਾ ਚੁਣੋ</option>
+                {PUNJAB_DISTRICTS.map(d => <option key={d.name} value={d.name}>{d.name}</option>)}
+              </select>
+            </div>
+            <div className="space-y-1.5">
+              <Label className="text-sm">ਤਹਿਸੀਲ *</Label>
+              <select value={form.tehsil}
+                onChange={(e) => setForm(f => ({ ...f, tehsil: e.target.value }))}
+                className={selectCls + " h-9"} disabled={!form.district}>
+                <option value="">ਤਹਿਸੀਲ ਚੁਣੋ</option>
+                {tehsilsForDistrict.map(t => <option key={t} value={t}>{t}</option>)}
+              </select>
+            </div>
+          </div>
+
+          {textField(form.areaType === "urban" ? "ਸ਼ਹਿਰ/ਨਗਰ *" : "ਪਿੰਡ *", "village", form.areaType === "urban" ? "ਸ਼ਹਿਰ ਦਾ ਨਾਮ" : "ਪਿੰਡ ਦਾ ਨਾਮ")}
+
+          {form.areaType === "urban" && (
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+              {textField("ਵਾਰਡ ਨੰਬਰ (ਵਿਕਲਪਿਕ)", "wardNumber", "ਵਾਰਡ ਨੰਬਰ")}
+              {textField("ਮੁਹੱਲਾ (ਵਿਕਲਪਿਕ)", "mohalla", "ਮੁਹੱਲਾ")}
+            </div>
+          )}
+
           <div className="space-y-1.5">
             <Label className="text-sm">ਫ਼ੋਟੋ</Label>
             <Input type="file" accept="image/*" onChange={(e) => setPhoto(e.target.files?.[0] || null)} />
@@ -469,7 +726,6 @@ function AnalyticsDashboard() {
 
   return (
     <div className="space-y-6">
-      {/* Summary cards */}
       <div className="grid grid-cols-2 md:grid-cols-3 gap-4">
         <Card className="md:col-span-1">
           <CardContent className="pt-5 pb-4 text-center">
@@ -496,7 +752,6 @@ function AnalyticsDashboard() {
         </Card>
       </div>
 
-      {/* Page breakdown */}
       <Card>
         <CardHeader><CardTitle className="text-base flex items-center gap-2"><BarChart2 className="h-5 w-5 text-primary" /> ਪੰਨੇ ਅਨੁਸਾਰ ਵਿਜ਼ਿਟ</CardTitle></CardHeader>
         <CardContent className="space-y-3">
@@ -509,17 +764,13 @@ function AnalyticsDashboard() {
                 <span className="text-muted-foreground font-mono">{row.count}</span>
               </div>
               <div className="h-2 bg-muted rounded-full overflow-hidden">
-                <div
-                  className="h-full bg-primary rounded-full transition-all"
-                  style={{ width: `${Math.round((row.count / maxCount) * 100)}%` }}
-                />
+                <div className="h-full bg-primary rounded-full transition-all" style={{ width: `${Math.round((row.count / maxCount) * 100)}%` }} />
               </div>
             </div>
           ))}
         </CardContent>
       </Card>
 
-      {/* Last 7 days */}
       <Card>
         <CardHeader><CardTitle className="text-base flex items-center gap-2"><TrendingUp className="h-5 w-5 text-green-500" /> ਪਿਛਲੇ 7 ਦਿਨ</CardTitle></CardHeader>
         <CardContent>
@@ -551,12 +802,13 @@ function AnalyticsDashboard() {
 
 // ─── Main Admin Panel ──────────────────────────────────────
 export default function Admin() {
-  const { isLoading: authLoading, isAuthenticated, logout } = useAuth();
+  const { isLoading: authLoading, isAuthenticated, needsPin, logout } = useAuth();
   const { data: registrations, isLoading } = useRegistrations();
   const downloadAll = useDownloadRegistrations();
   const [search, setSearch] = useState("");
 
   if (authLoading) return <div className="min-h-screen flex items-center justify-center"><Loader2 className="h-8 w-8 animate-spin text-primary" /></div>;
+  if (needsPin) return <PinForm />;
   if (!isAuthenticated) return <LoginForm />;
 
   const allRegs = registrations || [];
@@ -576,7 +828,6 @@ export default function Admin() {
     <div className="min-h-screen bg-background py-6 px-4">
       <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} className="max-w-5xl mx-auto">
 
-        {/* Header */}
         <div className="flex items-center justify-between mb-6">
           <div className="flex items-center gap-3">
             <div className="bg-primary/10 p-3 rounded-full"><ShieldCheck className="h-7 w-7 text-primary" /></div>
@@ -587,7 +838,6 @@ export default function Admin() {
           </Button>
         </div>
 
-        {/* Stats */}
         <div className="grid grid-cols-2 md:grid-cols-4 gap-3 mb-6">
           {[
             { label: "ਕੁੱਲ", value: isLoading ? "..." : allRegs.length, color: "text-primary" },
@@ -602,7 +852,6 @@ export default function Admin() {
           ))}
         </div>
 
-        {/* Tabs */}
         <Tabs defaultValue="pending">
           <TabsList className="grid grid-cols-5 mb-6 h-auto">
             <TabsTrigger value="pending" className="flex items-center gap-1.5 py-2.5 text-xs">
@@ -623,7 +872,6 @@ export default function Admin() {
             </TabsTrigger>
           </TabsList>
 
-          {/* PENDING TAB */}
           <TabsContent value="pending">
             {isLoading ? (
               <div className="flex justify-center py-16"><Loader2 className="h-8 w-8 animate-spin text-primary" /></div>
@@ -638,7 +886,6 @@ export default function Admin() {
             )}
           </TabsContent>
 
-          {/* APPROVED TAB */}
           <TabsContent value="approved">
             <div className="flex flex-col sm:flex-row gap-3 mb-4">
               <Input placeholder="ਖੋਜੋ — ਨਾਮ, ਪਿੰਡ, ਮੋਬਾਈਲ, Card No..."
@@ -660,13 +907,8 @@ export default function Admin() {
             )}
           </TabsContent>
 
-          {/* DIRECT ENTRY TAB */}
           <TabsContent value="direct"><DirectEntryForm /></TabsContent>
-
-          {/* UPDATES TAB */}
           <TabsContent value="updates"><UpdatesManager /></TabsContent>
-
-          {/* ANALYTICS TAB */}
           <TabsContent value="analytics"><AnalyticsDashboard /></TabsContent>
         </Tabs>
       </motion.div>
