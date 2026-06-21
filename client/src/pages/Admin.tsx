@@ -30,7 +30,6 @@ function LoginForm() {
   const { login, isLoggingIn, loginError } = useAuth();
   const [username, setUsername] = useState("");
   const [password, setPassword] = useState("");
-  const [showUsername, setShowUsername] = useState(false);
   const [showPassword, setShowPassword] = useState(false);
   const { toast } = useToast();
 
@@ -56,15 +55,9 @@ function LoginForm() {
             <form onSubmit={handleSubmit} className="space-y-4">
               <div className="space-y-2">
                 <Label htmlFor="username">ਯੂਜ਼ਰਨੇਮ</Label>
-                <div className="relative">
-                  <Input id="username" type={showUsername ? "text" : "password"} value={username}
-                    onChange={(e) => setUsername(e.target.value)} placeholder="ਯੂਜ਼ਰਨੇਮ"
-                    required data-testid="input-username" className="pr-10" />
-                  <button type="button" onClick={() => setShowUsername(!showUsername)}
-                    className="absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground" tabIndex={-1}>
-                    {showUsername ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
-                  </button>
-                </div>
+                <Input id="username" type="text" value={username} autoComplete="username"
+                  onChange={(e) => setUsername(e.target.value)} placeholder="ਯੂਜ਼ਰਨੇਮ"
+                  required data-testid="input-username" />
               </div>
               <div className="space-y-2">
                 <Label htmlFor="password">ਪਾਸਵਰਡ</Label>
