@@ -3,9 +3,8 @@ import { registrations, updates, pageViews, type Registration, type Update } fro
 import { eq, desc, sql } from "drizzle-orm";
 
 function generateCardNumber(): string {
-  const year = new Date().getFullYear();
   const rand = Math.floor(100000 + Math.random() * 900000);
-  return `KUP-${year}-${rand}`;
+  return `KSCPKB-${rand}`;
 }
 
 type RegistrationData = {

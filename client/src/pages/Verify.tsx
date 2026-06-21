@@ -1,7 +1,7 @@
 import { useEffect, useState } from "react";
-import { useParams } from "wouter";
+import { useParams, useLocation } from "wouter";
 import { motion } from "framer-motion";
-import { CheckCircle2, XCircle, AlertTriangle, Loader2, Shield } from "lucide-react";
+import { CheckCircle2, XCircle, AlertTriangle, Loader2, Shield, ArrowLeft } from "lucide-react";
 
 interface VerifyData {
   valid: boolean;
@@ -22,6 +22,7 @@ interface VerifyData {
 
 export default function Verify() {
   const { cardNumber } = useParams<{ cardNumber: string }>();
+  const [, setLocation] = useLocation();
   const [data, setData] = useState<VerifyData | null>(null);
   const [loading, setLoading] = useState(true);
   const [notFound, setNotFound] = useState(false);
@@ -35,6 +36,19 @@ export default function Verify() {
       .then((d) => { if (d) setData(d); setLoading(false); })
       .catch(() => { setNotFound(true); setLoading(false); });
   }, [cardNumber]);
+
+  const BackButton = () => (
+    <button
+      onClick={() => setLocation("/")}
+      className="flex items-center gap-2 text-green-300 hover:text-white transition-colors mb-6 group"
+      data-testid="button-back-home"
+    >
+      <div className="bg-white/10 group-hover:bg-white/20 rounded-full p-2 transition-colors">
+        <ArrowLeft className="h-5 w-5" />
+      </div>
+      <span className="text-sm font-medium">ਮੁੱਖ ਪੰਨਾ</span>
+    </button>
+  );
 
   if (loading) {
     return (
@@ -50,7 +64,8 @@ export default function Verify() {
   if (notFound || !data) {
     return (
       <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-red-900 to-red-800 px-4">
-        <motion.div initial={{ opacity: 0, scale: 0.9 }} animate={{ opacity: 1, scale: 1 }} className="text-center max-w-sm">
+        <motion.div initial={{ opacity: 0, scale: 0.9 }} animate={{ opacity: 1, scale: 1 }} className="text-center max-w-sm w-full">
+          <BackButton />
           <div className="w-24 h-24 rounded-full bg-red-700/50 flex items-center justify-center mx-auto mb-6">
             <XCircle className="h-14 w-14 text-red-300" />
           </div>
@@ -70,6 +85,8 @@ export default function Verify() {
   return (
     <div className="min-h-screen bg-gradient-to-br from-green-950 via-green-900 to-emerald-950 flex items-center justify-center px-4 py-10">
       <motion.div initial={{ opacity: 0, y: 40 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.5 }} className="w-full max-w-sm">
+
+        <BackButton />
 
         {/* Status badge */}
         <div className="flex justify-center mb-5">
@@ -95,10 +112,8 @@ export default function Verify() {
 
           {/* Card Top — Green Header */}
           <div className="bg-gradient-to-r from-green-800 to-green-700 px-5 py-4 relative overflow-hidden">
-            {/* Decorative circles */}
             <div className="absolute -top-6 -right-6 w-24 h-24 rounded-full bg-white/5" />
             <div className="absolute -bottom-4 -left-4 w-16 h-16 rounded-full bg-white/5" />
-
             <div className="flex items-center gap-3 relative">
               <div className="bg-white/15 rounded-full p-2">
                 <Shield className="h-7 w-7 text-yellow-300" />
@@ -115,9 +130,7 @@ export default function Verify() {
 
           {/* Card Body — White */}
           <div className="bg-white">
-            {/* Photo + Name */}
             <div className="flex items-stretch">
-              {/* Left — Photo */}
               <div className="bg-green-50 p-4 flex items-center justify-center border-r border-green-100" style={{ minWidth: "110px" }}>
                 {data.photoUrl ? (
                   <img src={data.photoUrl} alt={data.name}
@@ -128,8 +141,6 @@ export default function Verify() {
                   </div>
                 )}
               </div>
-
-              {/* Right — Details */}
               <div className="flex-1 p-4 space-y-2">
                 <div>
                   <p className="text-xs text-gray-400 uppercase tracking-wider">ਨਾਮ / Name</p>
@@ -169,9 +180,9 @@ export default function Verify() {
             </div>
           </div>
 
-          {/* Card Footer — Dark */}
+          {/* Card Footer */}
           <div className="bg-gray-900 px-4 py-3 text-center">
-            <p className="text-gray-400 text-xs">Kisan Sangharsh Committee Punjab</p>
+            <p className="text-gray-400 text-xs">Kisan Sangharsh Committee Punjab (Kot Budha)</p>
             <p className="text-gray-600 text-xs font-mono mt-0.5">kisan-union-punjab.fly.dev</p>
           </div>
         </motion.div>
@@ -186,7 +197,7 @@ export default function Verify() {
         )}
 
         <p className="text-center text-green-700 text-xs mt-5 opacity-60">
-          Verified by KMSC Punjab Digital System
+          Verified by KSCPKB Digital System
         </p>
       </motion.div>
     </div>
