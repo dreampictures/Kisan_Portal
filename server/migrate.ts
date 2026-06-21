@@ -59,6 +59,20 @@ export async function runMigrations() {
         viewed_at TIMESTAMP DEFAULT NOW()
       );
     `);
+
+    await client.query(`
+      ALTER TABLE registrations ADD COLUMN IF NOT EXISTS area_type TEXT DEFAULT 'rural';
+      ALTER TABLE registrations ADD COLUMN IF NOT EXISTS ward_number TEXT;
+      ALTER TABLE registrations ADD COLUMN IF NOT EXISTS mohalla TEXT;
+      ALTER TABLE registrations ADD COLUMN IF NOT EXISTS photo_url TEXT;
+      ALTER TABLE registrations ADD COLUMN IF NOT EXISTS photo_data TEXT;
+      ALTER TABLE registrations ADD COLUMN IF NOT EXISTS photo_mime_type TEXT;
+      ALTER TABLE registrations ADD COLUMN IF NOT EXISTS valid_from TIMESTAMP;
+      ALTER TABLE registrations ADD COLUMN IF NOT EXISTS valid_until TIMESTAMP;
+      ALTER TABLE registrations ADD COLUMN IF NOT EXISTS card_number TEXT;
+      ALTER TABLE registrations ADD COLUMN IF NOT EXISTS designation TEXT DEFAULT 'ਮੈਂਬਰ';
+    `);
+
     console.log("[migrate] All tables ready");
   } catch (err) {
     console.error("[migrate] Migration error:", err);
