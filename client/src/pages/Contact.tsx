@@ -34,13 +34,19 @@ const selectCls = "flex h-12 w-full rounded-md border border-input bg-background
 const formSchema = insertRegistrationSchema.extend({
   photo: z
     .instanceof(FileList)
-    .refine((files) => files?.length === 1, "ਫੋਟੋ ਲੋੜੀਂਦੀ ਹੈ")
+    .refine((files) => files?.length === 1, "ਫੋਟੋ ਲਾਜ਼ਮੀ ਹੈ")
     .refine((files) => files?.[0]?.size <= 5000000, "ਵੱਧ ਤੋਂ ਵੱਧ ਆਕਾਰ 5MB")
     .refine(
       (files) =>
         ["image/jpeg", "image/png", "image/jpg"].includes(files?.[0]?.type),
       "ਸਿਰਫ਼ .jpg, .jpeg, .png ਸਮਰਥਿਤ ਹਨ",
     ),
+  aadhaarNumber: z.string().length(12, "ਆਧਾਰ ਨੰਬਰ 12 ਅੰਕ ਹੋਣਾ ਚਾਹੀਦਾ ਹੈ"),
+  mobileNumber: z.string().min(10, "ਮੋਬਾਈਲ ਨੰਬਰ 10 ਅੰਕ ਹੋਣਾ ਚਾਹੀਦਾ ਹੈ").max(10, "ਮੋਬਾਈਲ ਨੰਬਰ 10 ਅੰਕ ਹੋਣਾ ਚਾਹੀਦਾ ਹੈ"),
+  name: z.string().min(1, "ਨਾਮ ਲਾਜ਼ਮੀ ਹੈ"),
+  village: z.string().min(1, "ਪਿੰਡ/ਸ਼ਹਿਰ ਲਾਜ਼ਮੀ ਹੈ"),
+  tehsil: z.string().min(1, "ਤਹਿਸੀਲ ਲਾਜ਼ਮੀ ਹੈ"),
+  district: z.string().min(1, "ਜ਼ਿਲ੍ਹਾ ਲਾਜ਼ਮੀ ਹੈ"),
   areaType: z.enum(["rural", "urban"]).default("rural"),
   wardNumber: z.string().optional().or(z.literal("")),
   mohalla: z.string().optional().or(z.literal("")),
@@ -209,9 +215,9 @@ export default function Contact() {
                       name="aadhaarNumber"
                       render={({ field }) => (
                         <FormItem>
-                          <FormLabel>ਆਧਾਰ ਨੰਬਰ (12 ਅੰਕ)</FormLabel>
+                          <FormLabel>ਆਧਾਰ ਨੰਬਰ (12 ਅੰਕ) *</FormLabel>
                           <FormControl>
-                            <Input data-testid="input-aadhaar" placeholder="XXXX XXXX XXXX" {...field} maxLength={12} className="h-12 font-mono" />
+                            <Input data-testid="input-aadhaar" placeholder="XXXXXXXXXXXX" {...field} maxLength={12} className="h-12 font-mono" />
                           </FormControl>
                           <FormMessage />
                         </FormItem>
@@ -222,7 +228,7 @@ export default function Contact() {
                       name="mobileNumber"
                       render={({ field }) => (
                         <FormItem>
-                          <FormLabel>ਮੋਬਾਈਲ ਨੰਬਰ</FormLabel>
+                          <FormLabel>ਮੋਬਾਈਲ ਨੰਬਰ *</FormLabel>
                           <FormControl>
                             <Input data-testid="input-mobile" placeholder="9876543210" {...field} maxLength={10} className="h-12 font-mono" />
                           </FormControl>

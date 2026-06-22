@@ -460,15 +460,30 @@ export async function registerRoutes(httpServer: Server, app: Express): Promise<
     }
   });
 
+  // ── Public: site stats (visitor count for homepage) ─────────
+  app.get("/api/stats", async (req, res) => {
+    try {
+      const [total, today] = await Promise.all([
+        storage.getTotalVisits(),
+        storage.getTodayVisits(),
+      ]);
+      res.json({ total, today });
+    } catch (err) {
+      res.json({ total: 0, today: 0 });
+    }
+  });
+
   // ── Admin: analytics ────────────────────────────────────────
   app.get("/api/admin/analytics", isAdminAuth, async (req: any, res: any) => {
     try {
-      const [pageStats, totalVisits, last7Days] = await Promise.all([
+      const days = Math.min(parseInt(String(req.query.days || "7")), 365) || 7;
+      const [pageStats, totalVisits, todayVisits, dailyData] = await Promise.all([
         storage.getPageViewStats(),
         storage.getTotalVisits(),
-        storage.getVisitsLast7Days(),
+        storage.getTodayVisits(),
+        storage.getVisitsByDays(days),
       ]);
-      res.json({ pageStats, totalVisits, last7Days });
+      res.json({ pageStats, totalVisits, todayVisits, dailyData, days });
     } catch (err) {
       console.error(err);
       res.status(500).json({ message: "Analytics ਲੋਡ ਨਹੀਂ ਹੋਈ" });

@@ -699,54 +699,153 @@ function UpdatesManager() {
 
 // ─── Analytics Dashboard ───────────────────────────────────
 function AnalyticsDashboard() {
-  const { data, isLoading } = useQuery<{
+  const [days, setDays] = useState(7);
+  const [customDays, setCustomDays] = useState("");
+  const [showCustom, setShowCustom] = useState(false);
+
+  const { data, isLoading, refetch } = useQuery<{
     pageStats: { page: string; count: number }[];
     totalVisits: number;
-    last7Days: { date: string; count: number }[];
-  }>({ queryKey: ["/api/admin/analytics"] });
+    todayVisits: number;
+    dailyData: { date: string; count: number }[];
+    days: number;
+  }>({ queryKey: ["/api/admin/analytics", days], queryFn: () =>
+    fetch(`/api/admin/analytics?days=${days}`, { credentials: "include" }).then(r => r.json())
+  });
 
   const pageLabels: Record<string, string> = {
     "/": "ਮੁੱਖ ਪੰਨਾ",
     "/about": "ਯੂਨੀਅਨ ਬਾਰੇ",
     "/updates": "ਤਾਜ਼ੀਆਂ ਖ਼ਬਰਾਂ",
-    "/contact": "ਪਛਾਣ ਪੱਤਰ",
+    "/contact": "ਰਜਿਸਟ੍ਰੇਸ਼ਨ",
+    "/verify": "Card ਤਸਦੀਕ",
     "/admin": "ਐਡਮਿਨ",
   };
 
-  const maxCount = data?.pageStats?.[0]?.count || 1;
+  const maxPageCount = data?.pageStats?.[0]?.count || 1;
+  const dailyMax = Math.max(...(data?.dailyData?.map(d => d.count) ?? [1]), 1);
+  const periodTotal = data?.dailyData?.reduce((s, d) => s + d.count, 0) ?? 0;
+
+  const presets = [
+    { label: "ਅੱਜ", value: 1 },
+    { label: "7 ਦਿਨ", value: 7 },
+    { label: "30 ਦਿਨ", value: 30 },
+    { label: "ਆਪਣੇ ਆਪ", value: 0 },
+  ];
+
+  const handlePreset = (v: number) => {
+    if (v === 0) { setShowCustom(true); return; }
+    setShowCustom(false);
+    setDays(v);
+  };
+
+  const applyCustom = () => {
+    const n = parseInt(customDays);
+    if (n > 0 && n <= 365) { setDays(n); setShowCustom(false); }
+  };
 
   if (isLoading) return <div className="flex justify-center py-16"><Loader2 className="h-8 w-8 animate-spin text-primary" /></div>;
 
   return (
-    <div className="space-y-6">
-      <div className="grid grid-cols-2 md:grid-cols-3 gap-4">
-        <Card className="md:col-span-1">
-          <CardContent className="pt-5 pb-4 text-center">
-            <Globe className="h-6 w-6 text-primary mx-auto mb-2" />
-            <p className="text-xs text-muted-foreground mb-1">ਕੁੱਲ ਵਿਜ਼ਿਟ</p>
-            <div className="text-3xl font-bold text-primary">{data?.totalVisits ?? 0}</div>
+    <div className="space-y-5">
+
+      {/* Stats summary */}
+      <div className="grid grid-cols-3 gap-3">
+        <Card>
+          <CardContent className="pt-4 pb-3 text-center">
+            <Globe className="h-5 w-5 text-primary mx-auto mb-1" />
+            <p className="text-xs text-muted-foreground">ਕੁੱਲ ਵਿਜ਼ਿਟ</p>
+            <div className="text-2xl font-bold text-primary">{(data?.totalVisits ?? 0).toLocaleString()}</div>
           </CardContent>
         </Card>
-        <Card className="md:col-span-1">
-          <CardContent className="pt-5 pb-4 text-center">
-            <BarChart2 className="h-6 w-6 text-blue-500 mx-auto mb-2" />
-            <p className="text-xs text-muted-foreground mb-1">ਪੰਨੇ ਟਰੈਕ</p>
-            <div className="text-3xl font-bold text-blue-500">{data?.pageStats?.length ?? 0}</div>
+        <Card>
+          <CardContent className="pt-4 pb-3 text-center">
+            <TrendingUp className="h-5 w-5 text-green-500 mx-auto mb-1" />
+            <p className="text-xs text-muted-foreground">ਅੱਜ</p>
+            <div className="text-2xl font-bold text-green-600">{(data?.todayVisits ?? 0).toLocaleString()}</div>
           </CardContent>
         </Card>
-        <Card className="col-span-2 md:col-span-1">
-          <CardContent className="pt-5 pb-4 text-center">
-            <TrendingUp className="h-6 w-6 text-green-500 mx-auto mb-2" />
-            <p className="text-xs text-muted-foreground mb-1">ਅੱਜ (7 ਦਿਨ ਦਾ ਕੁੱਲ)</p>
-            <div className="text-3xl font-bold text-green-500">
-              {data?.last7Days?.reduce((s, d) => s + d.count, 0) ?? 0}
-            </div>
+        <Card>
+          <CardContent className="pt-4 pb-3 text-center">
+            <BarChart2 className="h-5 w-5 text-blue-500 mx-auto mb-1" />
+            <p className="text-xs text-muted-foreground">{days === 1 ? "ਅੱਜ" : `${days} ਦਿਨ`} ਕੁੱਲ</p>
+            <div className="text-2xl font-bold text-blue-600">{periodTotal.toLocaleString()}</div>
           </CardContent>
         </Card>
       </div>
 
+      {/* Daily visits chart */}
       <Card>
-        <CardHeader><CardTitle className="text-base flex items-center gap-2"><BarChart2 className="h-5 w-5 text-primary" /> ਪੰਨੇ ਅਨੁਸਾਰ ਵਿਜ਼ਿਟ</CardTitle></CardHeader>
+        <CardHeader className="pb-3">
+          <div className="flex flex-wrap items-center justify-between gap-3">
+            <CardTitle className="text-base flex items-center gap-2">
+              <TrendingUp className="h-4 w-4 text-green-500" /> ਰੋਜ਼ਾਨਾ ਵਿਜ਼ਿਟ
+            </CardTitle>
+            <div className="flex flex-wrap gap-1.5">
+              {presets.map(p => (
+                <button
+                  key={p.value}
+                  onClick={() => handlePreset(p.value)}
+                  className={`px-3 py-1 rounded-full text-xs font-medium border transition-colors ${
+                    days === p.value && !showCustom
+                      ? "bg-primary text-primary-foreground border-primary"
+                      : "border-border hover:bg-muted"
+                  }`}
+                >
+                  {p.label}
+                </button>
+              ))}
+            </div>
+          </div>
+          {showCustom && (
+            <div className="flex items-center gap-2 mt-2">
+              <input
+                type="number"
+                value={customDays}
+                onChange={e => setCustomDays(e.target.value)}
+                placeholder="ਦਿਨਾਂ ਦੀ ਗਿਣਤੀ (1-365)"
+                className="flex-1 border border-input rounded-md px-3 py-1.5 text-sm"
+                min="1" max="365"
+              />
+              <button onClick={applyCustom} className="bg-primary text-primary-foreground px-4 py-1.5 rounded-md text-sm font-medium">
+                ਲਾਗੂ
+              </button>
+            </div>
+          )}
+        </CardHeader>
+        <CardContent>
+          {!data?.dailyData?.length ? (
+            <p className="text-center text-muted-foreground py-8">ਇਸ ਸਮੇਂ ਲਈ ਕੋਈ ਡੇਟਾ ਨਹੀਂ</p>
+          ) : (
+            <div className="space-y-2">
+              {data.dailyData.map((row) => {
+                const d = new Date(row.date + "T00:00:00");
+                const isToday = new Date().toDateString() === d.toDateString();
+                return (
+                  <div key={row.date} className="flex items-center gap-3">
+                    <span className={`text-xs w-20 shrink-0 font-mono ${isToday ? "text-primary font-bold" : "text-muted-foreground"}`}>
+                      {isToday ? "ਅੱਜ" : d.toLocaleDateString("en-IN", { day: "2-digit", month: "short" })}
+                    </span>
+                    <div className="flex-1 h-5 bg-muted rounded overflow-hidden">
+                      <div
+                        className={`h-full rounded transition-all ${isToday ? "bg-primary" : "bg-green-500"}`}
+                        style={{ width: `${Math.max(Math.round((row.count / dailyMax) * 100), 2)}%` }}
+                      />
+                    </div>
+                    <span className={`text-xs font-bold w-8 text-right ${isToday ? "text-primary" : "text-muted-foreground"}`}>
+                      {row.count}
+                    </span>
+                  </div>
+                );
+              })}
+            </div>
+          )}
+        </CardContent>
+      </Card>
+
+      {/* Page breakdown */}
+      <Card>
+        <CardHeader><CardTitle className="text-base flex items-center gap-2"><BarChart2 className="h-4 w-4 text-primary" /> ਪੰਨੇ ਅਨੁਸਾਰ ਵਿਜ਼ਿਟ (ਕੁੱਲ)</CardTitle></CardHeader>
         <CardContent className="space-y-3">
           {!data?.pageStats?.length ? (
             <p className="text-center text-muted-foreground py-6">ਅਜੇ ਕੋਈ ਡੇਟਾ ਨਹੀਂ</p>
@@ -754,39 +853,13 @@ function AnalyticsDashboard() {
             <div key={row.page}>
               <div className="flex justify-between text-sm mb-1">
                 <span className="font-medium">{pageLabels[row.page] ?? row.page}</span>
-                <span className="text-muted-foreground font-mono">{row.count}</span>
+                <span className="text-muted-foreground font-mono font-bold">{row.count.toLocaleString()}</span>
               </div>
               <div className="h-2 bg-muted rounded-full overflow-hidden">
-                <div className="h-full bg-primary rounded-full transition-all" style={{ width: `${Math.round((row.count / maxCount) * 100)}%` }} />
+                <div className="h-full bg-primary rounded-full" style={{ width: `${Math.round((row.count / maxPageCount) * 100)}%` }} />
               </div>
             </div>
           ))}
-        </CardContent>
-      </Card>
-
-      <Card>
-        <CardHeader><CardTitle className="text-base flex items-center gap-2"><TrendingUp className="h-5 w-5 text-green-500" /> ਪਿਛਲੇ 7 ਦਿਨ</CardTitle></CardHeader>
-        <CardContent>
-          {!data?.last7Days?.length ? (
-            <p className="text-center text-muted-foreground py-6">ਅਜੇ ਕੋਈ ਡੇਟਾ ਨਹੀਂ</p>
-          ) : (
-            <div className="space-y-2">
-              {data.last7Days.map((row) => {
-                const dayMax = Math.max(...data.last7Days.map(d => d.count), 1);
-                return (
-                  <div key={row.date} className="flex items-center gap-3">
-                    <span className="text-xs text-muted-foreground w-24 shrink-0 font-mono">
-                      {new Date(row.date).toLocaleDateString("pa-IN", { day: "2-digit", month: "short" })}
-                    </span>
-                    <div className="flex-1 h-2 bg-muted rounded-full overflow-hidden">
-                      <div className="h-full bg-green-500 rounded-full" style={{ width: `${Math.round((row.count / dayMax) * 100)}%` }} />
-                    </div>
-                    <span className="text-xs font-mono text-muted-foreground w-8 text-right">{row.count}</span>
-                  </div>
-                );
-              })}
-            </div>
-          )}
         </CardContent>
       </Card>
     </div>

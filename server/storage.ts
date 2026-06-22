@@ -50,6 +50,8 @@ export interface IStorage {
   getPageViewStats(): Promise<{ page: string; count: number }[]>;
   getTotalVisits(): Promise<number>;
   getVisitsLast7Days(): Promise<{ date: string; count: number }[]>;
+  getVisitsByDays(days: number): Promise<{ date: string; count: number }[]>;
+  getTodayVisits(): Promise<number>;
 }
 
 export class DatabaseStorage implements IStorage {
@@ -208,6 +210,27 @@ export class DatabaseStorage implements IStorage {
       .groupBy(sql`date_trunc('day', ${pageViews.viewedAt})`)
       .orderBy(sql`date_trunc('day', ${pageViews.viewedAt})`);
     return rows;
+  }
+
+  async getVisitsByDays(days: number): Promise<{ date: string; count: number }[]> {
+    const rows = await db
+      .select({
+        date: sql<string>`date_trunc('day', ${pageViews.viewedAt})::date::text`,
+        count: sql<number>`count(*)::int`,
+      })
+      .from(pageViews)
+      .where(sql`${pageViews.viewedAt} >= now() - interval '1 day' * ${days}`)
+      .groupBy(sql`date_trunc('day', ${pageViews.viewedAt})`)
+      .orderBy(sql`date_trunc('day', ${pageViews.viewedAt})`);
+    return rows;
+  }
+
+  async getTodayVisits(): Promise<number> {
+    const [row] = await db
+      .select({ count: sql<number>`count(*)::int` })
+      .from(pageViews)
+      .where(sql`${pageViews.viewedAt} >= date_trunc('day', now())`);
+    return row?.count ?? 0;
   }
 }
 
