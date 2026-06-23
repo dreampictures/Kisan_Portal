@@ -3,10 +3,5 @@ node_modules
 *.log
 .git
 .gitignore
-attached_assets
-client
-server
-shared
-script
-migrations
 .local
+attached_assets
