@@ -1,0 +1,3 @@
+- [Multi-level approval workflow](approval-workflow.md) — 3-stage approval: state_meet_president → state_president → admin; currentStage drives PendingCard button visibility.
+- [Staff auth flow](staff-auth.md) — POST /api/admin/login checks staff_users table first, falls back to env vars. Admin needs 4-digit PIN (session: pinVerified). Others skip PIN.
+- [Tracking ID system](tracking-ids.md) — registrations get TRK-XXXXXX on creation; public /api/track?trackingId= or ?mobile= endpoint (no auth); visible in success modal.

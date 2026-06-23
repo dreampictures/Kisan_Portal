@@ -58,6 +58,38 @@ export async function runMigrations() {
         page TEXT NOT NULL,
         viewed_at TIMESTAMP DEFAULT NOW()
       );
+
+      CREATE TABLE IF NOT EXISTS staff_users (
+        id SERIAL PRIMARY KEY,
+        username TEXT UNIQUE NOT NULL,
+        password TEXT NOT NULL,
+        display_name TEXT NOT NULL,
+        role TEXT NOT NULL,
+        created_at TIMESTAMP DEFAULT NOW()
+      );
+
+      CREATE TABLE IF NOT EXISTS delete_requests (
+        id SERIAL PRIMARY KEY,
+        member_id INTEGER NOT NULL,
+        member_name TEXT NOT NULL,
+        requested_by TEXT NOT NULL,
+        requested_by_role TEXT NOT NULL,
+        reason TEXT NOT NULL,
+        status TEXT NOT NULL DEFAULT 'pending',
+        created_at TIMESTAMP DEFAULT NOW(),
+        resolved_by TEXT,
+        resolved_at TIMESTAMP
+      );
+
+      CREATE TABLE IF NOT EXISTS activity_logs (
+        id SERIAL PRIMARY KEY,
+        member_id INTEGER,
+        action TEXT NOT NULL,
+        performed_by TEXT NOT NULL,
+        role TEXT NOT NULL,
+        timestamp TIMESTAMP DEFAULT NOW(),
+        remarks TEXT
+      );
     `);
 
     await client.query(`
@@ -71,6 +103,42 @@ export async function runMigrations() {
       ALTER TABLE registrations ADD COLUMN IF NOT EXISTS valid_until TIMESTAMP;
       ALTER TABLE registrations ADD COLUMN IF NOT EXISTS card_number TEXT;
       ALTER TABLE registrations ADD COLUMN IF NOT EXISTS designation TEXT DEFAULT 'ਮੈਂਬਰ';
+
+      ALTER TABLE registrations ADD COLUMN IF NOT EXISTS tracking_id TEXT UNIQUE;
+      ALTER TABLE registrations ADD COLUMN IF NOT EXISTS current_stage TEXT DEFAULT 'submitted';
+      ALTER TABLE registrations ADD COLUMN IF NOT EXISTS submitted_at TIMESTAMP;
+      ALTER TABLE registrations ADD COLUMN IF NOT EXISTS meet_president_status TEXT;
+      ALTER TABLE registrations ADD COLUMN IF NOT EXISTS meet_president_by TEXT;
+      ALTER TABLE registrations ADD COLUMN IF NOT EXISTS meet_president_at TIMESTAMP;
+      ALTER TABLE registrations ADD COLUMN IF NOT EXISTS state_president_status TEXT;
+      ALTER TABLE registrations ADD COLUMN IF NOT EXISTS state_president_by TEXT;
+      ALTER TABLE registrations ADD COLUMN IF NOT EXISTS state_president_at TIMESTAMP;
+      ALTER TABLE registrations ADD COLUMN IF NOT EXISTS admin_status TEXT;
+      ALTER TABLE registrations ADD COLUMN IF NOT EXISTS admin_by TEXT;
+      ALTER TABLE registrations ADD COLUMN IF NOT EXISTS admin_at TIMESTAMP;
+      ALTER TABLE registrations ADD COLUMN IF NOT EXISTS rejected_by TEXT;
+      ALTER TABLE registrations ADD COLUMN IF NOT EXISTS rejected_reason TEXT;
+      ALTER TABLE registrations ADD COLUMN IF NOT EXISTS rejected_at TIMESTAMP;
+      ALTER TABLE registrations ADD COLUMN IF NOT EXISTS created_by TEXT;
+      ALTER TABLE registrations ADD COLUMN IF NOT EXISTS created_by_role TEXT;
+    `);
+
+    await client.query(`
+      UPDATE registrations
+      SET current_stage = 'card_issued'
+      WHERE status = 'approved' AND card_number IS NOT NULL AND current_stage = 'submitted';
+
+      UPDATE registrations
+      SET tracking_id = 'TRK-' || LPAD(FLOOR(RANDOM() * 900000 + 100000)::TEXT, 6, '0')
+      WHERE tracking_id IS NULL;
+
+      UPDATE registrations
+      SET submitted_at = created_at
+      WHERE submitted_at IS NULL;
+    `);
+
+    await client.query(`
+      CREATE UNIQUE INDEX IF NOT EXISTS registrations_tracking_id_key ON registrations (tracking_id) WHERE tracking_id IS NOT NULL;
     `);
 
     console.log("[migrate] All tables ready");

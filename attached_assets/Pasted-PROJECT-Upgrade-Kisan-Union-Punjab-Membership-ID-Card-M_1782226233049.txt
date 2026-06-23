@@ -1,0 +1,451 @@
+PROJECT: Upgrade Kisan Union Punjab Membership & ID Card Management System
+
+IMPORTANT:
+
+* Existing card generation system must NOT be changed.
+* Existing QR verification system must NOT be changed.
+* Existing card design must NOT be changed.
+* Existing verification pages must continue working.
+* Existing admin functionality must continue working.
+* New features should be added on top of the current system.
+
+====================================================
+
+1. REGISTRATION SUCCESS POPUP + TRACKING ID
+   ====================================================
+
+After successful member registration form submission:
+
+Generate a unique Tracking ID format:
+
+TRK-XXXXXX
+
+Example:
+TRK-847291
+
+Show a centered modal popup.
+
+Popup text:
+
+"ਤੁਹਾਡੀ ਮੈਂਬਰਸ਼ਿਪ ਅਰਜ਼ੀ ਸਫਲਤਾਪੂਰਵਕ ਪ੍ਰਾਪਤ ਹੋ ਗਈ ਹੈ।
+
+ਤੁਹਾਡੀ ਅਰਜ਼ੀ ਨੂੰ ਜਲਦ ਹੀ ਕਮੇਟੀ ਦੀ ਟੀਮ ਵੱਲੋਂ ਵੇਰੀਫਾਈ ਕੀਤਾ ਜਾਵੇਗਾ।
+
+ਤੁਹਾਡਾ Tracking ID:
+TRK-XXXXXX
+
+ਕਿਰਪਾ ਕਰਕੇ ਇਸ Tracking ID ਨੂੰ ਸੰਭਾਲ ਕੇ ਰੱਖੋ।"
+
+Show only one button:
+
+[ OK ]
+
+Popup must NOT auto close.
+
+Popup should close only when OK button is clicked.
+
+====================================================
+2. MULTI LEVEL APPROVAL WORKFLOW
+================================
+
+Create 3 approval roles:
+
+1. state_meet_president
+2. state_president
+3. admin
+
+New approval flow:
+
+Member Registration
+→ State Meet President Approval
+→ State President Approval
+→ Admin Approval
+→ Membership Card Generated
+
+Admin must still be able to directly approve members and generate cards immediately.
+
+====================================================
+3. USER ROLE SYSTEM
+===================
+
+Add role column to users table.
+
+Possible values:
+
+admin
+state_meet_president
+state_president
+
+Use one common login page.
+
+After login automatically redirect according to role.
+
+====================================================
+4. MEMBER TRACKING SYSTEM
+=========================
+
+Create new public page:
+
+/track
+
+Allow search using:
+
+Tracking ID
+
+OR
+
+Mobile Number
+
+Display:
+
+Member Name
+Village
+District
+Current Status
+Application Timeline
+Progress Percentage
+
+====================================================
+5. TIMELINE TRACKING
+====================
+
+Show timeline based on current stage.
+
+Example:
+
+✓ Application Submitted
+
+✓ State Meet President Approved
+
+✓ State President Approved
+
+⏳ Admin Approval Pending
+
+□ Membership Card Generated
+
+If card generated:
+
+✓ Application Submitted
+
+✓ State Meet President Approved
+
+✓ State President Approved
+
+✓ Admin Approved
+
+✓ Membership Card Generated
+
+====================================================
+6. PROGRESS BAR
+===============
+
+Display visual progress bar.
+
+Submitted = 20%
+
+Meet President Approved = 40%
+
+State President Approved = 60%
+
+Admin Approved = 80%
+
+Card Generated = 100%
+
+Rejected = Red Progress State
+
+====================================================
+7. TRACKING PAGE STATUS TYPES
+=============================
+
+Application Received
+
+Meet President Pending
+
+State President Pending
+
+Admin Pending
+
+Approved
+
+Rejected
+
+Card Generated
+
+If rejected:
+
+Show rejection reason.
+
+====================================================
+8. PRESIDENT MEMBER ENTRY
+=========================
+
+State Meet President can create members.
+
+State President can create members.
+
+Admin can create members.
+
+If created by presidents:
+
+Status should go to Admin Approval.
+
+Only Admin can generate card.
+
+====================================================
+9. DELETE REQUEST SYSTEM
+========================
+
+State Meet President:
+
+Can request delete.
+
+State President:
+
+Can request delete.
+
+Admin:
+
+Can permanently delete.
+
+Create delete_requests table.
+
+Fields:
+
+id
+member_id
+requested_by
+reason
+status
+created_at
+
+Delete reasons:
+
+Duplicate Member
+
+Wrong Information
+
+Member Left Committee
+
+Other
+
+====================================================
+10. ADMIN DELETE CONFIRMATION
+=============================
+
+Before permanent deletion:
+
+Show confirmation modal.
+
+Text:
+
+"ਕੀ ਤੁਸੀਂ ਇਹ ਮੈਂਬਰ ਅਤੇ ਇਸ ਦਾ ਕਾਰਡ ਸਥਾਈ ਤੌਰ ਤੇ ਡਿਲੀਟ ਕਰਨਾ ਚਾਹੁੰਦੇ ਹੋ?
+
+ਇਹ ਕਾਰਵਾਈ ਵਾਪਸ ਨਹੀਂ ਹੋ ਸਕੇਗੀ।"
+
+Buttons:
+
+Cancel
+
+Delete Member
+
+====================================================
+11. DASHBOARD IMPROVEMENTS
+==========================
+
+Create Applications Overview cards.
+
+Show:
+
+Total Applications
+
+Meet President Pending
+
+State President Pending
+
+Admin Pending
+
+Approved
+
+Rejected
+
+Delete Requests
+
+====================================================
+12. NOTIFICATION SYSTEM
+=======================
+
+Show notification badge in dashboard.
+
+Examples:
+
+New Application Received
+
+Approval Required
+
+Delete Request Pending
+
+====================================================
+13. AUDIT LOG SYSTEM
+====================
+
+Create activity_logs table.
+
+Store every important action.
+
+Examples:
+
+Application Submitted
+
+Meet President Approved
+
+State President Approved
+
+Admin Approved
+
+Card Generated
+
+Delete Requested
+
+Delete Approved
+
+Delete Rejected
+
+Fields:
+
+id
+member_id
+action
+performed_by
+role
+timestamp
+remarks
+
+====================================================
+14. DATABASE CHANGES
+====================
+
+registrations table:
+
+tracking_id
+
+current_stage
+
+submitted_at
+
+meet_president_status
+
+meet_president_by
+
+meet_president_at
+
+state_president_status
+
+state_president_by
+
+state_president_at
+
+admin_status
+
+admin_by
+
+admin_at
+
+rejected_by
+
+rejected_reason
+
+rejected_at
+
+created_by
+
+created_by_role
+
+====================================================
+15. ROLE PERMISSIONS
+====================
+
+STATE MEET PRESIDENT
+
+View members
+
+Add members
+
+First approval
+
+Delete request
+
+Tracking view
+
+No analytics
+
+No updates management
+
+No permanent delete
+
+---
+
+STATE PRESIDENT
+
+View members
+
+Add members
+
+Second approval
+
+Delete request
+
+Tracking view
+
+No analytics
+
+No updates management
+
+No permanent delete
+
+---
+
+ADMIN
+
+Full access
+
+Direct member approval
+
+Direct card generation
+
+Analytics
+
+Updates management
+
+Permanent deletion
+
+User management
+
+====================================================
+16. IMPORTANT REQUIREMENTS
+==========================
+
+Keep existing QR verification working.
+
+Keep existing card design unchanged.
+
+Keep existing card number generation unchanged.
+
+Keep existing approval functionality backward compatible.
+
+Migrate old approved members safely.
+
+Do not break existing data.
+
+Create proper database migration files.
+
+Use TypeScript types for all new models.
+
+Update React frontend, Express backend, Drizzle schema and PostgreSQL migrations accordingly.
+
+After implementation provide:
+
+1. Database migration summary
+2. API endpoints created
+3. Frontend pages created
+4. Role permission matrix
+5. Testing checklist

@@ -1,4 +1,4 @@
-import { pgTable, text, serial, timestamp, integer, date } from "drizzle-orm/pg-core";
+import { pgTable, text, serial, timestamp, integer, boolean } from "drizzle-orm/pg-core";
 import { createInsertSchema } from "drizzle-zod";
 import { z } from "zod";
 
@@ -24,6 +24,30 @@ export const registrations = pgTable("registrations", {
   validUntil: timestamp("valid_until"),
   status: text("status").default("pending").notNull(),
   createdAt: timestamp("created_at").defaultNow(),
+
+  // — New workflow fields —
+  trackingId: text("tracking_id").unique(),
+  currentStage: text("current_stage").default("submitted"),
+  submittedAt: timestamp("submitted_at"),
+
+  meetPresidentStatus: text("meet_president_status"),
+  meetPresidentBy: text("meet_president_by"),
+  meetPresidentAt: timestamp("meet_president_at"),
+
+  statePresidentStatus: text("state_president_status"),
+  statePresidentBy: text("state_president_by"),
+  statePresidentAt: timestamp("state_president_at"),
+
+  adminStatus: text("admin_status"),
+  adminBy: text("admin_by"),
+  adminAt: timestamp("admin_at"),
+
+  rejectedBy: text("rejected_by"),
+  rejectedReason: text("rejected_reason"),
+  rejectedAt: timestamp("rejected_at"),
+
+  createdBy: text("created_by"),
+  createdByRole: text("created_by_role"),
 });
 
 export const updates = pgTable("updates", {
@@ -41,10 +65,45 @@ export const pageViews = pgTable("page_views", {
   viewedAt: timestamp("viewed_at").defaultNow(),
 });
 
+export const staffUsers = pgTable("staff_users", {
+  id: serial("id").primaryKey(),
+  username: text("username").unique().notNull(),
+  password: text("password").notNull(),
+  displayName: text("display_name").notNull(),
+  role: text("role").notNull(),
+  createdAt: timestamp("created_at").defaultNow(),
+});
+
+export const deleteRequests = pgTable("delete_requests", {
+  id: serial("id").primaryKey(),
+  memberId: integer("member_id").notNull(),
+  memberName: text("member_name").notNull(),
+  requestedBy: text("requested_by").notNull(),
+  requestedByRole: text("requested_by_role").notNull(),
+  reason: text("reason").notNull(),
+  status: text("status").default("pending").notNull(),
+  createdAt: timestamp("created_at").defaultNow(),
+  resolvedBy: text("resolved_by"),
+  resolvedAt: timestamp("resolved_at"),
+});
+
+export const activityLogs = pgTable("activity_logs", {
+  id: serial("id").primaryKey(),
+  memberId: integer("member_id"),
+  action: text("action").notNull(),
+  performedBy: text("performed_by").notNull(),
+  role: text("role").notNull(),
+  timestamp: timestamp("timestamp").defaultNow(),
+  remarks: text("remarks"),
+});
+
 export type PageView = typeof pageViews.$inferSelect;
+export type StaffUser = typeof staffUsers.$inferSelect;
+export type DeleteRequest = typeof deleteRequests.$inferSelect;
+export type ActivityLog = typeof activityLogs.$inferSelect;
 
 export const insertRegistrationSchema = createInsertSchema(registrations)
-  .omit({ id: true, createdAt: true, photoData: true, photoMimeType: true, cardNumber: true, photoUrl: true, validFrom: true, validUntil: true, status: true })
+  .omit({ id: true, createdAt: true, photoData: true, photoMimeType: true, cardNumber: true, photoUrl: true, validFrom: true, validUntil: true, status: true, trackingId: true, currentStage: true, submittedAt: true, meetPresidentStatus: true, meetPresidentBy: true, meetPresidentAt: true, statePresidentStatus: true, statePresidentBy: true, statePresidentAt: true, adminStatus: true, adminBy: true, adminAt: true, rejectedBy: true, rejectedReason: true, rejectedAt: true, createdBy: true, createdByRole: true })
   .extend({
     aadhaarNumber: z.string().length(12, "ਆਧਾਰ ਨੰਬਰ 12 ਅੰਕ ਹੋਣਾ ਚਾਹੀਦਾ ਹੈ").optional().or(z.literal("")),
     mobileNumber: z.string().min(10, "ਮੋਬਾਈਲ ਨੰਬਰ 10 ਅੰਕ ਹੋਣਾ ਚਾਹੀਦਾ ਹੈ").optional().or(z.literal("")),
@@ -56,7 +115,11 @@ export const insertRegistrationSchema = createInsertSchema(registrations)
 export const insertUpdateSchema = createInsertSchema(updates)
   .omit({ id: true, createdAt: true });
 
+export const insertStaffUserSchema = createInsertSchema(staffUsers)
+  .omit({ id: true, createdAt: true });
+
 export type Registration = typeof registrations.$inferSelect;
 export type InsertRegistration = z.infer<typeof insertRegistrationSchema>;
 export type Update = typeof updates.$inferSelect;
 export type InsertUpdate = z.infer<typeof insertUpdateSchema>;
+export type InsertStaffUser = z.infer<typeof insertStaffUserSchema>;

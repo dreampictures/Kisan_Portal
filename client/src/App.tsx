@@ -13,6 +13,7 @@ import Admin from "@/pages/Admin";
 import Verify from "@/pages/Verify";
 import VerifySearch from "@/pages/VerifySearch";
 import Updates from "@/pages/Updates";
+import Track from "@/pages/Track";
 
 function Router() {
   const [location] = useLocation();
@@ -28,6 +29,7 @@ function Router() {
           <Route path="/about" component={About} />
           <Route path="/updates" component={Updates} />
           <Route path="/contact" component={Contact} />
+          <Route path="/track" component={Track} />
           <Route path="/admin" component={Admin} />
           <Route path="/verify" component={VerifySearch} />
           <Route path="/verify/:cardNumber" component={Verify} />
