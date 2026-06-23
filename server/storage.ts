@@ -366,6 +366,11 @@ export class DatabaseStorage implements IStorage {
     return result.length > 0;
   }
 
+  async updateStaffUserPassword(id: number, newPassword: string): Promise<boolean> {
+    const result = await db.update(staffUsers).set({ password: newPassword }).where(eq(staffUsers.id, id)).returning();
+    return result.length > 0;
+  }
+
   async createDeleteRequest(data: { memberId: number; memberName: string; requestedBy: string; requestedByRole: string; reason: string }): Promise<DeleteRequest> {
     const [req] = await db.insert(deleteRequests).values({ ...data, status: "pending" }).returning();
     return req;

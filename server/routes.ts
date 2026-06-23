@@ -713,6 +713,21 @@ export async function registerRoutes(httpServer: Server, app: Express): Promise<
     }
   });
 
+  app.patch("/api/admin/staff-users/:id/password", isAdminAuth, async (req: any, res: any) => {
+    try {
+      const schema = z.object({ newPassword: z.string().min(4, "Password ਘੱਟੋ-ਘੱਟ 4 ਅੱਖਰ") });
+      const { newPassword } = schema.parse(req.body);
+      const updated = await storage.updateStaffUserPassword(parseInt(req.params.id), newPassword);
+      if (!updated) return res.status(404).json({ message: "ਯੂਜ਼ਰ ਨਹੀਂ ਮਿਲਿਆ" });
+      await storage.logActivity({ action: "Staff Password Changed", performedBy: getPerformedBy(req), role: "admin", remarks: `User ID: ${req.params.id}` });
+      res.json({ message: "ਪਾਸਵਰਡ ਬਦਲਿਆ" });
+    } catch (err) {
+      if (err instanceof z.ZodError) return res.status(400).json({ message: err.errors[0].message });
+      console.error(err);
+      res.status(500).json({ message: "ਪਾਸਵਰਡ ਬਦਲਣ ਵਿੱਚ ਗਲਤੀ" });
+    }
+  });
+
   app.delete("/api/admin/staff-users/:id", isAdminAuth, async (req: any, res: any) => {
     try {
       const deleted = await storage.deleteStaffUser(parseInt(req.params.id));

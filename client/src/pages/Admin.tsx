@@ -632,10 +632,69 @@ function DeleteRequestsPanel({ isAdminRole }: { isAdminRole: boolean }) {
 }
 
 // ─── User Management Panel (admin only) ──────────────────────
+function ChangePasswordDialog({ user, onClose }: { user: any; onClose: () => void }) {
+  const { toast } = useToast();
+  const [newPassword, setNewPassword] = useState("");
+  const [showPw, setShowPw] = useState(false);
+
+  const changeMut = useMutation({
+    mutationFn: async () => {
+      const res = await apiRequest("PATCH", `/api/admin/staff-users/${user.id}/password`, { newPassword });
+      if (!res.ok) { const err = await res.json(); throw new Error(err.message); }
+      return res.json();
+    },
+    onSuccess: () => {
+      toast({ title: "✓ ਪਾਸਵਰਡ ਬਦਲ ਦਿੱਤਾ", description: `@${user.username} ਦਾ ਪਾਸਵਰਡ ਅਪਡੇਟ ਹੋ ਗਿਆ` });
+      onClose();
+    },
+    onError: (err: any) => toast({ title: "ਗਲਤੀ", description: err.message, variant: "destructive" }),
+  });
+
+  return (
+    <Dialog open onOpenChange={onClose}>
+      <DialogContent className="max-w-sm">
+        <DialogHeader>
+          <DialogTitle className="flex items-center gap-2"><KeyRound className="h-4 w-4 text-primary" /> ਪਾਸਵਰਡ ਬਦਲੋ</DialogTitle>
+        </DialogHeader>
+        <div className="space-y-4 pt-1">
+          <p className="text-sm text-muted-foreground">@{user.username} ({user.displayName})</p>
+          <div className="space-y-1">
+            <Label className="text-xs">ਨਵਾਂ ਪਾਸਵਰਡ *</Label>
+            <div className="relative">
+              <Input
+                type={showPw ? "text" : "password"}
+                value={newPassword}
+                onChange={(e) => setNewPassword(e.target.value)}
+                placeholder="ਨਵਾਂ ਪਾਸਵਰਡ"
+                className="pr-10"
+                autoFocus
+              />
+              <button type="button" onClick={() => setShowPw(p => !p)}
+                className="absolute right-2 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground">
+                {showPw ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
+              </button>
+            </div>
+            <p className="text-xs text-muted-foreground">ਘੱਟੋ-ਘੱਟ 4 ਅੱਖਰ</p>
+          </div>
+          <div className="flex gap-2">
+            <Button variant="outline" className="flex-1" onClick={onClose}>ਰੱਦ ਕਰੋ</Button>
+            <Button className="flex-1" onClick={() => changeMut.mutate()}
+              disabled={changeMut.isPending || newPassword.length < 4}>
+              {changeMut.isPending ? <><Loader2 className="mr-2 h-4 w-4 animate-spin" />ਅਪਡੇਟ ਹੋ ਰਿਹਾ...</> : "ਪਾਸਵਰਡ ਸੇਵ ਕਰੋ"}
+            </Button>
+          </div>
+        </div>
+      </DialogContent>
+    </Dialog>
+  );
+}
+
 function UserManagementPanel() {
   const { toast } = useToast();
   const queryClient = useQueryClient();
   const [showForm, setShowForm] = useState(false);
+  const [showFormPw, setShowFormPw] = useState(false);
+  const [changePwUser, setChangePwUser] = useState<any>(null);
   const [form, setForm] = useState({ username: "", password: "", displayName: "", role: "state_meet_president" });
 
   const { data: users, isLoading } = useQuery<any[]>({ queryKey: ["/api/admin/staff-users"], queryFn: () => fetch("/api/admin/staff-users", { credentials: "include" }).then(r => r.json()) });
@@ -660,6 +719,8 @@ function UserManagementPanel() {
 
   return (
     <div className="space-y-4">
+      {changePwUser && <ChangePasswordDialog user={changePwUser} onClose={() => setChangePwUser(null)} />}
+
       <div className="flex items-center justify-between">
         <h3 className="text-lg font-semibold flex items-center gap-2"><UserCog className="h-5 w-5 text-primary" /> ਸਟਾਫ਼ ਯੂਜ਼ਰ ਮੈਨੇਜ ਕਰੋ</h3>
         <Button size="sm" onClick={() => setShowForm(!showForm)} className="gap-1.5">
@@ -671,8 +732,22 @@ function UserManagementPanel() {
         <Card className="border-primary/20 bg-primary/5">
           <CardContent className="pt-4 space-y-3">
             <div className="grid grid-cols-2 gap-3">
-              <div className="space-y-1"><Label className="text-xs">ਯੂਜ਼ਰਨੇਮ *</Label><Input value={form.username} onChange={(e) => setForm(p => ({ ...p, username: e.target.value }))} placeholder="username" className="h-9 text-sm" /></div>
-              <div className="space-y-1"><Label className="text-xs">ਪਾਸਵਰਡ *</Label><Input type="password" value={form.password} onChange={(e) => setForm(p => ({ ...p, password: e.target.value }))} placeholder="password" className="h-9 text-sm" /></div>
+              <div className="space-y-1">
+                <Label className="text-xs">ਯੂਜ਼ਰਨੇਮ *</Label>
+                <Input value={form.username} onChange={(e) => setForm(p => ({ ...p, username: e.target.value }))} placeholder="username" className="h-9 text-sm" />
+              </div>
+              <div className="space-y-1">
+                <Label className="text-xs">ਪਾਸਵਰਡ *</Label>
+                <div className="relative">
+                  <Input type={showFormPw ? "text" : "password"} value={form.password}
+                    onChange={(e) => setForm(p => ({ ...p, password: e.target.value }))}
+                    placeholder="password" className="h-9 text-sm pr-9" />
+                  <button type="button" onClick={() => setShowFormPw(p => !p)}
+                    className="absolute right-2 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground">
+                    {showFormPw ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
+                  </button>
+                </div>
+              </div>
             </div>
             <div className="space-y-1"><Label className="text-xs">ਅਸਲ ਨਾਮ *</Label><Input value={form.displayName} onChange={(e) => setForm(p => ({ ...p, displayName: e.target.value }))} placeholder="ਪੂਰਾ ਨਾਮ" className="h-9 text-sm" /></div>
             <div className="space-y-1"><Label className="text-xs">ਅਹੁਦਾ *</Label>
@@ -695,15 +770,24 @@ function UserManagementPanel() {
           <div className="space-y-2">
             {users.map((u) => (
               <Card key={u.id}>
-                <CardContent className="p-3 flex items-center justify-between">
-                  <div>
+                <CardContent className="p-3 flex items-center justify-between gap-2">
+                  <div className="min-w-0">
                     <p className="font-semibold text-sm">{u.displayName}</p>
-                    <p className="text-xs text-muted-foreground font-mono">@{u.username} • {roleLabel[u.role] || u.role}</p>
+                    <p className="text-xs text-muted-foreground font-mono truncate">@{u.username} • {roleLabel[u.role] || u.role}</p>
                   </div>
-                  <Button size="sm" variant="ghost" className="text-destructive hover:bg-destructive/10"
-                    onClick={() => { if (confirm(`@${u.username} ਨੂੰ ਮਿਟਾਉਣਾ ਹੈ?`)) deleteMut.mutate(u.id); }}>
-                    <Trash2 className="h-4 w-4" />
-                  </Button>
+                  <div className="flex items-center gap-1 shrink-0">
+                    <Button size="sm" variant="outline" className="gap-1.5 text-xs h-8"
+                      onClick={() => setChangePwUser(u)}
+                      data-testid={`button-change-password-${u.id}`}>
+                      <KeyRound className="h-3.5 w-3.5" />
+                      <span className="hidden sm:inline">ਪਾਸਵਰਡ</span>
+                    </Button>
+                    <Button size="sm" variant="ghost" className="text-destructive hover:bg-destructive/10 h-8 w-8 p-0"
+                      onClick={() => { if (confirm(`@${u.username} ਨੂੰ ਮਿਟਾਉਣਾ ਹੈ?`)) deleteMut.mutate(u.id); }}
+                      data-testid={`button-delete-user-${u.id}`}>
+                      <Trash2 className="h-4 w-4" />
+                    </Button>
+                  </div>
                 </CardContent>
               </Card>
             ))}
