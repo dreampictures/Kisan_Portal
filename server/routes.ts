@@ -405,15 +405,19 @@ export async function registerRoutes(httpServer: Server, app: Express): Promise<
     }
   });
 
-  // ── Admin: approve registration ──────────────────────────
+  // ── Admin: approve registration (auto-issues card with 1 year validity) ──
   app.post("/api/admin/registrations/:id/approve", isAdminAuth, async (req: any, res: any) => {
     try {
       const id = parseInt(req.params.id);
       const by = getPerformedBy(req);
-      const updated = await storage.approveRegistration(id, by, "admin");
+      const validFrom = new Date();
+      const validUntil = new Date();
+      validUntil.setFullYear(validUntil.getFullYear() + 1);
+      // Approve + immediately issue card in one step so currentStage = card_issued
+      const updated = await storage.updateRegistrationCard(id, { validFrom, validUntil, performedBy: by });
       if (!updated) return res.status(404).json({ message: "ਰਜਿਸਟ੍ਰੇਸ਼ਨ ਨਹੀਂ ਮਿਲੀ" });
-      await storage.logActivity({ memberId: id, action: "Admin Approved", performedBy: by, role: "admin" });
-      res.json({ message: "ਅਪ੍ਰੂਵ ਕੀਤਾ", registration: updated });
+      await storage.logActivity({ memberId: id, action: "Admin Approved & Card Issued", performedBy: by, role: "admin" });
+      res.json({ message: "ਅਪ੍ਰੂਵ ਅਤੇ ਕਾਰਡ ਜਾਰੀ ਕੀਤਾ", registration: updated });
     } catch (err) {
       console.error(err);
       res.status(500).json({ message: "ਅਪ੍ਰੂਵ ਕਰਨ ਵਿੱਚ ਗਲਤੀ" });
