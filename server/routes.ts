@@ -213,28 +213,40 @@ export async function registerRoutes(httpServer: Server, app: Express): Promise<
 
       if (!regs.length) return res.status(404).json({ message: "ਕੋਈ ਰਜਿਸਟ੍ਰੇਸ਼ਨ ਨਹੀਂ ਮਿਲੀ" });
 
-      const result = regs.map(r => ({
-        id: r.id,
-        trackingId: r.trackingId,
-        name: r.name,
-        village: r.village,
-        district: r.district,
-        currentStage: r.currentStage || "submitted",
-        status: r.status,
-        submittedAt: r.submittedAt || r.createdAt,
-        meetPresidentStatus: r.meetPresidentStatus,
-        meetPresidentAt: r.meetPresidentAt,
-        statePresidentStatus: r.statePresidentStatus,
-        statePresidentAt: r.statePresidentAt,
-        adminStatus: r.adminStatus,
-        adminAt: r.adminAt,
-        rejectedBy: r.rejectedBy,
-        rejectedReason: r.rejectedReason,
-        rejectedAt: r.rejectedAt,
-        cardNumber: r.cardNumber,
-        validFrom: r.validFrom,
-        validUntil: r.validUntil,
-      }));
+      const result = regs.map(r => {
+        // Determine the true current stage:
+        // If validFrom & validUntil are set, card is issued regardless of what currentStage says
+        let trueStage = r.currentStage || "submitted";
+        if (r.validFrom && r.validUntil && trueStage !== "rejected") {
+          trueStage = "card_issued";
+        } else if (r.status === "approved" && r.cardNumber && !r.validFrom && trueStage !== "rejected") {
+          trueStage = "approved";
+        }
+
+        return {
+          id: r.id,
+          trackingId: r.trackingId,
+          name: r.name,
+          village: r.village,
+          district: r.district,
+          currentStage: trueStage,
+          status: r.status,
+          submittedAt: r.submittedAt || r.createdAt,
+          meetPresidentStatus: r.meetPresidentStatus,
+          meetPresidentAt: r.meetPresidentAt,
+          statePresidentStatus: r.statePresidentStatus,
+          statePresidentAt: r.statePresidentAt,
+          adminStatus: r.adminStatus,
+          adminAt: r.adminAt,
+          rejectedBy: r.rejectedBy,
+          rejectedReason: r.rejectedReason,
+          rejectedAt: r.rejectedAt,
+          // Only show card number when card is actually issued
+          cardNumber: (r.validFrom && r.validUntil) ? r.cardNumber : null,
+          validFrom: r.validFrom,
+          validUntil: r.validUntil,
+        };
+      });
 
       res.json(result);
     } catch (err) {
