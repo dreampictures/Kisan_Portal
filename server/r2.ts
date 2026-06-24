@@ -19,9 +19,22 @@ if (R2_CONFIGURED) {
       accessKeyId: process.env.R2_ACCESS_KEY_ID!,
       secretAccessKey: process.env.R2_SECRET_ACCESS_KEY!,
     },
+    requestHandler: {
+      requestTimeout: 10000,
+      connectionTimeout: 8000,
+    } as any,
   });
   BUCKET = process.env.R2_BUCKET_NAME!;
   PUBLIC_URL = process.env.R2_PUBLIC_URL!.replace(/\/$/, "");
+}
+
+function withTimeout<T>(promise: Promise<T>, ms: number): Promise<T> {
+  return Promise.race([
+    promise,
+    new Promise<T>((_, reject) =>
+      setTimeout(() => reject(new Error(`R2 upload timed out after ${ms}ms`)), ms)
+    ),
+  ]);
 }
 
 export async function uploadPhotoToR2(
@@ -32,16 +45,18 @@ export async function uploadPhotoToR2(
   if (!r2Client) {
     throw new Error("R2 storage is not configured — set R2_* environment variables to enable photo uploads.");
   }
-  const key = `photos/${fileName}`;
-  await r2Client.send(
-    new PutObjectCommand({
-      Bucket: BUCKET,
-      Key: key,
-      Body: buffer,
-      ContentType: mimeType,
-    })
+  await withTimeout(
+    r2Client.send(
+      new PutObjectCommand({
+        Bucket: BUCKET,
+        Key: fileName,
+        Body: buffer,
+        ContentType: mimeType,
+      })
+    ),
+    10000
   );
-  return `${PUBLIC_URL}/${key}`;
+  return `${PUBLIC_URL}/${fileName}`;
 }
 
 export async function deletePhotoFromR2(photoUrl: string): Promise<void> {
