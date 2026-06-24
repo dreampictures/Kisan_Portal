@@ -1,5 +1,5 @@
 import { Link, useLocation } from "wouter";
-import { Menu, X } from "lucide-react";
+import { Menu, X, LogIn, Search, Shield } from "lucide-react";
 import { useState } from "react";
 import { Button } from "@/components/ui/button";
 import { motion, AnimatePresence } from "framer-motion";
@@ -16,6 +16,12 @@ export function Navbar() {
     { href: "/contact", label: "ਸੰਪਰਕ ਕਰੋ" },
   ];
 
+  const actionLinks = [
+    { href: "/track", label: "ਟਰੈਕ ਕਰੋ", icon: Search, color: "text-blue-600" },
+    { href: "/verify", label: "ਵੈਰੀਫਾਈ", icon: Shield, color: "text-green-600" },
+    { href: "/admin", label: "ਲੌਗਇਨ", icon: LogIn, color: "text-orange-600" },
+  ];
+
   return (
     <header className="sticky top-0 z-50 w-full border-b border-border/40 bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60">
       <div className="container mx-auto px-4 h-16 flex items-center justify-between">
@@ -28,11 +34,11 @@ export function Navbar() {
         </Link>
 
         {/* Desktop Nav */}
-        <nav className="hidden md:flex items-center space-x-6">
+        <nav className="hidden md:flex items-center space-x-1">
           {links.map((link) => (
             <Link key={link.href} href={link.href}>
               <span
-                className={`text-sm font-medium transition-colors hover:text-primary cursor-pointer ${
+                className={`px-3 py-2 text-sm font-medium transition-colors hover:text-primary cursor-pointer rounded-md hover:bg-muted ${
                   location === link.href
                     ? "text-primary font-bold"
                     : "text-muted-foreground"
@@ -42,8 +48,27 @@ export function Navbar() {
               </span>
             </Link>
           ))}
+
+          <div className="h-5 w-px bg-border mx-2" />
+
+          {/* Action buttons - Track, Verify, Login */}
+          {actionLinks.map((link) => (
+            <Link key={link.href} href={link.href}>
+              <Button
+                variant="ghost"
+                size="sm"
+                className={`gap-1.5 text-sm font-medium ${
+                  location === link.href ? "bg-muted" : ""
+                } hover:bg-muted`}
+              >
+                <link.icon className={`h-4 w-4 ${link.color}`} />
+                <span className={link.color}>{link.label}</span>
+              </Button>
+            </Link>
+          ))}
+
           <Link href="/contact">
-            <Button size="sm" className="bg-primary hover:bg-primary/90 text-white shadow-lg shadow-primary/20">
+            <Button size="sm" className="ml-2 bg-primary hover:bg-primary/90 text-white shadow-lg shadow-primary/20">
               ਮੈਂਬਰ ਬਣੋ
             </Button>
           </Link>
@@ -67,26 +92,46 @@ export function Navbar() {
             exit={{ opacity: 0, height: 0 }}
             className="md:hidden border-t border-border bg-background"
           >
-            <div className="container mx-auto px-4 py-4 space-y-4">
+            <div className="container mx-auto px-4 py-4 space-y-1">
               {links.map((link) => (
                 <Link key={link.href} href={link.href}>
                   <div
                     onClick={() => setIsOpen(false)}
-                    className={`block py-2 text-base font-medium ${
+                    className={`block px-3 py-2.5 rounded-md text-base font-medium ${
                       location === link.href
-                        ? "text-primary"
-                        : "text-muted-foreground"
+                        ? "text-primary bg-muted"
+                        : "text-muted-foreground hover:bg-muted"
                     }`}
                   >
                     {link.label}
                   </div>
                 </Link>
               ))}
-              <Link href="/contact">
-                <Button className="w-full bg-primary hover:bg-primary/90" onClick={() => setIsOpen(false)}>
-                  ਮੈਂਬਰ ਬਣੋ
-                </Button>
-              </Link>
+
+              <div className="h-px bg-border my-2" />
+
+              {/* Action links - mobile */}
+              {actionLinks.map((link) => (
+                <Link key={link.href} href={link.href}>
+                  <div
+                    onClick={() => setIsOpen(false)}
+                    className={`flex items-center gap-2 px-3 py-2.5 rounded-md text-base font-medium ${
+                      location === link.href ? "bg-muted" : "hover:bg-muted"
+                    }`}
+                  >
+                    <link.icon className={`h-5 w-5 ${link.color}`} />
+                    <span className={link.color}>{link.label}</span>
+                  </div>
+                </Link>
+              ))}
+
+              <div className="pt-2">
+                <Link href="/contact">
+                  <Button className="w-full bg-primary hover:bg-primary/90" onClick={() => setIsOpen(false)}>
+                    ਮੈਂਬਰ ਬਣੋ
+                  </Button>
+                </Link>
+              </div>
             </div>
           </motion.div>
         )}
