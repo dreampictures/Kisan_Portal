@@ -425,7 +425,7 @@ export async function registerRoutes(httpServer: Server, app: Express): Promise<
   });
 
   // ── Admin: reject registration (mark as rejected) ────────
-  app.delete("/api/admin/registrations/:id/reject", isAdminAuth, async (req: any, res: any) => {
+  app.post("/api/admin/registrations/:id/reject", isAdminAuth, async (req: any, res: any) => {
     try {
       const id = parseInt(req.params.id);
       const { reason } = req.body;
