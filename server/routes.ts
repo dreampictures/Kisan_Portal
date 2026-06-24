@@ -593,6 +593,52 @@ export async function registerRoutes(httpServer: Server, app: Express): Promise<
     }
   });
 
+  // ── Admin: CSV export ───────────────────────────────────
+  app.get("/api/admin/registrations/export-csv", isAdminAuth, async (req, res) => {
+    try {
+      const allRegs = await storage.getRegistrations();
+      const headers = [
+        "Sr No", "Tracking ID", "Card Number", "Status", "ਨਾਮ", "ਆਹੁਦਾ",
+        "ਪਿੰਡ/ਸ਼ਹਿਰ", "ਤਹਿਸੀਲ", "ਜ਼ਿਲ੍ਹਾ", "ਖੇਤਰ", "ਵਾਰਡ", "ਮੁਹੱਲਾ",
+        "ਮੋਬਾਈਲ", "ਆਧਾਰ (ਆਖਰੀ 4)", "Valid From", "Valid Until", "Registration Date"
+      ];
+      const escape = (v: any) => {
+        if (v == null) return "";
+        const s = String(v);
+        return s.includes(",") || s.includes('"') || s.includes("\n")
+          ? `"${s.replace(/"/g, '""')}"` : s;
+      };
+      const rows = allRegs.map((r, i) => [
+        i + 1,
+        r.trackingId || "",
+        r.cardNumber || "",
+        r.status,
+        r.name,
+        r.designation || "",
+        r.village,
+        r.tehsil,
+        r.district,
+        r.areaType || "rural",
+        r.wardNumber || "",
+        r.mohalla || "",
+        r.mobileNumber || "",
+        r.aadhaarNumber ? r.aadhaarNumber.slice(-4) : "",
+        r.validFrom ? new Date(r.validFrom).toLocaleDateString("en-IN") : "",
+        r.validUntil ? new Date(r.validUntil).toLocaleDateString("en-IN") : "",
+        r.createdAt ? new Date(r.createdAt).toLocaleDateString("en-IN") : "",
+      ].map(escape).join(","));
+
+      const csv = "\uFEFF" + [headers.join(","), ...rows].join("\n");
+      const date = new Date().toISOString().slice(0, 10);
+      res.setHeader("Content-Type", "text/csv; charset=utf-8");
+      res.setHeader("Content-Disposition", `attachment; filename=members_${date}.csv`);
+      res.send(csv);
+    } catch (err) {
+      console.error(err);
+      res.status(500).json({ message: "CSV export ਫੇਲ੍ਹ ਹੋ ਗਈ" });
+    }
+  });
+
   app.get("/api/admin/registrations/:id", isStaffAuth, async (req, res) => {
     try {
       const reg = await storage.getRegistration(parseInt(req.params.id));

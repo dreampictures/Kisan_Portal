@@ -1186,7 +1186,7 @@ export default function Admin() {
                   <BarChart2 className="h-3.5 w-3.5" /><span className="hidden sm:inline">Stats</span>
                 </TabsTrigger>
                 <TabsTrigger value="download" className="flex items-center gap-1 py-2.5 text-xs">
-                  <Download className="h-3.5 w-3.5" /><span className="hidden sm:inline">ZIP</span>
+                  <Download className="h-3.5 w-3.5" /><span className="hidden sm:inline">ਡਾਊਨਲੋਡ</span>
                 </TabsTrigger>
               </>
             )}
@@ -1257,18 +1257,57 @@ export default function Admin() {
                 <AnalyticsDashboard />
               </TabsContent>
               <TabsContent value="download">
-                <Card>
-                  <CardContent className="py-10 text-center space-y-4">
-                    <Download className="h-12 w-12 mx-auto text-primary/50" />
-                    <div>
-                      <p className="font-semibold text-lg">ਸਾਰੀਆਂ ਰਜਿਸਟ੍ਰੇਸ਼ਨਾਂ ਡਾਊਨਲੋਡ ਕਰੋ</p>
-                      <p className="text-sm text-muted-foreground mt-1">ਸਾਰੇ {approved.length} Approved ਮੈਂਬਰਾਂ ਦਾ ZIP ਫਾਈਲ</p>
-                    </div>
-                    <Button onClick={() => downloadAll.mutate()} disabled={downloadAll.isPending || !approved.length} className="gap-2">
-                      {downloadAll.isPending ? <><Loader2 className="mr-2 h-4 w-4 animate-spin" />ਡਾਊਨਲੋਡ ਹੋ ਰਿਹਾ...</> : <><Download className="h-4 w-4" />ZIP ਡਾਊਨਲੋਡ ({approved.length})</>}
-                    </Button>
-                  </CardContent>
-                </Card>
+                <div className="grid gap-4 md:grid-cols-2">
+                  {/* CSV Export */}
+                  <Card className="border-green-200">
+                    <CardContent className="py-8 text-center space-y-4">
+                      <div className="h-14 w-14 mx-auto bg-green-50 rounded-full flex items-center justify-center">
+                        <Download className="h-7 w-7 text-green-600" />
+                      </div>
+                      <div>
+                        <p className="font-semibold text-lg">CSV / Excel ਡਾਊਨਲੋਡ</p>
+                        <p className="text-sm text-muted-foreground mt-1">ਸਾਰੇ {registrations?.length || 0} ਮੈਂਬਰਾਂ ਦਾ ਡਾਟਾ Excel ਵਿੱਚ</p>
+                      </div>
+                      <Button
+                        variant="outline"
+                        className="gap-2 border-green-300 text-green-700 hover:bg-green-50"
+                        onClick={() => {
+                          const a = document.createElement("a");
+                          a.href = "/api/admin/registrations/export-csv";
+                          a.download = `members_${new Date().toISOString().slice(0, 10)}.csv`;
+                          a.click();
+                        }}
+                      >
+                        <Download className="h-4 w-4" />
+                        CSV ਡਾਊਨਲੋਡ ({registrations?.length || 0} ਮੈਂਬਰ)
+                      </Button>
+                      <p className="text-xs text-muted-foreground">Excel / Google Sheets ਵਿੱਚ ਖੁੱਲ੍ਹੇਗੀ</p>
+                    </CardContent>
+                  </Card>
+
+                  {/* ZIP Download */}
+                  <Card className="border-blue-200">
+                    <CardContent className="py-8 text-center space-y-4">
+                      <div className="h-14 w-14 mx-auto bg-blue-50 rounded-full flex items-center justify-center">
+                        <Download className="h-7 w-7 text-blue-600" />
+                      </div>
+                      <div>
+                        <p className="font-semibold text-lg">ID Cards ZIP ਡਾਊਨਲੋਡ</p>
+                        <p className="text-sm text-muted-foreground mt-1">ਸਾਰੇ {approved.length} Approved ਮੈਂਬਰਾਂ ਦੇ ID Cards</p>
+                      </div>
+                      <Button
+                        onClick={() => downloadAll.mutate()}
+                        disabled={downloadAll.isPending || !approved.length}
+                        className="gap-2 bg-blue-600 hover:bg-blue-700"
+                      >
+                        {downloadAll.isPending
+                          ? <><Loader2 className="mr-2 h-4 w-4 animate-spin" />ਡਾਊਨਲੋਡ ਹੋ ਰਿਹਾ...</>
+                          : <><Download className="h-4 w-4" />ZIP ਡਾਊਨਲੋਡ ({approved.length})</>}
+                      </Button>
+                      <p className="text-xs text-muted-foreground">ਫ਼ੋਟੋ ਅਤੇ ਵੇਰਵਿਆਂ ਸਮੇਤ</p>
+                    </CardContent>
+                  </Card>
+                </div>
               </TabsContent>
             </>
           )}
