@@ -13,6 +13,7 @@ import { Upload, Loader2, Send, CheckCircle2, Copy, ExternalLink } from "lucide-
 import { motion } from "framer-motion";
 import { z } from "zod";
 import { PUNJAB_DISTRICTS } from "@/lib/punjab-data";
+import { useSEO } from "@/hooks/use-seo";
 import { useToast } from "@/hooks/use-toast";
 import { api } from "@shared/routes";
 import { useQueryClient } from "@tanstack/react-query";
@@ -105,6 +106,12 @@ function SuccessModal({ trackingId, onClose }: { trackingId: string; onClose: ()
 }
 
 export default function Contact() {
+  useSEO({
+    title: "ਮੈਂਬਰਸ਼ਿਪ ਰਜਿਸਟ੍ਰੇਸ਼ਨ - Join Kisan Union Punjab | KMSC Kot Budha Membership",
+    description: "Register for Kisan Mazdoor Sangharsh Committee Punjab (Kot Budha) membership. Join Kisan Union Punjab led by Inderjit Singh Kot Budha and Sukhdev Singh Mand. Get your official digital farmer ID card.",
+    keywords: "Kisan Union Punjab membership, KMSC registration, join kisan union, Kisan Punjab register, farmer ID card Punjab, ਕਿਸਾਨ ਮੈਂਬਰਸ਼ਿਪ ਰਜਿਸਟ੍ਰੇਸ਼ਨ, Kot Budha membership",
+    canonical: "https://kscpkotbudha.org/contact",
+  });
   const [successData, setSuccessData] = useState<{ trackingId: string } | null>(null);
   const [isPending, setIsPending] = useState(false);
   const { toast } = useToast();

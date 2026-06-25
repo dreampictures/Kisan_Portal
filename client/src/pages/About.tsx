@@ -2,8 +2,15 @@ import { motion } from "framer-motion";
 import { BadgeCheck, Leaf, HeartHandshake, Wheat, Zap, Users, Shield, MapPin, Scale, Train, Flame } from "lucide-react";
 import inderjitPhoto from "@assets/IMG_1715_1781841729335.jpeg";
 import sukhdevPhoto from "@assets/IMG_1716_1781843047103.jpeg";
+import { useSEO } from "@/hooks/use-seo";
 
 export default function About() {
+  useSEO({
+    title: "ਯੂਨੀਅਨ ਬਾਰੇ - Inderjit Singh Kot Budha & Sukhdev Singh Mand | Kisan Union Punjab",
+    description: "Learn about Kisan Mazdoor Sangharsh Committee Punjab (Kot Budha). Led by Inderjit Singh Kot Budha and Sukhdev Singh Mand. Fighting for farmers rights, MSP, and agricultural justice in Punjab.",
+    keywords: "Inderjit Singh Kot Budha, Sukhdev Singh Mand, Kisan Union Punjab about, KMSC Punjab leaders, Kot Budha kisan union, ਇੰਦਰਜੀਤ ਸਿੰਘ ਕੋਟ ਬੁੱਢਾ, ਸੁਖਦੇਵ ਸਿੰਘ ਮਾਂਡ",
+    canonical: "https://kscpkotbudha.org/about",
+  });
   const works = [
     {
       icon: Scale,

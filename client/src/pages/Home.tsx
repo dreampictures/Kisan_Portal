@@ -3,8 +3,15 @@ import { ArrowRight, Users, Shield, FileText, Eye, TrendingUp } from "lucide-rea
 import { Link } from "wouter";
 import { Button } from "@/components/ui/button";
 import { useQuery } from "@tanstack/react-query";
+import { useSEO } from "@/hooks/use-seo";
 
 export default function Home() {
+  useSEO({
+    title: "ਕਿਸਾਨ ਮਜ਼ਦੂਰ ਸੰਘਰਸ਼ ਕਮੇਟੀ ਪੰਜਾਬ - Kisan Union Punjab | Kot Budha | Inderjit Singh | Sukhdev Singh Mand",
+    description: "ਕਿਸਾਨ ਮਜ਼ਦੂਰ ਸੰਘਰਸ਼ ਕਮੇਟੀ ਪੰਜਾਬ (ਕੋਟ ਬੁੱਢਾ) - Official website of Kisan Union Punjab. Led by Inderjit Singh Kot Budha and Sukhdev Singh Mand. Register for Kisan Union membership and get your digital farmer ID card. Kisan Punjab farmers union.",
+    keywords: "Kisan Union Punjab, Kisan Punjab, Sukhdev Singh Mand, Inderjit Singh Kot Budha, Kot Budha, ਕਿਸਾਨ ਯੂਨੀਅਨ ਪੰਜਾਬ, ਕਿਸਾਨ ਮਜ਼ਦੂਰ ਸੰਘਰਸ਼ ਕਮੇਟੀ, kisan card Punjab, farmer union Punjab",
+    canonical: "https://kscpkotbudha.org/",
+  });
   const { data: stats } = useQuery<{ total: number; today: number }>({
     queryKey: ["/api/stats"],
     refetchInterval: 60000,

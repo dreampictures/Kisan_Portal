@@ -2,8 +2,15 @@ import { useState } from "react";
 import { useLocation } from "wouter";
 import { motion } from "framer-motion";
 import { Search, ArrowLeft, Shield } from "lucide-react";
+import { useSEO } from "@/hooks/use-seo";
 
 export default function VerifySearch() {
+  useSEO({
+    title: "ਕਾਰਡ ਤਸਦੀਕ ਕਰੋ - Verify Kisan Union Punjab Membership Card | KMSC",
+    description: "Verify the authenticity of Kisan Mazdoor Sangharsh Committee Punjab (Kot Budha) membership ID cards. Check if a Kisan Union Punjab member card is genuine.",
+    keywords: "verify kisan card Punjab, KMSC card verify, Kisan Union Punjab ID verification, Kot Budha kisan card check",
+    canonical: "https://kscpkotbudha.org/verify",
+  });
   const [, setLocation] = useLocation();
   const [manualId, setManualId] = useState("");
   const [error, setError] = useState("");

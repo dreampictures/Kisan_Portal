@@ -3,8 +3,15 @@ import { motion } from "framer-motion";
 import { Loader2, Calendar, ImageOff, Megaphone } from "lucide-react";
 import { Card, CardContent } from "@/components/ui/card";
 import type { Update } from "@shared/schema";
+import { useSEO } from "@/hooks/use-seo";
 
 export default function Updates() {
+  useSEO({
+    title: "ਤਾਜ਼ੀਆਂ ਖ਼ਬਰਾਂ - Kisan Union Punjab Latest News | KMSC Kot Budha Updates",
+    description: "Latest news and updates from Kisan Mazdoor Sangharsh Committee Punjab (Kot Budha). Stay informed about Kisan Union Punjab activities, protests, and farmer rights campaigns led by Inderjit Singh Kot Budha.",
+    keywords: "Kisan Union Punjab news, KMSC updates, Kisan Punjab latest news, farmer protest Punjab, Kot Budha kisan news, Sukhdev Singh Mand news",
+    canonical: "https://kscpkotbudha.org/updates",
+  });
   const { data: updates, isLoading } = useQuery<Update[]>({
     queryKey: ["/api/updates"],
   });

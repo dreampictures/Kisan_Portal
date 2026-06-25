@@ -1,0 +1,9 @@
+User-agent: *
+Allow: /
+Disallow: /admin
+Disallow: /api/
+
+Sitemap: https://kscpkotbudha.org/sitemap.xml
+
+# Kisan Mazdoor Sangharsh Committee Punjab (Kot Budha)
+# Kisan Union Punjab | Inderjit Singh Kot Budha | Sukhdev Singh Mand

@@ -5,6 +5,7 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { Search, Loader2, CheckCircle2, Clock, XCircle, CreditCard, AlertCircle, ArrowRight } from "lucide-react";
+import { useSEO } from "@/hooks/use-seo";
 
 const STAGES = [
   { key: "submitted", label: "ਅਰਜ਼ੀ ਜਮ੍ਹਾ", sub: "Application Submitted" },
@@ -173,6 +174,12 @@ function TrackResult({ reg }: { reg: any }) {
 }
 
 export default function Track() {
+  useSEO({
+    title: "ਅਰਜ਼ੀ ਟਰੈਕ ਕਰੋ - Track Kisan Union Punjab Application | KMSC Status",
+    description: "Track your Kisan Mazdoor Sangharsh Committee Punjab membership application status. Check your Kisan Union Punjab ID card registration progress by tracking ID or mobile number.",
+    keywords: "track kisan application, KMSC application status, Kisan Union Punjab card status, kisan card track Punjab, ਕਿਸਾਨ ਅਰਜ਼ੀ ਟਰੈਕ",
+    canonical: "https://kscpkotbudha.org/track",
+  });
   const [input, setInput] = useState("");
   const [searchQuery, setSearchQuery] = useState<{ type: "trackingId" | "mobile"; value: string } | null>(null);
 
