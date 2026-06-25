@@ -421,7 +421,7 @@ function PendingCard({ reg, userRole }: { reg: Registration; userRole: StaffRole
 
   const canMeetPresAct = userRole === "state_meet_president" && stage === "submitted";
   const canStatePresAct = userRole === "state_president" && stage === "state_president_review";
-  const canAdminAct = userRole === "admin" && stage === "admin_review";
+  const canAdminAct = userRole === "admin" && reg.status === "pending";
 
   const meetApprove = useMutation({
     mutationFn: async () => { const r = await apiRequest("POST", `/api/admin/registrations/${reg.id}/meet-president-approve`); if (!r.ok) throw new Error(); return r.json(); },
