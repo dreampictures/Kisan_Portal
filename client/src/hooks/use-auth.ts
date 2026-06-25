@@ -34,17 +34,22 @@ export function useAuth() {
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["/api/admin/check"] });
+      queryClient.invalidateQueries({ queryKey: ["/api/admin/registrations"] });
+      queryClient.invalidateQueries({ queryKey: ["/api/admin/dashboard-stats"] });
+      queryClient.invalidateQueries({ queryKey: ["/api/admin/delete-requests"] });
     },
   });
 
   const verifyPinMutation = useMutation({
     mutationFn: async (pin: string) => {
       const res = await apiRequest("POST", "/api/admin/verify-pin", { pin });
-      if (!res.ok) throw new Error("ਗਲਤ PIN");
       return res.json();
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["/api/admin/check"] });
+      queryClient.invalidateQueries({ queryKey: ["/api/admin/registrations"] });
+      queryClient.invalidateQueries({ queryKey: ["/api/admin/dashboard-stats"] });
+      queryClient.invalidateQueries({ queryKey: ["/api/admin/delete-requests"] });
     },
   });
 
