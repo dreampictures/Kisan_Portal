@@ -1,4 +1,5 @@
 import { Switch, Route, useLocation } from "wouter";
+import { useEffect, useRef } from "react";
 import { queryClient } from "./lib/queryClient";
 import { QueryClientProvider } from "@tanstack/react-query";
 import { Toaster } from "@/components/ui/toaster";
@@ -19,6 +20,17 @@ function Router() {
   const [location] = useLocation();
   const isAdminPage = location.startsWith("/admin");
   const isVerifyPage = location.startsWith("/verify");
+  const lastTracked = useRef<string>("");
+
+  useEffect(() => {
+    if (location === lastTracked.current) return;
+    lastTracked.current = location;
+    fetch("/api/track-view", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ page: location }),
+    }).catch(() => {});
+  }, [location]);
 
   return (
     <div className="flex flex-col min-h-screen">

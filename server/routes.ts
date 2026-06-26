@@ -78,13 +78,13 @@ export async function registerRoutes(httpServer: Server, app: Express): Promise<
   await setupAuth(app);
   registerAuthRoutes(app);
 
-  // ── Page view tracking middleware ────────────────────────
-  app.use((req: Request, res: Response, next: NextFunction) => {
-    if (!req.path.startsWith("/api") && !req.path.includes(".")) {
-      const page = req.path || "/";
-      storage.recordPageView(page).catch(() => {});
-    }
-    next();
+  // ── Client-side page view tracking ───────────────────────
+  app.post("/api/track-view", async (req: any, res: any) => {
+    try {
+      const page = String(req.body?.page || "/").split("?")[0] || "/";
+      await storage.recordPageView(page);
+    } catch {}
+    res.json({ ok: true });
   });
 
   // ── Admin login ──────────────────────────────────────────
