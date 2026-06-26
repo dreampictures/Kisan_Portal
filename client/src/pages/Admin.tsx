@@ -256,6 +256,50 @@ function IssueQRDialog({ reg }: { reg: Registration }) {
   );
 }
 
+// ─── Photo Preview Dialog ────────────────────────────────────
+function PhotoPreviewDialog({ reg }: { reg: Registration }) {
+  const [open, setOpen] = useState(false);
+  const photoSrc = reg.photoUrl || (reg.photoData ? `data:${reg.photoMimeType};base64,${reg.photoData}` : null);
+  if (!photoSrc) return null;
+
+  const handleDownload = () => {
+    const a = document.createElement("a");
+    a.href = photoSrc;
+    a.download = `${reg.name.replace(/\s+/g, "_")}_photo.jpg`;
+    document.body.appendChild(a);
+    a.click();
+    document.body.removeChild(a);
+  };
+
+  return (
+    <Dialog open={open} onOpenChange={setOpen}>
+      <DialogTrigger asChild>
+        <button type="button" className="flex-shrink-0 rounded-full ring-2 ring-transparent hover:ring-primary/40 transition-all focus:outline-none" title="ਫੋਟੋ ਦੇਖੋ" data-testid={`photo-preview-${reg.id}`}>
+          <Avatar className="h-14 w-14 border-2 border-muted">
+            <AvatarImage src={photoSrc} />
+            <AvatarFallback className="text-xl font-bold">{reg.name[0]}</AvatarFallback>
+          </Avatar>
+        </button>
+      </DialogTrigger>
+      <DialogContent className="max-w-xs p-0 overflow-hidden">
+        <div className="bg-gray-900 flex items-center justify-center min-h-[280px]">
+          <img src={photoSrc} alt={reg.name} className="max-w-full max-h-[60vh] object-contain" />
+        </div>
+        <div className="p-4 space-y-3">
+          <div>
+            <p className="font-semibold">{reg.name}</p>
+            <p className="text-xs text-muted-foreground">{reg.designation} • {reg.village}, {reg.district}</p>
+          </div>
+          <Button onClick={handleDownload} className="w-full gap-2" variant="outline" data-testid={`button-download-photo-${reg.id}`}>
+            <Download className="h-4 w-4" /> ਫੋਟੋ Download ਕਰੋ
+          </Button>
+          <p className="text-xs text-muted-foreground text-center">Download ਕਰਕੇ edit ਕਰੋ, ਫਿਰ "ਸੋਧ ਕਰੋ" ਤੋਂ ਦੁਬਾਰਾ upload ਕਰੋ</p>
+        </div>
+      </DialogContent>
+    </Dialog>
+  );
+}
+
 // ─── Image Compression Utility ───────────────────────────────
 async function compressImage(file: File, maxW = 600, maxH = 800, quality = 0.82): Promise<Blob> {
   return new Promise((resolve, reject) => {
@@ -538,10 +582,13 @@ function PendingCard({ reg, userRole }: { reg: Registration; userRole: StaffRole
     <Card className="border-amber-200 bg-amber-50/30 overflow-hidden">
       <CardContent className="p-4">
         <div className="flex items-start gap-3">
-          <Avatar className="h-14 w-14 flex-shrink-0 border-2 border-amber-200">
-            {reg.photoUrl ? <AvatarImage src={reg.photoUrl} /> : reg.photoData ? <AvatarImage src={`data:${reg.photoMimeType};base64,${reg.photoData}`} /> : null}
-            <AvatarFallback className="text-xl font-bold bg-amber-100">{reg.name[0]}</AvatarFallback>
-          </Avatar>
+          {reg.photoUrl || reg.photoData ? (
+            <PhotoPreviewDialog reg={reg} />
+          ) : (
+            <Avatar className="h-14 w-14 flex-shrink-0 border-2 border-amber-200">
+              <AvatarFallback className="text-xl font-bold bg-amber-100">{reg.name[0]}</AvatarFallback>
+            </Avatar>
+          )}
           <div className="flex-1 min-w-0">
             <div className="flex items-start justify-between gap-2">
               <div><p className="font-semibold leading-tight">{reg.name}</p><p className="text-sm text-muted-foreground">{reg.designation}</p></div>
@@ -614,10 +661,13 @@ function MemberCard({ reg, isAdminRole }: { reg: Registration; isAdminRole: bool
     <Card className="overflow-hidden hover:shadow-md transition-shadow">
       <CardContent className="p-4">
         <div className="flex items-start gap-3">
-          <Avatar className="h-14 w-14 flex-shrink-0 border-2 border-muted">
-            {reg.photoUrl ? <AvatarImage src={reg.photoUrl} /> : reg.photoData ? <AvatarImage src={`data:${reg.photoMimeType};base64,${reg.photoData}`} /> : null}
-            <AvatarFallback className="text-xl font-bold">{reg.name[0]}</AvatarFallback>
-          </Avatar>
+          {reg.photoUrl || reg.photoData ? (
+            <PhotoPreviewDialog reg={reg} />
+          ) : (
+            <Avatar className="h-14 w-14 flex-shrink-0 border-2 border-muted">
+              <AvatarFallback className="text-xl font-bold">{reg.name[0]}</AvatarFallback>
+            </Avatar>
+          )}
           <div className="flex-1 min-w-0">
             <div className="flex items-start justify-between gap-2">
               <div><p className="font-semibold leading-tight">{reg.name}</p><p className="text-sm text-muted-foreground">{reg.designation}</p></div>
