@@ -140,6 +140,9 @@ export class DatabaseStorage implements IStorage {
     if (data.mohalla !== undefined) updateData.mohalla = data.mohalla || null;
     if (data.mobileNumber !== undefined) updateData.mobileNumber = data.mobileNumber || null;
     if (data.aadhaarNumber !== undefined) updateData.aadhaarNumber = data.aadhaarNumber || null;
+    if (data.photoUrl !== undefined) updateData.photoUrl = data.photoUrl || null;
+    if (data.photoData !== undefined) updateData.photoData = data.photoData || null;
+    if (data.photoMimeType !== undefined) updateData.photoMimeType = data.photoMimeType || null;
     const [updated] = await db.update(registrations).set(updateData).where(eq(registrations.id, id)).returning();
     return updated;
   }

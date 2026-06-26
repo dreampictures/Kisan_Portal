@@ -15,7 +15,7 @@ import {
   MapPin, Phone, CreditCard, UserPlus, Newspaper, Plus, X,
   Clock, ThumbsUp, ThumbsDown, BarChart2, Globe, TrendingUp,
   Pencil, KeyRound, FileText, UserCog, Bell, ChevronRight,
-  AlertCircle, CheckCheck,
+  AlertCircle, CheckCheck, Camera, CheckCircle2,
 } from "lucide-react";
 import { motion } from "framer-motion";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
@@ -256,17 +256,75 @@ function IssueQRDialog({ reg }: { reg: Registration }) {
   );
 }
 
+// ─── Image Compression Utility ───────────────────────────────
+async function compressImage(file: File, maxW = 600, maxH = 800, quality = 0.82): Promise<Blob> {
+  return new Promise((resolve, reject) => {
+    const img = new Image();
+    const url = URL.createObjectURL(file);
+    img.onload = () => {
+      URL.revokeObjectURL(url);
+      let { width, height } = img;
+      if (width > maxW || height > maxH) {
+        const ratio = Math.min(maxW / width, maxH / height);
+        width = Math.round(width * ratio);
+        height = Math.round(height * ratio);
+      }
+      const canvas = document.createElement("canvas");
+      canvas.width = width; canvas.height = height;
+      const ctx = canvas.getContext("2d")!;
+      ctx.drawImage(img, 0, 0, width, height);
+      canvas.toBlob(b => b ? resolve(b) : reject(new Error("compress failed")), "image/jpeg", quality);
+    };
+    img.onerror = reject;
+    img.src = url;
+  });
+}
+
 // ─── Edit Dialog ─────────────────────────────────────────────
 function EditDialog({ reg }: { reg: Registration }) {
   const [open, setOpen] = useState(false);
   const { toast } = useToast();
   const queryClient = useQueryClient();
   const [form, setForm] = useState({ name: reg.name, designation: reg.designation || "ਮੈਂਬਰ", district: reg.district, tehsil: reg.tehsil, village: reg.village, areaType: (reg.areaType || "rural") as "rural" | "urban", wardNumber: reg.wardNumber || "", mohalla: reg.mohalla || "", mobileNumber: reg.mobileNumber || "", aadhaarNumber: reg.aadhaarNumber || "" });
+  const [photoFile, setPhotoFile] = useState<File | null>(null);
+  const [photoPreview, setPhotoPreview] = useState<string | null>(null);
+  const [compressing, setCompressing] = useState(false);
   const tehsilsForDistrict = PUNJAB_DISTRICTS.find(d => d.name === form.district)?.tehsils || [];
 
+  const currentPhoto = reg.photoUrl || (reg.photoData ? `data:${reg.photoMimeType};base64,${reg.photoData}` : null);
+
+  const handlePhotoChange = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+    setCompressing(true);
+    try {
+      const compressed = await compressImage(file);
+      const compressedFile = new File([compressed], file.name.replace(/\.[^.]+$/, ".jpg"), { type: "image/jpeg" });
+      setPhotoFile(compressedFile);
+      const reader = new FileReader();
+      reader.onload = (ev) => setPhotoPreview(ev.target?.result as string);
+      reader.readAsDataURL(compressedFile);
+      toast({ title: "✓ ਫੋਟੋ ਤਿਆਰ", description: `Compressed: ${(compressed.size / 1024).toFixed(0)} KB` });
+    } catch {
+      toast({ title: "ਗਲਤੀ", description: "ਫੋਟੋ compress ਨਹੀਂ ਹੋਈ", variant: "destructive" });
+    }
+    setCompressing(false);
+  };
+
+  const resetDialog = (o: boolean) => {
+    setOpen(o);
+    if (o) {
+      setForm({ name: reg.name, designation: reg.designation || "ਮੈਂਬਰ", district: reg.district, tehsil: reg.tehsil, village: reg.village, areaType: (reg.areaType || "rural") as "rural" | "urban", wardNumber: reg.wardNumber || "", mohalla: reg.mohalla || "", mobileNumber: reg.mobileNumber || "", aadhaarNumber: reg.aadhaarNumber || "" });
+      setPhotoFile(null); setPhotoPreview(null);
+    }
+  };
+
   const editMut = useMutation({
-    mutationFn: async (data: typeof form) => {
-      const res = await apiRequest("PATCH", `/api/admin/registrations/${reg.id}`, data);
+    mutationFn: async () => {
+      const fd = new FormData();
+      Object.entries(form).forEach(([k, v]) => fd.append(k, v as string));
+      if (photoFile) fd.append("photo", photoFile);
+      const res = await fetch(`/api/admin/registrations/${reg.id}`, { method: "PATCH", body: fd, credentials: "include" });
       if (!res.ok) { const err = await res.json(); throw new Error(err.message); }
       return res.json();
     },
@@ -281,13 +339,48 @@ function EditDialog({ reg }: { reg: Registration }) {
   );
 
   return (
-    <Dialog open={open} onOpenChange={(o) => { setOpen(o); if (o) setForm({ name: reg.name, designation: reg.designation || "ਮੈਂਬਰ", district: reg.district, tehsil: reg.tehsil, village: reg.village, areaType: (reg.areaType || "rural") as "rural" | "urban", wardNumber: reg.wardNumber || "", mohalla: reg.mohalla || "", mobileNumber: reg.mobileNumber || "", aadhaarNumber: reg.aadhaarNumber || "" }); }}>
+    <Dialog open={open} onOpenChange={resetDialog}>
       <DialogTrigger asChild>
         <Button size="sm" variant="outline" className="w-full gap-1.5 text-xs" data-testid={`button-edit-${reg.id}`}><Pencil className="h-3.5 w-3.5" /> ਸੋਧ ਕਰੋ</Button>
       </DialogTrigger>
       <DialogContent className="max-w-md max-h-[90vh] overflow-y-auto">
         <DialogHeader><DialogTitle className="flex items-center gap-2"><Pencil className="h-4 w-4 text-primary" /> ਮੈਂਬਰ ਸੋਧ ਕਰੋ</DialogTitle></DialogHeader>
         <div className="space-y-3 py-2">
+
+          {/* ── Photo Section ── */}
+          <div className="space-y-2">
+            <Label className="text-xs">ਫੋਟੋ</Label>
+            <div className="flex items-center gap-3 p-3 bg-muted/40 rounded-lg">
+              <div className="relative flex-shrink-0">
+                {(photoPreview || currentPhoto) ? (
+                  <img src={photoPreview || currentPhoto!} alt="photo"
+                    className="h-16 w-16 rounded-full object-cover border-2 border-primary/20" />
+                ) : (
+                  <div className="h-16 w-16 rounded-full bg-muted border-2 border-border flex items-center justify-center">
+                    <span className="text-xl font-bold text-muted-foreground">{reg.name[0]}</span>
+                  </div>
+                )}
+                {photoPreview && (
+                  <div className="absolute -top-1 -right-1 bg-green-500 rounded-full p-0.5">
+                    <CheckCircle2 className="h-3 w-3 text-white" />
+                  </div>
+                )}
+              </div>
+              <div className="flex-1 space-y-1.5">
+                <p className="text-xs text-muted-foreground">
+                  {photoPreview ? "ਨਵੀਂ ਫੋਟੋ ਚੁਣੀ ਗਈ (compressed ✓)" : currentPhoto ? "ਮੌਜੂਦਾ ਫੋਟੋ" : "ਕੋਈ ਫੋਟੋ ਨਹੀਂ"}
+                </p>
+                <label className={`inline-flex items-center gap-1.5 px-3 py-1.5 rounded-md border text-xs font-medium cursor-pointer transition-colors ${compressing ? "opacity-50 cursor-not-allowed" : "hover:bg-muted border-input"}`}>
+                  {compressing ? <><Loader2 className="h-3 w-3 animate-spin" />Compressing...</> : <><Camera className="h-3 w-3" />ਫੋਟੋ ਬਦਲੋ</>}
+                  <input type="file" accept="image/*" className="hidden" onChange={handlePhotoChange} disabled={compressing} data-testid={`input-photo-edit-${reg.id}`} />
+                </label>
+                {photoPreview && (
+                  <button onClick={() => { setPhotoFile(null); setPhotoPreview(null); }} className="text-xs text-muted-foreground hover:text-destructive ml-2">✕ ਰੱਦ ਕਰੋ</button>
+                )}
+              </div>
+            </div>
+          </div>
+
           <div className="grid grid-cols-2 gap-3">{f("ਨਾਮ *", "name", "ਪੂਰਾ ਨਾਮ")}{f("ਆਹੁਦਾ", "designation", "ਮੈਂਬਰ / ਪ੍ਰਧਾਨ...")}</div>
           <div className="space-y-1"><Label className="text-xs">ਖੇਤਰ</Label>
             <div className="grid grid-cols-2 gap-2">
@@ -316,7 +409,7 @@ function EditDialog({ reg }: { reg: Registration }) {
           {form.areaType === "urban" && <div className="grid grid-cols-2 gap-3">{f("ਵਾਰਡ ਨੰਬਰ", "wardNumber", "ਵਿਕਲਪਿਕ")}{f("ਮੁਹੱਲਾ", "mohalla", "ਵਿਕਲਪਿਕ")}</div>}
           <div className="grid grid-cols-2 gap-3">{f("ਮੋਬਾਈਲ", "mobileNumber", "10 ਅੰਕ")}{f("ਆਧਾਰ ਨੰਬਰ", "aadhaarNumber", "12 ਅੰਕ")}</div>
         </div>
-        <Button onClick={() => editMut.mutate(form)} disabled={editMut.isPending || !form.name || !form.village || !form.tehsil || !form.district} className="w-full">
+        <Button onClick={() => editMut.mutate()} disabled={editMut.isPending || compressing || !form.name || !form.village || !form.tehsil || !form.district} className="w-full">
           {editMut.isPending ? <><Loader2 className="mr-2 h-4 w-4 animate-spin" />ਸੇਵ ਹੋ ਰਿਹਾ...</> : <><Pencil className="mr-2 h-4 w-4" />ਸੇਵ ਕਰੋ</>}
         </Button>
       </DialogContent>

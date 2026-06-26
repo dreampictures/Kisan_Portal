@@ -503,7 +503,7 @@ export async function registerRoutes(httpServer: Server, app: Express): Promise<
   });
 
   // ── Admin: edit registration ─────────────────────────────
-  app.patch("/api/admin/registrations/:id", isStaffAuth, async (req: any, res: any) => {
+  app.patch("/api/admin/registrations/:id", isStaffAuth, upload.single("photo"), async (req: any, res: any) => {
     try {
       const id = parseInt(req.params.id);
       const editSchema = z.object({
@@ -519,7 +519,31 @@ export async function registerRoutes(httpServer: Server, app: Express): Promise<
         aadhaarNumber: z.string().optional(),
       });
       const parsed = editSchema.parse(req.body);
-      const updated = await storage.updateRegistration(id, parsed);
+
+      let photoUrl: string | undefined;
+      let photoData: string | undefined;
+      let photoMimeType: string | undefined;
+
+      if (req.file) {
+        const ext = req.file.mimetype.split("/")[1] || "jpg";
+        const fileName = `photos/${Date.now()}-${Math.random().toString(36).slice(2)}.${ext}`;
+        try {
+          const oldReg = await storage.getRegistration(id);
+          if (oldReg?.photoUrl) await deletePhotoFromR2(oldReg.photoUrl).catch(() => {});
+          photoUrl = await uploadPhotoToR2(req.file.buffer, req.file.mimetype, fileName);
+        } catch {
+          photoData = req.file.buffer.toString("base64");
+          photoMimeType = req.file.mimetype;
+        }
+      }
+
+      const updateData: any = { ...parsed };
+      if (req.file) {
+        if (photoUrl) { updateData.photoUrl = photoUrl; updateData.photoData = null; updateData.photoMimeType = null; }
+        else { updateData.photoData = photoData; updateData.photoMimeType = photoMimeType; updateData.photoUrl = null; }
+      }
+
+      const updated = await storage.updateRegistration(id, updateData);
       if (!updated) return res.status(404).json({ message: "ਰਜਿਸਟ੍ਰੇਸ਼ਨ ਨਹੀਂ ਮਿਲੀ" });
       res.json({ message: "ਅੱਪਡੇਟ ਹੋ ਗਿਆ", registration: updated });
     } catch (err) {
