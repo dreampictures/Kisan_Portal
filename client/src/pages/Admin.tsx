@@ -1,4 +1,5 @@
 import { useState, useRef } from "react";
+import { Link } from "wouter";
 import { Navbar } from "@/components/Navbar";
 import { useAuth, type StaffRole } from "@/hooks/use-auth";
 import { useRegistrations, useDownloadRegistrations } from "@/hooks/use-registration";
@@ -56,43 +57,83 @@ function LoginForm() {
     });
   };
 
+  const navLinks = [
+    { href: "/", label: "ਮੁੱਖ ਪੰਨਾ" },
+    { href: "/about", label: "ਯੂਨੀਅਨ ਬਾਰੇ" },
+    { href: "/updates", label: "ਤਾਜ਼ੀਆਂ ਖ਼ਬਰਾਂ" },
+    { href: "/contact", label: "ਸੰਪਰਕ ਕਰੋ" },
+    { href: "/track", label: "ਟਰੈਕ ਕਰੋ" },
+    { href: "/verify", label: "ਵੈਰੀਫਾਈ ਕਰੋ" },
+    { href: "/contact", label: "ਮੈਂਬਰ ਬਣੋ" },
+  ];
+
   return (
-    <div className="min-h-screen flex items-center justify-center bg-background px-4">
-      <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} className="w-full max-w-sm">
-        <Card className="shadow-lg">
-          <CardHeader className="text-center space-y-3 pb-4">
-            <div className="mx-auto bg-primary/10 p-4 rounded-full w-fit"><Lock className="h-8 w-8 text-primary" /></div>
-            <CardTitle className="text-2xl font-display">ਸਟਾਫ਼ ਲੌਗਇਨ</CardTitle>
-            <p className="text-sm text-muted-foreground">ਕਿਸਾਨ ਯੂਨੀਅਨ ਪੰਜਾਬ</p>
-          </CardHeader>
-          <CardContent>
-            <form onSubmit={handleSubmit} className="space-y-4">
-              <div className="space-y-2">
-                <Label htmlFor="username">ਯੂਜ਼ਰਨੇਮ</Label>
-                <Input id="username" type="text" value={username} autoComplete="username"
-                  onChange={(e) => setUsername(e.target.value)} placeholder="ਯੂਜ਼ਰਨੇਮ"
-                  required data-testid="input-username" />
-              </div>
-              <div className="space-y-2">
-                <Label htmlFor="password">ਪਾਸਵਰਡ</Label>
-                <div className="relative">
-                  <Input id="password" type={showPassword ? "text" : "password"} value={password}
-                    onChange={(e) => setPassword(e.target.value)} placeholder="ਪਾਸਵਰਡ"
-                    required data-testid="input-password" className="pr-10" />
-                  <button type="button" onClick={() => setShowPassword(!showPassword)}
-                    className="absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground" tabIndex={-1}>
-                    {showPassword ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
-                  </button>
-                </div>
-              </div>
-              {loginError && <p className="text-sm text-destructive text-center">ਗਲਤ ਯੂਜ਼ਰਨੇਮ ਜਾਂ ਪਾਸਵਰਡ</p>}
-              <Button type="submit" className="w-full" disabled={isLoggingIn} data-testid="button-login">
-                {isLoggingIn ? <><Loader2 className="mr-2 h-4 w-4 animate-spin" />ਲੌਗਇਨ...</> : "ਲੌਗਇਨ ਕਰੋ"}
+    <div className="min-h-screen flex flex-col bg-background">
+      {/* Top Navigation */}
+      <div className="w-full bg-primary/5 border-b border-border px-4 py-3">
+        <div className="max-w-2xl mx-auto flex flex-wrap gap-2 justify-center">
+          {navLinks.map((link) => (
+            <Link key={link.href + link.label} href={link.href}>
+              <Button variant="outline" size="sm" className="text-xs font-medium text-foreground hover:bg-primary/10 hover:text-primary border-border">
+                {link.label}
               </Button>
-            </form>
-          </CardContent>
-        </Card>
-      </motion.div>
+            </Link>
+          ))}
+        </div>
+      </div>
+
+      {/* Login Card */}
+      <div className="flex-grow flex items-center justify-center px-4 py-8">
+        <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} className="w-full max-w-sm">
+          <Card className="shadow-lg">
+            <CardHeader className="text-center space-y-3 pb-4">
+              <div className="mx-auto bg-primary/10 p-4 rounded-full w-fit"><Lock className="h-8 w-8 text-primary" /></div>
+              <CardTitle className="text-2xl font-display">ਸਟਾਫ਼ ਲੌਗਇਨ</CardTitle>
+              <p className="text-sm text-muted-foreground">ਕਿਸਾਨ ਯੂਨੀਅਨ ਪੰਜਾਬ</p>
+            </CardHeader>
+            <CardContent>
+              <form onSubmit={handleSubmit} className="space-y-4">
+                <div className="space-y-2">
+                  <Label htmlFor="username">ਯੂਜ਼ਰਨੇਮ</Label>
+                  <Input id="username" type="text" value={username} autoComplete="username"
+                    onChange={(e) => setUsername(e.target.value)} placeholder="ਯੂਜ਼ਰਨੇਮ"
+                    required data-testid="input-username" />
+                </div>
+                <div className="space-y-2">
+                  <Label htmlFor="password">ਪਾਸਵਰਡ</Label>
+                  <div className="relative">
+                    <Input id="password" type={showPassword ? "text" : "password"} value={password}
+                      onChange={(e) => setPassword(e.target.value)} placeholder="ਪਾਸਵਰਡ"
+                      required data-testid="input-password" className="pr-10" />
+                    <button type="button" onClick={() => setShowPassword(!showPassword)}
+                      className="absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground" tabIndex={-1}>
+                      {showPassword ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
+                    </button>
+                  </div>
+                </div>
+                {loginError && <p className="text-sm text-destructive text-center">ਗਲਤ ਯੂਜ਼ਰਨੇਮ ਜਾਂ ਪਾਸਵਰਡ</p>}
+                <Button type="submit" className="w-full" disabled={isLoggingIn} data-testid="button-login">
+                  {isLoggingIn ? <><Loader2 className="mr-2 h-4 w-4 animate-spin" />ਲੌਗਇਨ...</> : "ਲੌਗਇਨ ਕਰੋ"}
+                </Button>
+              </form>
+            </CardContent>
+          </Card>
+        </motion.div>
+      </div>
+
+      {/* Bottom Navigation */}
+      <div className="w-full bg-primary/5 border-t border-border px-4 py-3">
+        <div className="max-w-2xl mx-auto flex flex-wrap gap-2 justify-center">
+          {navLinks.map((link) => (
+            <Link key={link.href + link.label} href={link.href}>
+              <Button variant="outline" size="sm" className="text-xs font-medium text-foreground hover:bg-primary/10 hover:text-primary border-border">
+                {link.label}
+              </Button>
+            </Link>
+          ))}
+        </div>
+        <p className="text-center text-xs text-muted-foreground mt-3">© ਕਿਸਾਨ ਸੰਘਰਸ਼ ਕਮੇਟੀ ਪੰਜਾਬ</p>
+      </div>
     </div>
   );
 }
