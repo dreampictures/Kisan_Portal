@@ -1,4 +1,5 @@
 import { useState, useRef } from "react";
+import { Navbar } from "@/components/Navbar";
 import { useAuth, type StaffRole } from "@/hooks/use-auth";
 import { useRegistrations, useDownloadRegistrations } from "@/hooks/use-registration";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
