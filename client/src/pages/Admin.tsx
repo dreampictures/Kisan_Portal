@@ -1,6 +1,7 @@
 import { useState, useRef } from "react";
 import { Link } from "wouter";
 import { Navbar } from "@/components/Navbar";
+import { Footer } from "@/components/Footer";
 import { useAuth, type StaffRole } from "@/hooks/use-auth";
 import { useRegistrations, useDownloadRegistrations } from "@/hooks/use-registration";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
@@ -57,83 +58,168 @@ function LoginForm() {
     });
   };
 
-  const navLinks = [
-    { href: "/", label: "ਮੁੱਖ ਪੰਨਾ" },
-    { href: "/about", label: "ਯੂਨੀਅਨ ਬਾਰੇ" },
-    { href: "/updates", label: "ਤਾਜ਼ੀਆਂ ਖ਼ਬਰਾਂ" },
-    { href: "/contact", label: "ਸੰਪਰਕ ਕਰੋ" },
-    { href: "/track", label: "ਟਰੈਕ ਕਰੋ" },
-    { href: "/verify", label: "ਵੈਰੀਫਾਈ ਕਰੋ" },
-    { href: "/contact", label: "ਮੈਂਬਰ ਬਣੋ" },
-  ];
-
   return (
     <div className="min-h-screen flex flex-col bg-background">
-      {/* Top Navigation */}
-      <div className="w-full bg-primary/5 border-b border-border px-4 py-3">
-        <div className="max-w-2xl mx-auto flex flex-wrap gap-2 justify-center">
-          {navLinks.map((link) => (
-            <Link key={link.href + link.label} href={link.href}>
-              <Button variant="outline" size="sm" className="text-xs font-medium text-foreground hover:bg-primary/10 hover:text-primary border-border">
-                {link.label}
-              </Button>
-            </Link>
-          ))}
-        </div>
-      </div>
+      {/* Site Navbar */}
+      <Navbar />
 
-      {/* Login Card */}
-      <div className="flex-grow flex items-center justify-center px-4 py-8">
-        <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} className="w-full max-w-sm">
-          <Card className="shadow-lg">
-            <CardHeader className="text-center space-y-3 pb-4">
-              <div className="mx-auto bg-primary/10 p-4 rounded-full w-fit"><Lock className="h-8 w-8 text-primary" /></div>
-              <CardTitle className="text-2xl font-display">ਸਟਾਫ਼ ਲੌਗਇਨ</CardTitle>
-              <p className="text-sm text-muted-foreground">ਕਿਸਾਨ ਯੂਨੀਅਨ ਪੰਜਾਬ</p>
-            </CardHeader>
-            <CardContent>
-              <form onSubmit={handleSubmit} className="space-y-4">
-                <div className="space-y-2">
-                  <Label htmlFor="username">ਯੂਜ਼ਰਨੇਮ</Label>
-                  <Input id="username" type="text" value={username} autoComplete="username"
-                    onChange={(e) => setUsername(e.target.value)} placeholder="ਯੂਜ਼ਰਨੇਮ"
-                    required data-testid="input-username" />
+      {/* Hero Section with blurred farmer field background */}
+      <section className="relative flex-grow flex items-center justify-center overflow-hidden py-16 px-4">
+        {/* Blurred background image */}
+        <div
+          className="absolute inset-0 z-0"
+          style={{
+            backgroundImage: `url('https://images.unsplash.com/photo-1625246333195-78d9c38ad449?w=1920&q=80')`,
+            backgroundSize: "cover",
+            backgroundPosition: "center",
+            filter: "blur(6px) brightness(0.55)",
+            transform: "scale(1.05)",
+          }}
+        />
+        {/* Gradient overlay */}
+        <div className="absolute inset-0 z-0 bg-gradient-to-b from-primary/60 via-primary/30 to-background/80" />
+
+        <div className="relative z-10 w-full max-w-5xl mx-auto flex flex-col md:flex-row items-center justify-between gap-10">
+          {/* Left: Hero text (home page style) */}
+          <motion.div
+            initial={{ opacity: 0, x: -30 }}
+            animate={{ opacity: 1, x: 0 }}
+            transition={{ duration: 0.6 }}
+            className="hidden md:flex flex-col gap-5 text-white max-w-sm"
+          >
+            <span className="inline-block px-4 py-1.5 rounded-full bg-white/20 text-white font-semibold text-sm tracking-wide w-fit">
+              ਕਿਸਾਨਾਂ ਦੀ ਆਵਾਜ਼
+            </span>
+            <h1 className="text-4xl font-display font-bold leading-tight drop-shadow-lg">
+              ਕਿਸਾਨ ਸੰਘਰਸ਼<br />
+              <span className="text-white/90">ਕਮੇਟੀ ਪੰਜਾਬ</span>
+            </h1>
+            <p className="text-white/80 text-base leading-relaxed">
+              ਕਿਸਾਨਾਂ ਨੂੰ ਇਕਜੁੱਟ ਕਰਨਾ ਤਾਂ ਜੋ ਸਾਡੇ ਹੱਕਾਂ,<br />
+              ਜ਼ਮੀਨਾਂ ਅਤੇ ਭਵਿੱਖ ਦੀ ਰਾਖੀ ਕੀਤੀ ਜਾ ਸਕੇ।
+            </p>
+            <div className="flex gap-3 pt-2">
+              <Link href="/contact">
+                <Button size="sm" className="rounded-full bg-white text-primary hover:bg-white/90 font-semibold shadow-lg">
+                  ਮੈਂਬਰ ਬਣੋ
+                </Button>
+              </Link>
+              <Link href="/about">
+                <Button size="sm" variant="outline" className="rounded-full border-white/60 text-white hover:bg-white/10 backdrop-blur">
+                  ਹੋਰ ਜਾਣੋ
+                </Button>
+              </Link>
+            </div>
+          </motion.div>
+
+          {/* Right: Login Card */}
+          <motion.div
+            initial={{ opacity: 0, y: 20 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ duration: 0.5 }}
+            className="w-full max-w-sm"
+          >
+            <Card className="shadow-2xl border-white/20 bg-white/95 backdrop-blur-md">
+              <CardHeader className="text-center space-y-3 pb-4">
+                <div className="mx-auto bg-primary/10 p-4 rounded-full w-fit">
+                  <Lock className="h-8 w-8 text-primary" />
                 </div>
-                <div className="space-y-2">
-                  <Label htmlFor="password">ਪਾਸਵਰਡ</Label>
-                  <div className="relative">
-                    <Input id="password" type={showPassword ? "text" : "password"} value={password}
-                      onChange={(e) => setPassword(e.target.value)} placeholder="ਪਾਸਵਰਡ"
-                      required data-testid="input-password" className="pr-10" />
-                    <button type="button" onClick={() => setShowPassword(!showPassword)}
-                      className="absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground" tabIndex={-1}>
-                      {showPassword ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
-                    </button>
+                <CardTitle className="text-2xl font-display text-foreground">ਸਟਾਫ਼ ਲੌਗਇਨ</CardTitle>
+                <p className="text-sm text-muted-foreground">ਕਿਸਾਨ ਸੰਘਰਸ਼ ਕਮੇਟੀ ਪੰਜਾਬ</p>
+              </CardHeader>
+              <CardContent>
+                <form onSubmit={handleSubmit} className="space-y-4">
+                  <div className="space-y-2">
+                    <Label htmlFor="username">ਯੂਜ਼ਰਨੇਮ</Label>
+                    <Input id="username" type="text" value={username} autoComplete="username"
+                      onChange={(e) => setUsername(e.target.value)} placeholder="ਯੂਜ਼ਰਨੇਮ"
+                      required data-testid="input-username" />
+                  </div>
+                  <div className="space-y-2">
+                    <Label htmlFor="password">ਪਾਸਵਰਡ</Label>
+                    <div className="relative">
+                      <Input id="password" type={showPassword ? "text" : "password"} value={password}
+                        onChange={(e) => setPassword(e.target.value)} placeholder="ਪਾਸਵਰਡ"
+                        required data-testid="input-password" className="pr-10" autoComplete="current-password" />
+                      <button type="button" onClick={() => setShowPassword(!showPassword)}
+                        className="absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground" tabIndex={-1}>
+                        {showPassword ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
+                      </button>
+                    </div>
+                  </div>
+                  {loginError && (
+                    <p className="text-sm text-destructive text-center">ਗਲਤ ਯੂਜ਼ਰਨੇਮ ਜਾਂ ਪਾਸਵਰਡ</p>
+                  )}
+                  <Button type="submit" className="w-full" disabled={isLoggingIn} data-testid="button-login">
+                    {isLoggingIn ? <><Loader2 className="mr-2 h-4 w-4 animate-spin" />ਲੌਗਇਨ...</> : "ਲੌਗਇਨ ਕਰੋ"}
+                  </Button>
+                </form>
+
+                <div className="mt-5 pt-4 border-t border-border/50">
+                  <p className="text-xs text-center text-muted-foreground mb-3">ਹੋਰ ਪੰਨੇ</p>
+                  <div className="flex flex-wrap gap-1.5 justify-center">
+                    {[
+                      { href: "/", label: "ਮੁੱਖ ਪੰਨਾ" },
+                      { href: "/about", label: "ਯੂਨੀਅਨ ਬਾਰੇ" },
+                      { href: "/updates", label: "ਖ਼ਬਰਾਂ" },
+                      { href: "/contact", label: "ਸੰਪਰਕ" },
+                      { href: "/track", label: "ਟਰੈਕ" },
+                      { href: "/verify", label: "ਵੈਰੀਫਾਈ" },
+                    ].map((link) => (
+                      <Link key={link.href + link.label} href={link.href}>
+                        <Button variant="outline" size="sm" className="text-xs h-7 px-2">
+                          {link.label}
+                        </Button>
+                      </Link>
+                    ))}
                   </div>
                 </div>
-                {loginError && <p className="text-sm text-destructive text-center">ਗਲਤ ਯੂਜ਼ਰਨੇਮ ਜਾਂ ਪਾਸਵਰਡ</p>}
-                <Button type="submit" className="w-full" disabled={isLoggingIn} data-testid="button-login">
-                  {isLoggingIn ? <><Loader2 className="mr-2 h-4 w-4 animate-spin" />ਲੌਗਇਨ...</> : "ਲੌਗਇਨ ਕਰੋ"}
-                </Button>
-              </form>
-            </CardContent>
-          </Card>
-        </motion.div>
-      </div>
-
-      {/* Bottom Navigation */}
-      <div className="w-full bg-primary/5 border-t border-border px-4 py-3">
-        <div className="max-w-2xl mx-auto flex flex-wrap gap-2 justify-center">
-          {navLinks.map((link) => (
-            <Link key={link.href + link.label} href={link.href}>
-              <Button variant="outline" size="sm" className="text-xs font-medium text-foreground hover:bg-primary/10 hover:text-primary border-border">
-                {link.label}
-              </Button>
-            </Link>
-          ))}
+              </CardContent>
+            </Card>
+          </motion.div>
         </div>
-        <p className="text-center text-xs text-muted-foreground mt-3">© ਕਿਸਾਨ ਸੰਘਰਸ਼ ਕਮੇਟੀ ਪੰਜਾਬ</p>
-      </div>
+      </section>
+
+      {/* Features strip (home page style) */}
+      <section className="py-12 bg-background border-t border-border">
+        <div className="container mx-auto px-4">
+          <motion.div
+            initial={{ opacity: 0, y: 20 }}
+            whileInView={{ opacity: 1, y: 0 }}
+            viewport={{ once: true }}
+            className="grid grid-cols-1 md:grid-cols-3 gap-6"
+          >
+            {[
+              { icon: Users, title: "ਏਕਤਾ ਵਿੱਚ ਬਲ", desc: "ਹਰ ਜ਼ਿਲ੍ਹੇ ਦੇ ਕਿਸਾਨਾਂ ਨੂੰ ਇਕੱਠੇ ਕਰਕੇ ਮਜ਼ਬੂਤ ਸਮੂਹਿਕ ਆਵਾਜ਼।" },
+              { icon: ShieldCheck, title: "ਹੱਕਾਂ ਦੀ ਰਾਖੀ", desc: "ਜ਼ਮੀਨੀ ਹੱਕਾਂ ਅਤੇ ਫਸਲਾਂ ਦੇ ਉਚਿਤ ਭਾਅ ਲਈ ਸੰਘਰਸ਼।" },
+              { icon: CreditCard, title: "ਸਰਕਾਰੀ ਪਛਾਣ", desc: "ਡਿਜੀਟਲ ਪੋਰਟਲ ਰਾਹੀਂ ਮੈਂਬਰਸ਼ਿਪ ਪਛਾਣ ਪੱਤਰ ਪ੍ਰਾਪਤ ਕਰੋ।" },
+            ].map(({ icon: Icon, title, desc }) => (
+              <div key={title} className="p-6 rounded-2xl bg-white border border-border shadow-sm hover:border-primary/40 transition-colors group">
+                <div className="w-11 h-11 rounded-xl bg-primary/10 flex items-center justify-center mb-4 group-hover:bg-primary group-hover:text-white transition-colors">
+                  <Icon className="h-5 w-5 text-primary group-hover:text-white transition-colors" />
+                </div>
+                <h3 className="text-base font-bold mb-2">{title}</h3>
+                <p className="text-sm text-muted-foreground leading-relaxed">{desc}</p>
+              </div>
+            ))}
+          </motion.div>
+        </div>
+      </section>
+
+      {/* Quote banner (home page style) */}
+      <section className="py-14 bg-primary text-white text-center">
+        <div className="container mx-auto px-4">
+          <h2 className="text-2xl md:text-3xl font-display font-bold mb-3 drop-shadow">
+            "ਕਿਸਾਨ ਜਗਾਓ ਦੇਸ਼ ਬਚਾਓ"
+          </h2>
+          <p className="text-base opacity-85 max-w-xl mx-auto">
+            ਦੇਸ਼ ਨੂੰ ਬਚਾਉਣ ਲਈ ਕਿਸਾਨ ਨੂੰ ਜਗਾਓ। ਸਾਡਾ ਸੰਘਰਸ਼ ਪੂਰੇ ਦੇਸ਼ ਦੀ ਅੰਨ ਸੁਰੱਖਿਆ ਲਈ ਹੈ।
+          </p>
+        </div>
+      </section>
+
+      {/* Footer */}
+      <Footer />
     </div>
   );
 }
