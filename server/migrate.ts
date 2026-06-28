@@ -1,4 +1,5 @@
 import { Pool } from "pg";
+import bcrypt from "bcryptjs";
 
 export async function runMigrations() {
   const pool = new Pool({ connectionString: process.env.DATABASE_URL });
@@ -141,6 +142,16 @@ export async function runMigrations() {
     await client.query(`
       CREATE UNIQUE INDEX IF NOT EXISTS registrations_tracking_id_key ON registrations (tracking_id) WHERE tracking_id IS NOT NULL;
     `);
+
+    // Hash any plain-text passwords in staff_users (those not starting with $2b$)
+    const users = await client.query(`SELECT id, password FROM staff_users`);
+    for (const row of users.rows) {
+      if (row.password && !row.password.startsWith("$2b$") && !row.password.startsWith("$2a$")) {
+        const hashed = await bcrypt.hash(row.password, 12);
+        await client.query(`UPDATE staff_users SET password = $1 WHERE id = $2`, [hashed, row.id]);
+        console.log(`[migrate] Hashed password for staff_user id=${row.id}`);
+      }
+    }
 
     console.log("[migrate] All tables ready");
   } catch (err) {

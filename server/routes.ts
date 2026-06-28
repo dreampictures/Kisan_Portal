@@ -9,6 +9,8 @@ import { z } from "zod";
 import AdmZip from "adm-zip";
 import { uploadPhotoToR2, deletePhotoFromR2 } from "./r2";
 import { generateQRCode, generateQRCodeBuffer } from "./qr";
+import rateLimit from "express-rate-limit";
+import bcrypt from "bcryptjs";
 
 const upload = multer({
   storage: multer.memoryStorage(),
@@ -21,7 +23,40 @@ const upload = multer({
 
 const ADMIN_USERNAME = process.env.ADMIN_USERNAME!;
 const ADMIN_PASSWORD = process.env.ADMIN_PASSWORD!;
-const ADMIN_PIN = "1103";
+const ADMIN_PIN = process.env.ADMIN_PIN || "1103";
+
+// ── Rate Limiters ────────────────────────────────────────────
+const loginLimiter = rateLimit({
+  windowMs: 15 * 60 * 1000,
+  max: 10,
+  message: { message: "ਬਹੁਤ ਜ਼ਿਆਦਾ ਕੋਸ਼ਿਸ਼ਾਂ। 15 ਮਿੰਟ ਬਾਅਦ ਦੁਬਾਰਾ ਕੋਸ਼ਿਸ਼ ਕਰੋ।" },
+  standardHeaders: true,
+  legacyHeaders: false,
+});
+
+const pinLimiter = rateLimit({
+  windowMs: 10 * 60 * 1000,
+  max: 5,
+  message: { message: "ਬਹੁਤ ਜ਼ਿਆਦਾ ਗਲਤ PIN। 10 ਮਿੰਟ ਬਾਅਦ ਕੋਸ਼ਿਸ਼ ਕਰੋ।" },
+  standardHeaders: true,
+  legacyHeaders: false,
+});
+
+const registrationLimiter = rateLimit({
+  windowMs: 60 * 60 * 1000,
+  max: 20,
+  message: { message: "ਬਹੁਤ ਜ਼ਿਆਦਾ ਰਜਿਸਟ੍ਰੇਸ਼ਨ ਕੋਸ਼ਿਸ਼ਾਂ। 1 ਘੰਟੇ ਬਾਅਦ ਕੋਸ਼ਿਸ਼ ਕਰੋ।" },
+  standardHeaders: true,
+  legacyHeaders: false,
+});
+
+const trackLimiter = rateLimit({
+  windowMs: 5 * 60 * 1000,
+  max: 30,
+  message: { message: "ਬਹੁਤ ਜ਼ਿਆਦਾ ਕੋਸ਼ਿਸ਼ਾਂ। ਕੁਝ ਮਿੰਟ ਬਾਅਦ ਕੋਸ਼ਿਸ਼ ਕਰੋ।" },
+  standardHeaders: true,
+  legacyHeaders: false,
+});
 
 // ── Auth Middleware ─────────────────────────────────────────
 function isFullyAuthenticated(req: any): boolean {
@@ -88,12 +123,14 @@ export async function registerRoutes(httpServer: Server, app: Express): Promise<
   });
 
   // ── Admin login ──────────────────────────────────────────
-  app.post("/api/admin/login", async (req: any, res: any) => {
+  app.post("/api/admin/login", loginLimiter, async (req: any, res: any) => {
     const { username, password } = req.body;
+    if (!username || !password) return res.status(400).json({ message: "Username ਅਤੇ Password ਲੋੜੀਂਦੇ ਹਨ" });
 
     // Check staff_users table first
     const staffUser = await storage.getStaffUserByUsername(username).catch(() => undefined);
-    if (staffUser && staffUser.password === password) {
+    const passwordMatch = staffUser ? await bcrypt.compare(password, staffUser.password).catch(() => staffUser.password === password) : false;
+    if (staffUser && passwordMatch) {
       req.session.adminAuthenticated = true;
       req.session.staffUserId = staffUser.id;
       req.session.staffRole = staffUser.role;
@@ -131,8 +168,9 @@ export async function registerRoutes(httpServer: Server, app: Express): Promise<
     return res.status(401).json({ message: "ਗਲਤ ਯੂਜ਼ਰਨੇਮ ਜਾਂ ਪਾਸਵਰਡ" });
   });
 
-  app.post("/api/admin/verify-pin", isPasswordAuth, (req: any, res: any) => {
+  app.post("/api/admin/verify-pin", pinLimiter, isPasswordAuth, (req: any, res: any) => {
     const { pin } = req.body;
+    if (!pin) return res.status(400).json({ message: "PIN ਲੋੜੀਂਦਾ ਹੈ" });
     if (pin === ADMIN_PIN) {
       req.session.pinVerified = true;
       return req.session.save((err: any) => {
@@ -198,7 +236,7 @@ export async function registerRoutes(httpServer: Server, app: Express): Promise<
   });
 
   // ── Public: tracking ─────────────────────────────────────
-  app.get("/api/track", async (req: any, res: any) => {
+  app.get("/api/track", trackLimiter, async (req: any, res: any) => {
     try {
       const { trackingId, mobile } = req.query;
       if (!trackingId && !mobile) return res.status(400).json({ message: "trackingId ਜਾਂ mobile ਲੋੜੀਂਦਾ ਹੈ" });
@@ -256,7 +294,7 @@ export async function registerRoutes(httpServer: Server, app: Express): Promise<
   });
 
   // ── Public: submit registration ──────────────────────────
-  app.post(api.registrations.submit.path, upload.single("photo"), async (req, res) => {
+  app.post(api.registrations.submit.path, registrationLimiter, upload.single("photo"), async (req, res) => {
     try {
       const bodySchema = insertRegistrationSchema.extend({
         name: z.string().min(1, "ਨਾਮ ਲੋੜੀਂਦਾ ਹੈ"),
@@ -782,14 +820,15 @@ export async function registerRoutes(httpServer: Server, app: Express): Promise<
     try {
       const schema = z.object({
         username: z.string().min(3, "Username ਘੱਟੋ-ਘੱਟ 3 ਅੱਖਰ"),
-        password: z.string().min(4, "Password ਘੱਟੋ-ਘੱਟ 4 ਅੱਖਰ"),
+        password: z.string().min(6, "Password ਘੱਟੋ-ਘੱਟ 6 ਅੱਖਰ"),
         displayName: z.string().min(1, "ਨਾਮ ਲੋੜੀਂਦਾ ਹੈ"),
         role: z.enum(["admin", "state_meet_president", "state_president"]),
       });
       const parsed = schema.parse(req.body);
       const existing = await storage.getStaffUserByUsername(parsed.username);
       if (existing) return res.status(400).json({ message: "Username ਪਹਿਲਾਂ ਹੀ ਮੌਜੂਦ ਹੈ" });
-      const user = await storage.createStaffUser(parsed);
+      const hashedPassword = await bcrypt.hash(parsed.password, 12);
+      const user = await storage.createStaffUser({ ...parsed, password: hashedPassword });
       await storage.logActivity({ action: "Staff User Created", performedBy: getPerformedBy(req), role: "admin", remarks: `${parsed.username} (${parsed.role})` });
       res.status(201).json({ id: user.id, username: user.username, displayName: user.displayName, role: user.role });
     } catch (err) {
@@ -801,9 +840,10 @@ export async function registerRoutes(httpServer: Server, app: Express): Promise<
 
   app.patch("/api/admin/staff-users/:id/password", isAdminAuth, async (req: any, res: any) => {
     try {
-      const schema = z.object({ newPassword: z.string().min(4, "Password ਘੱਟੋ-ਘੱਟ 4 ਅੱਖਰ") });
+      const schema = z.object({ newPassword: z.string().min(6, "Password ਘੱਟੋ-ਘੱਟ 6 ਅੱਖਰ") });
       const { newPassword } = schema.parse(req.body);
-      const updated = await storage.updateStaffUserPassword(parseInt(req.params.id), newPassword);
+      const hashedPassword = await bcrypt.hash(newPassword, 12);
+      const updated = await storage.updateStaffUserPassword(parseInt(req.params.id), hashedPassword);
       if (!updated) return res.status(404).json({ message: "ਯੂਜ਼ਰ ਨਹੀਂ ਮਿਲਿਆ" });
       await storage.logActivity({ action: "Staff Password Changed", performedBy: getPerformedBy(req), role: "admin", remarks: `User ID: ${req.params.id}` });
       res.json({ message: "ਪਾਸਵਰਡ ਬਦਲਿਆ" });
