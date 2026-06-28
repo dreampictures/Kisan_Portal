@@ -47,11 +47,11 @@ export default function Home() {
             <span className="inline-block px-4 py-1.5 rounded-full bg-accent/10 text-accent font-semibold text-sm tracking-wide">
               ਕਿਸਾਨਾਂ ਦੀ ਆਵਾਜ਼
             </span>
-            <h1 className="text-5xl md:text-7xl font-display font-bold text-primary leading-tight">
-              ਕਿਸਾਨ <br />
-              <span className="text-foreground">ਸੰਘਰਸ਼ ਕਮੇਟੀ ਪੰਜਾਬ</span>
+            <h1 className="text-5xl md:text-7xl font-display font-bold text-foreground leading-tight">
+              <span className="text-primary">ਕਿਸਾਨ</span> <br />
+              ਸੰਘਰਸ਼ ਕਮੇਟੀ ਪੰਜਾਬ
             </h1>
-            <p className="text-xl text-muted-foreground max-w-2xl mx-auto leading-relaxed">
+            <p className="text-xl text-foreground/70 max-w-2xl mx-auto leading-relaxed">
               ਕਿਸਾਨਾਂ ਨੂੰ ਇਕਜੁੱਟ ਕਰਨਾ ਤਾਂ ਜੋ ਸਾਡੇ ਹੱਕਾਂ, ਜ਼ਮੀਨਾਂ ਅਤੇ ਭਵਿੱਖ ਦੀ
               ਰਾਖੀ ਕੀਤੀ ਜਾ ਸਕੇ। ਅੱਜ ਹੀ ਲਹਿਰ ਦਾ ਹਿੱਸਾ ਬਣੋ।
             </p>

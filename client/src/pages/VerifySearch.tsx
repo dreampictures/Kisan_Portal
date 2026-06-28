@@ -35,7 +35,7 @@ export default function VerifySearch() {
           <div className="bg-primary/10 rounded-full p-4 w-16 h-16 flex items-center justify-center mx-auto mb-4">
             <Shield className="h-8 w-8 text-primary" />
           </div>
-          <h1 className="text-3xl font-display font-bold text-primary mb-2">Card ਤਸਦੀਕ ਕਰੋ</h1>
+          <h1 className="text-3xl font-display font-bold text-foreground mb-2">Card ਤਸਦੀਕ ਕਰੋ</h1>
           <p className="text-muted-foreground text-sm">ਮੈਂਬਰਸ਼ਿਪ ID ਨੰਬਰ ਦਰਜ ਕਰੋ</p>
         </div>
 

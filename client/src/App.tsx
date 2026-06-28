@@ -57,7 +57,7 @@ function Router() {
               position: "fixed",
               inset: 0,
               zIndex: -9,
-              background: "linear-gradient(to bottom, rgba(0,60,20,0.35) 0%, rgba(255,255,255,0.72) 60%, rgba(255,255,255,0.90) 100%)",
+              background: "linear-gradient(to bottom, rgba(255,255,255,0.72) 0%, rgba(255,255,255,0.84) 50%, rgba(255,255,255,0.93) 100%)",
             }}
           />
         </>

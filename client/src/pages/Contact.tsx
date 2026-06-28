@@ -185,7 +185,7 @@ export default function Contact() {
 
       <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} className="max-w-4xl mx-auto">
         <div className="text-center mb-10">
-          <h1 className="text-4xl font-display font-bold mb-4">ਮੈਂਬਰ ਰਜਿਸਟ੍ਰੇਸ਼ਨ</h1>
+          <h1 className="text-4xl font-display font-bold mb-4 text-foreground">ਮੈਂਬਰ ਰਜਿਸਟ੍ਰੇਸ਼ਨ</h1>
           <p className="text-muted-foreground text-lg max-w-2xl mx-auto">
             ਕਿਸਾਨ ਸੰਘਰਸ਼ ਕਮੇਟੀ ਪੰਜਾਬ (ਕੋਟ ਬੁੱਢਾ) ਦੇ ਮੈਂਬਰ ਬਣਨ ਲਈ ਰਜਿਸਟਰ ਕਰੋ।
           </p>

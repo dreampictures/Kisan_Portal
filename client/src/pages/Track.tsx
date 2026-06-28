@@ -222,7 +222,7 @@ export default function Track() {
           <div className="mx-auto bg-primary/10 p-4 rounded-full w-fit mb-4">
             <Search className="h-8 w-8 text-primary" />
           </div>
-          <h1 className="text-3xl font-display font-bold mb-3">ਰਜਿਸਟ੍ਰੇਸ਼ਨ ਟਰੈਕ ਕਰੋ</h1>
+          <h1 className="text-3xl font-display font-bold mb-3 text-foreground">ਰਜਿਸਟ੍ਰੇਸ਼ਨ ਟਰੈਕ ਕਰੋ</h1>
           <p className="text-muted-foreground">ਆਪਣੀ Tracking ID ਜਾਂ ਮੋਬਾਈਲ ਨੰਬਰ ਦਰਜ ਕਰੋ</p>
         </div>
 

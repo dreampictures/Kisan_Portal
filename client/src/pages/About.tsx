@@ -74,7 +74,7 @@ export default function About() {
             animate={{ opacity: 1, y: 0 }}
             className="max-w-3xl mx-auto"
           >
-            <h1 className="text-4xl md:text-5xl font-display font-bold mb-6">ਸਾਡੀ ਯੂਨੀਅਨ ਬਾਰੇ</h1>
+            <h1 className="text-4xl md:text-5xl font-display font-bold mb-6 text-foreground">ਸਾਡੀ ਯੂਨੀਅਨ ਬਾਰੇ</h1>
             <p className="text-lg text-muted-foreground leading-relaxed">
               ਕਿਸਾਨ ਸੰਘਰਸ਼ ਕਮੇਟੀ ਪੰਜਾਬ (ਕੋਟ ਬੁੱਢਾ) ਪੰਜਾਬ ਦੇ ਕਿਸਾਨਾਂ ਲਈ ਇੱਕ ਮਜ਼ਬੂਤ ਅਤੇ ਭਰੋਸੇਯੋਗ ਜਥੇਬੰਦੀ ਵਜੋਂ ਉੱਭਰੀ ਹੈ। ਇਹ ਕਮੇਟੀ ਖੇਤੀਬਾੜੀ ਭਾਈਚਾਰੇ ਦੇ ਹਰ ਦਰਦ ਅਤੇ ਹਰ ਮੁੱਦੇ ਲਈ ਇੱਕ ਥੰਮ੍ਹ ਵਾਂਗ ਖੜ੍ਹਦੀ ਹੈ।
             </p>
