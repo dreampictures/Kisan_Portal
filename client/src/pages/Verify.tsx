@@ -1,7 +1,7 @@
 import { useEffect, useState } from "react";
-import { useParams, useLocation } from "wouter";
+import { useParams } from "wouter";
 import { motion } from "framer-motion";
-import { CheckCircle2, XCircle, AlertTriangle, Loader2, Shield, ArrowLeft } from "lucide-react";
+import { CheckCircle2, XCircle, AlertTriangle, Loader2, Shield } from "lucide-react";
 
 interface VerifyData {
   valid: boolean;
@@ -22,7 +22,6 @@ interface VerifyData {
 
 export default function Verify() {
   const { cardNumber } = useParams<{ cardNumber: string }>();
-  const [, setLocation] = useLocation();
   const [data, setData] = useState<VerifyData | null>(null);
   const [loading, setLoading] = useState(true);
   const [notFound, setNotFound] = useState(false);
@@ -37,25 +36,12 @@ export default function Verify() {
       .catch(() => { setNotFound(true); setLoading(false); });
   }, [cardNumber]);
 
-  const BackButton = () => (
-    <button
-      onClick={() => setLocation("/")}
-      className="flex items-center gap-2 text-green-300 hover:text-white transition-colors mb-6 group"
-      data-testid="button-back-home"
-    >
-      <div className="bg-white/10 group-hover:bg-white/20 rounded-full p-2 transition-colors">
-        <ArrowLeft className="h-5 w-5" />
-      </div>
-      <span className="text-sm font-medium">ਮੁੱਖ ਪੰਨਾ</span>
-    </button>
-  );
-
   if (loading) {
     return (
-      <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-green-900 via-green-800 to-emerald-900">
-        <div className="text-center text-white">
-          <Loader2 className="h-12 w-12 animate-spin mx-auto mb-4" />
-          <p className="text-green-200 text-sm">Card ਤਸਦੀਕ ਕੀਤੀ ਜਾ ਰਹੀ ਹੈ...</p>
+      <div className="min-h-screen flex items-center justify-center py-16 px-4">
+        <div className="text-center">
+          <Loader2 className="h-12 w-12 animate-spin mx-auto mb-4 text-primary" />
+          <p className="text-muted-foreground text-sm">Card ਤਸਦੀਕ ਕੀਤੀ ਜਾ ਰਹੀ ਹੈ...</p>
         </div>
       </div>
     );
@@ -63,15 +49,15 @@ export default function Verify() {
 
   if (notFound || !data) {
     return (
-      <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-red-900 to-red-800 px-4">
-        <motion.div initial={{ opacity: 0, scale: 0.9 }} animate={{ opacity: 1, scale: 1 }} className="text-center max-w-sm w-full">
-          <BackButton />
-          <div className="w-24 h-24 rounded-full bg-red-700/50 flex items-center justify-center mx-auto mb-6">
-            <XCircle className="h-14 w-14 text-red-300" />
+      <div className="min-h-screen flex items-center justify-center py-16 px-4">
+        <motion.div initial={{ opacity: 0, scale: 0.9 }} animate={{ opacity: 1, scale: 1 }}
+          className="text-center max-w-sm w-full bg-white/90 backdrop-blur-sm rounded-2xl p-8 shadow-xl border border-border">
+          <div className="w-20 h-20 rounded-full bg-red-100 flex items-center justify-center mx-auto mb-5">
+            <XCircle className="h-12 w-12 text-red-500" />
           </div>
-          <h1 className="text-3xl font-bold text-white mb-3">Card ਨਹੀਂ ਮਿਲਿਆ</h1>
-          <p className="text-red-200 mb-2">ਇਹ Card Number ਸਾਡੇ ਰਿਕਾਰਡ ਵਿੱਚ ਨਹੀਂ ਹੈ।</p>
-          <p className="text-sm text-red-400 font-mono bg-red-900/50 px-3 py-1.5 rounded-lg inline-block">{cardNumber}</p>
+          <h1 className="text-2xl font-display font-bold text-foreground mb-2">Card ਨਹੀਂ ਮਿਲਿਆ</h1>
+          <p className="text-muted-foreground mb-3">ਇਹ Card Number ਸਾਡੇ ਰਿਕਾਰਡ ਵਿੱਚ ਨਹੀਂ ਹੈ।</p>
+          <p className="text-sm font-mono bg-red-50 text-red-700 px-3 py-1.5 rounded-lg inline-block border border-red-200">{cardNumber}</p>
         </motion.div>
       </div>
     );
@@ -79,15 +65,16 @@ export default function Verify() {
 
   const isValid = data.valid;
   const isExpired = data.expired;
-
   const fmtDate = (d: string) => d ? new Date(d).toLocaleDateString("en-IN", { day: "2-digit", month: "short", year: "numeric" }) : "N/A";
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-green-950 via-green-900 to-emerald-950 flex items-center justify-center px-4 py-10">
-      <motion.div initial={{ opacity: 0, y: 40 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.5 }} className="w-full max-w-sm">
-
-        <BackButton />
-
+    <div className="min-h-screen py-12 px-4">
+      <motion.div
+        initial={{ opacity: 0, y: 40 }}
+        animate={{ opacity: 1, y: 0 }}
+        transition={{ duration: 0.5 }}
+        className="w-full max-w-sm mx-auto"
+      >
         {/* Status badge */}
         <div className="flex justify-center mb-5">
           {isValid ? (
@@ -107,9 +94,12 @@ export default function Verify() {
         </div>
 
         {/* ID CARD */}
-        <motion.div initial={{ opacity: 0, scale: 0.95 }} animate={{ opacity: 1, scale: 1 }} transition={{ delay: 0.15 }}
-          className="rounded-2xl overflow-hidden shadow-2xl shadow-black/50">
-
+        <motion.div
+          initial={{ opacity: 0, scale: 0.95 }}
+          animate={{ opacity: 1, scale: 1 }}
+          transition={{ delay: 0.15 }}
+          className="rounded-2xl overflow-hidden shadow-2xl shadow-black/30"
+        >
           {/* Card Top — Green Header */}
           <div className="bg-gradient-to-r from-green-800 to-green-700 px-5 py-4 relative overflow-hidden">
             <div className="absolute -top-6 -right-6 w-24 h-24 rounded-full bg-white/5" />
@@ -183,20 +173,20 @@ export default function Verify() {
           {/* Card Footer */}
           <div className="bg-gray-900 px-4 py-3 text-center">
             <p className="text-gray-400 text-xs">Kisan Sangharsh Committee Punjab (Kot Budha)</p>
-            <p className="text-gray-600 text-xs font-mono mt-0.5">kisan-union-punjab.fly.dev</p>
+            <p className="text-gray-600 text-xs font-mono mt-0.5">kscpkotbudha.org</p>
           </div>
         </motion.div>
 
         {/* Aadhaar (masked) below card */}
         {data.aadhaarNumber && data.aadhaarNumber !== "*" && (
           <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} transition={{ delay: 0.4 }}
-            className="mt-4 bg-white/10 backdrop-blur rounded-xl px-4 py-3 text-center">
-            <p className="text-green-300 text-xs mb-1">ਆਧਾਰ ਨੰਬਰ (Masked)</p>
-            <p className="text-white font-mono font-bold tracking-widest">{data.aadhaarNumber}</p>
+            className="mt-4 bg-white/90 backdrop-blur-sm rounded-xl px-4 py-3 text-center border border-border shadow">
+            <p className="text-muted-foreground text-xs mb-1">ਆਧਾਰ ਨੰਬਰ (Masked)</p>
+            <p className="text-foreground font-mono font-bold tracking-widest">{data.aadhaarNumber}</p>
           </motion.div>
         )}
 
-        <p className="text-center text-green-700 text-xs mt-5 opacity-60">
+        <p className="text-center text-muted-foreground text-xs mt-5 opacity-70">
           Verified by KSCPKB Digital System
         </p>
       </motion.div>

@@ -19,7 +19,6 @@ import Track from "@/pages/Track";
 function Router() {
   const [location] = useLocation();
   const isAdminPage = location.startsWith("/admin");
-  const isVerifyPage = location.startsWith("/verify");
   const lastTracked = useRef<string>("");
 
   useEffect(() => {
@@ -32,7 +31,7 @@ function Router() {
     }).catch(() => {});
   }, [location]);
 
-  const isPublicPage = !isAdminPage && !isVerifyPage;
+  const isPublicPage = !isAdminPage;
 
   return (
     <div className="flex flex-col min-h-screen relative">
@@ -64,7 +63,7 @@ function Router() {
         </>
       )}
 
-      {!isAdminPage && !isVerifyPage && <Navbar />}
+      {!isAdminPage && <Navbar />}
       <main className="flex-grow">
         <Switch>
           <Route path="/" component={Home} />
@@ -78,7 +77,7 @@ function Router() {
           <Route component={NotFound} />
         </Switch>
       </main>
-      {!isAdminPage && !isVerifyPage && <Footer />}
+      {!isAdminPage && <Footer />}
     </div>
   );
 }

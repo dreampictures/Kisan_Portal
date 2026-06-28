@@ -1,8 +1,9 @@
 import { useState } from "react";
 import { useLocation } from "wouter";
 import { motion } from "framer-motion";
-import { Search, ArrowLeft, Shield } from "lucide-react";
+import { Search, Shield } from "lucide-react";
 import { useSEO } from "@/hooks/use-seo";
+import { Button } from "@/components/ui/button";
 
 export default function VerifySearch() {
   useSEO({
@@ -22,39 +23,27 @@ export default function VerifySearch() {
   };
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-green-950 via-green-900 to-emerald-950 flex items-center justify-center px-4 py-10">
+    <div className="min-h-screen py-16 px-4">
       <motion.div
         initial={{ opacity: 0, y: 30 }}
         animate={{ opacity: 1, y: 0 }}
         transition={{ duration: 0.4 }}
-        className="w-full max-w-sm"
+        className="w-full max-w-sm mx-auto"
       >
-        {/* Back button */}
-        <button
-          onClick={() => setLocation("/")}
-          className="flex items-center gap-2 text-green-300 hover:text-white transition-colors mb-6 group"
-          data-testid="button-back-home"
-        >
-          <div className="bg-white/10 group-hover:bg-white/20 rounded-full p-2 transition-colors">
-            <ArrowLeft className="h-5 w-5" />
-          </div>
-          <span className="text-sm font-medium">ਮੁੱਖ ਪੰਨਾ</span>
-        </button>
-
         {/* Header */}
         <div className="text-center mb-8">
-          <div className="bg-white/10 rounded-full p-4 w-16 h-16 flex items-center justify-center mx-auto mb-4">
-            <Shield className="h-8 w-8 text-yellow-300" />
+          <div className="bg-primary/10 rounded-full p-4 w-16 h-16 flex items-center justify-center mx-auto mb-4">
+            <Shield className="h-8 w-8 text-primary" />
           </div>
-          <h1 className="text-2xl font-bold text-white mb-1">Card ਤਸਦੀਕ ਕਰੋ</h1>
-          <p className="text-green-300 text-sm">ਮੈਂਬਰਸ਼ਿਪ ID ਨੰਬਰ ਦਰਜ ਕਰੋ</p>
+          <h1 className="text-3xl font-display font-bold text-primary mb-2">Card ਤਸਦੀਕ ਕਰੋ</h1>
+          <p className="text-muted-foreground text-sm">ਮੈਂਬਰਸ਼ਿਪ ID ਨੰਬਰ ਦਰਜ ਕਰੋ</p>
         </div>
 
         {/* Search Box */}
-        <div className="bg-white/10 backdrop-blur rounded-2xl p-6">
+        <div className="bg-white/90 backdrop-blur-sm rounded-2xl p-6 shadow-xl border border-border">
           <div className="flex items-center gap-2 mb-4">
-            <Search className="h-5 w-5 text-green-300" />
-            <span className="text-white font-semibold text-sm">ID ਨੰਬਰ ਨਾਲ ਖੋਜੋ</span>
+            <Search className="h-5 w-5 text-primary" />
+            <span className="text-foreground font-semibold text-sm">ID ਨੰਬਰ ਨਾਲ ਖੋਜੋ</span>
           </div>
 
           <input
@@ -63,25 +52,25 @@ export default function VerifySearch() {
             onChange={(e) => { setManualId(e.target.value.toUpperCase()); setError(""); }}
             onKeyDown={(e) => e.key === "Enter" && handleSearch()}
             placeholder="KSCPKB-XXXXXX"
-            className="w-full bg-white/10 border border-white/20 text-white placeholder-green-600 font-mono rounded-xl px-4 py-3 text-sm focus:outline-none focus:border-green-400 focus:bg-white/20 transition-all mb-3"
+            className="w-full border border-input bg-background text-foreground placeholder-muted-foreground font-mono rounded-xl px-4 py-3 text-sm focus:outline-none focus:ring-2 focus:ring-primary/40 transition-all mb-3"
             data-testid="input-card-id"
           />
 
           {error && (
-            <p className="text-red-300 text-xs mb-3">{error}</p>
+            <p className="text-destructive text-xs mb-3">{error}</p>
           )}
 
-          <button
+          <Button
             onClick={handleSearch}
-            className="w-full flex items-center justify-center gap-2 bg-yellow-500 hover:bg-yellow-400 text-green-950 font-bold py-3 rounded-xl transition-colors"
+            className="w-full"
             data-testid="button-search-id"
           >
-            <Search className="h-4 w-4" />
+            <Search className="h-4 w-4 mr-2" />
             ਖੋਜੋ
-          </button>
+          </Button>
         </div>
 
-        <p className="text-center text-green-700 text-xs mt-6 opacity-60">
+        <p className="text-center text-muted-foreground text-xs mt-6">
           Kisan Sangharsh Committee Punjab (Kot Budha)
         </p>
       </motion.div>
