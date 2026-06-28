@@ -401,8 +401,10 @@ export async function registerRoutes(httpServer: Server, app: Express): Promise<
       const { reason } = req.body;
       if (!reason) return res.status(400).json({ message: "ਕਾਰਨ ਲੋੜੀਂਦਾ ਹੈ" });
       const by = getPerformedBy(req);
+      const reg = await storage.getRegistration(id);
       const updated = await storage.meetPresidentReject(id, reason, by);
       if (!updated) return res.status(404).json({ message: "ਰਜਿਸਟ੍ਰੇਸ਼ਨ ਨਹੀਂ ਮਿਲੀ" });
+      if (reg?.photoUrl) await deletePhotoFromR2(reg.photoUrl).catch(console.error);
       await storage.logActivity({ memberId: id, action: "Meet President Rejected", performedBy: by, role: getPerformedByRole(req), remarks: reason });
       res.json({ message: "Reject ਕੀਤਾ", registration: updated });
     } catch (err) {
@@ -433,8 +435,10 @@ export async function registerRoutes(httpServer: Server, app: Express): Promise<
       const { reason } = req.body;
       if (!reason) return res.status(400).json({ message: "ਕਾਰਨ ਲੋੜੀਂਦਾ ਹੈ" });
       const by = getPerformedBy(req);
+      const reg = await storage.getRegistration(id);
       const updated = await storage.statePresidentReject(id, reason, by);
       if (!updated) return res.status(404).json({ message: "ਰਜਿਸਟ੍ਰੇਸ਼ਨ ਨਹੀਂ ਮਿਲੀ" });
+      if (reg?.photoUrl) await deletePhotoFromR2(reg.photoUrl).catch(console.error);
       await storage.logActivity({ memberId: id, action: "State President Rejected", performedBy: by, role: getPerformedByRole(req), remarks: reason });
       res.json({ message: "Reject ਕੀਤਾ", registration: updated });
     } catch (err) {
@@ -471,6 +475,7 @@ export async function registerRoutes(httpServer: Server, app: Express): Promise<
       const reg = await storage.getRegistration(id);
       if (!reg) return res.status(404).json({ message: "ਰਜਿਸਟ੍ਰੇਸ਼ਨ ਨਹੀਂ ਮਿਲੀ" });
       const updated = await storage.rejectRegistration(id, reason || "Admin rejected", by, "admin");
+      if (reg?.photoUrl) await deletePhotoFromR2(reg.photoUrl).catch(console.error);
       await storage.logActivity({ memberId: id, action: "Admin Rejected", performedBy: by, role: "admin", remarks: reason });
       res.json({ message: "Reject ਕੀਤਾ" });
     } catch (err) {
