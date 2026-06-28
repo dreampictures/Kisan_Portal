@@ -34,9 +34,7 @@ export default function Home() {
   return (
     <div className="min-h-screen bg-transparent">
       {/* Hero Section */}
-      <section className="relative pt-20 pb-32 overflow-hidden bg-gradient-to-b from-primary/20 to-white/80">
-        <div className="absolute inset-0 bg-grid-black/[0.02] -z-10" />
-
+      <section className="relative pt-20 pb-32 overflow-hidden bg-gradient-to-b from-white/30 to-white/85">
         <div className="container mx-auto px-4 text-center">
           <motion.div
             initial={{ opacity: 0, y: 20 }}
@@ -44,14 +42,19 @@ export default function Home() {
             transition={{ duration: 0.6 }}
             className="max-w-3xl mx-auto space-y-8"
           >
-            <span className="inline-block px-4 py-1.5 rounded-full bg-accent/10 text-accent font-semibold text-sm tracking-wide">
-              ਕਿਸਾਨਾਂ ਦੀ ਆਵਾਜ਼
+            <span className="inline-flex items-center gap-2 px-5 py-2 rounded-full bg-primary/10 border border-primary/25 text-primary font-bold text-sm tracking-wide shadow-sm">
+              🌾 ਕਿਸਾਨਾਂ ਦੀ ਆਵਾਜ਼
             </span>
-            <h1 className="text-5xl md:text-7xl font-display font-bold text-foreground leading-tight">
-              <span className="text-primary">ਕਿਸਾਨ</span> <br />
-              ਸੰਘਰਸ਼ ਕਮੇਟੀ ਪੰਜਾਬ
-            </h1>
-            <p className="text-xl text-foreground/70 max-w-2xl mx-auto leading-relaxed">
+            <div>
+              <h1 className="text-5xl md:text-7xl font-display font-bold text-foreground leading-tight">
+                <span className="text-primary">ਕਿਸਾਨ</span> <br />
+                ਸੰਘਰਸ਼ ਕਮੇਟੀ ਪੰਜਾਬ
+              </h1>
+              <div className="flex justify-center mt-4">
+                <div className="h-1 w-24 rounded-full bg-primary opacity-70" />
+              </div>
+            </div>
+            <p className="text-xl text-foreground/75 max-w-2xl mx-auto leading-relaxed font-medium">
               ਕਿਸਾਨਾਂ ਨੂੰ ਇਕਜੁੱਟ ਕਰਨਾ ਤਾਂ ਜੋ ਸਾਡੇ ਹੱਕਾਂ, ਜ਼ਮੀਨਾਂ ਅਤੇ ਭਵਿੱਖ ਦੀ
               ਰਾਖੀ ਕੀਤੀ ਜਾ ਸਕੇ। ਅੱਜ ਹੀ ਲਹਿਰ ਦਾ ਹਿੱਸਾ ਬਣੋ।
             </p>
@@ -104,6 +107,13 @@ export default function Home() {
       {/* Features Section */}
       <section className="py-24 bg-white/85">
         <div className="container mx-auto px-4">
+          <div className="text-center mb-14">
+            <p className="text-sm font-bold text-primary tracking-widest uppercase mb-2">ਸਾਡੇ ਮੁੱਖ ਉਦੇਸ਼</p>
+            <h2 className="text-3xl md:text-4xl font-display font-bold text-foreground">ਅਸੀਂ ਕਿਸ ਲਈ ਖੜ੍ਹੇ ਹਾਂ?</h2>
+            <div className="flex justify-center mt-3">
+              <div className="h-1 w-16 rounded-full bg-primary/60" />
+            </div>
+          </div>
           <motion.div
             variants={container}
             initial="hidden"

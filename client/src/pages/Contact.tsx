@@ -185,8 +185,14 @@ export default function Contact() {
 
       <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} className="max-w-4xl mx-auto">
         <div className="text-center mb-10">
-          <h1 className="text-4xl font-display font-bold mb-4 text-foreground">ਮੈਂਬਰ ਰਜਿਸਟ੍ਰੇਸ਼ਨ</h1>
-          <p className="text-muted-foreground text-lg max-w-2xl mx-auto">
+          <span className="inline-flex items-center gap-2 px-4 py-1.5 rounded-full bg-primary/10 border border-primary/25 text-primary font-bold text-sm mb-4">
+            📋 ਮੈਂਬਰਸ਼ਿਪ
+          </span>
+          <h1 className="text-4xl font-display font-bold mb-3 text-foreground">ਮੈਂਬਰ ਰਜਿਸਟ੍ਰੇਸ਼ਨ</h1>
+          <div className="flex justify-center mb-4">
+            <div className="h-1 w-16 rounded-full bg-primary/60" />
+          </div>
+          <p className="text-foreground/70 text-lg max-w-2xl mx-auto font-medium">
             ਕਿਸਾਨ ਸੰਘਰਸ਼ ਕਮੇਟੀ ਪੰਜਾਬ (ਕੋਟ ਬੁੱਢਾ) ਦੇ ਮੈਂਬਰ ਬਣਨ ਲਈ ਰਜਿਸਟਰ ਕਰੋ।
           </p>
         </div>

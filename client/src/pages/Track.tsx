@@ -278,13 +278,13 @@ export default function Track() {
         )}
 
         {!searchQuery && (
-          <Card className="border-dashed border-2">
-            <CardContent className="py-10 text-center text-muted-foreground space-y-2">
-              <Search className="h-10 w-10 mx-auto opacity-20 mb-3" />
-              <p className="font-medium">ਆਪਣੀ Tracking ID ਦਾਖਲ ਕਰੋ</p>
-              <p className="text-sm">ਰਜਿਸਟ੍ਰੇਸ਼ਨ ਜਮ੍ਹਾ ਕਰਨ ਤੋਂ ਬਾਅਦ ਤੁਹਾਨੂੰ ਇੱਕ TRK-XXXXXX ਨੰਬਰ ਮਿਲਿਆ ਸੀ।</p>
-            </CardContent>
-          </Card>
+          <div className="bg-white rounded-2xl border border-border shadow-sm p-8 text-center">
+            <div className="w-16 h-16 bg-primary/8 rounded-full flex items-center justify-center mx-auto mb-4">
+              <Search className="h-7 w-7 text-primary/40" />
+            </div>
+            <h3 className="font-bold text-foreground mb-1">ਆਪਣੀ Tracking ID ਦਾਖਲ ਕਰੋ</h3>
+            <p className="text-sm text-foreground/55">ਰਜਿਸਟ੍ਰੇਸ਼ਨ ਜਮ੍ਹਾ ਕਰਨ ਤੋਂ ਬਾਅਦ ਤੁਹਾਨੂੰ ਇੱਕ TRK-XXXXXX ਨੰਬਰ ਮਿਲਿਆ ਸੀ।</p>
+          </div>
         )}
       </motion.div>
     </div>

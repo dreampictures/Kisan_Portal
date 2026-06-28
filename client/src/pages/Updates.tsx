@@ -19,13 +19,16 @@ export default function Updates() {
   return (
     <div className="min-h-screen">
       {/* Header */}
-      <div className="bg-gradient-to-b from-primary/25 to-white/80 pt-14 pb-10 text-center px-4">
+      <div className="bg-white/85 pt-14 pb-10 text-center px-4 border-b border-border/40">
         <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }}>
-          <div className="inline-flex items-center justify-center bg-primary/10 p-4 rounded-full mb-4">
+          <div className="inline-flex items-center justify-center bg-primary/10 border border-primary/20 p-4 rounded-full mb-4">
             <Megaphone className="h-8 w-8 text-primary" />
           </div>
           <h1 className="text-4xl font-display font-bold text-foreground mb-2">ਤਾਜ਼ੀਆਂ ਖ਼ਬਰਾਂ</h1>
-          <p className="text-muted-foreground text-lg">ਕਿਸਾਨ ਸੰਘਰਸ਼ ਕਮੇਟੀ ਪੰਜਾਬ ਦੀਆਂ ਅੱਪਡੇਟਸ</p>
+          <div className="flex justify-center mb-3">
+            <div className="h-1 w-16 rounded-full bg-primary/60" />
+          </div>
+          <p className="text-foreground/65 text-lg font-medium">ਕਿਸਾਨ ਸੰਘਰਸ਼ ਕਮੇਟੀ ਪੰਜਾਬ ਦੀਆਂ ਅੱਪਡੇਟਸ</p>
         </motion.div>
       </div>
 
@@ -35,9 +38,14 @@ export default function Updates() {
             <Loader2 className="h-10 w-10 animate-spin text-primary" />
           </div>
         ) : !updates?.length ? (
-          <div className="text-center py-20 text-muted-foreground">
-            <Megaphone className="h-14 w-14 mx-auto mb-4 opacity-30" />
-            <p className="text-lg">ਹੁਣ ਤੱਕ ਕੋਈ ਅੱਪਡੇਟ ਨਹੀਂ</p>
+          <div className="flex flex-col items-center justify-center py-20">
+            <div className="bg-white rounded-2xl border border-border shadow-sm p-10 max-w-sm w-full text-center">
+              <div className="w-16 h-16 bg-primary/8 rounded-full flex items-center justify-center mx-auto mb-5">
+                <Megaphone className="h-8 w-8 text-primary/40" />
+              </div>
+              <h3 className="text-lg font-bold text-foreground mb-2">ਹੁਣ ਤੱਕ ਕੋਈ ਖ਼ਬਰ ਨਹੀਂ</h3>
+              <p className="text-sm text-foreground/55">ਜਲਦੀ ਹੀ ਨਵੀਆਂ ਖ਼ਬਰਾਂ ਅਤੇ ਅੱਪਡੇਟਸ ਇੱਥੇ ਦਿਖਾਈ ਦੇਣਗੀਆਂ।</p>
+            </div>
           </div>
         ) : (
           <div className="space-y-6 mt-2">

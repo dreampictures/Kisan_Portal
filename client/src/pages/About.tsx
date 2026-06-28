@@ -67,15 +67,21 @@ export default function About() {
   return (
     <div className="min-h-screen pb-20">
       {/* Header */}
-      <div className="bg-white/80 pt-16 pb-24 border-b border-border/50">
+      <div className="bg-white/85 pt-16 pb-24 border-b border-border/50">
         <div className="container mx-auto px-4 text-center">
           <motion.div
             initial={{ opacity: 0, y: 10 }}
             animate={{ opacity: 1, y: 0 }}
             className="max-w-3xl mx-auto"
           >
-            <h1 className="text-4xl md:text-5xl font-display font-bold mb-6 text-foreground">ਸਾਡੀ ਯੂਨੀਅਨ ਬਾਰੇ</h1>
-            <p className="text-lg text-muted-foreground leading-relaxed">
+            <span className="inline-flex items-center gap-2 px-4 py-1.5 rounded-full bg-primary/10 border border-primary/25 text-primary font-bold text-sm mb-4">
+              🌿 ਕਿਸਾਨ ਸੰਘਰਸ਼ ਕਮੇਟੀ ਪੰਜਾਬ
+            </span>
+            <h1 className="text-4xl md:text-5xl font-display font-bold mb-3 text-foreground">ਸਾਡੀ ਯੂਨੀਅਨ ਬਾਰੇ</h1>
+            <div className="flex justify-center mb-6">
+              <div className="h-1 w-20 rounded-full bg-primary/60" />
+            </div>
+            <p className="text-lg text-foreground/70 leading-relaxed font-medium">
               ਕਿਸਾਨ ਸੰਘਰਸ਼ ਕਮੇਟੀ ਪੰਜਾਬ (ਕੋਟ ਬੁੱਢਾ) ਪੰਜਾਬ ਦੇ ਕਿਸਾਨਾਂ ਲਈ ਇੱਕ ਮਜ਼ਬੂਤ ਅਤੇ ਭਰੋਸੇਯੋਗ ਜਥੇਬੰਦੀ ਵਜੋਂ ਉੱਭਰੀ ਹੈ। ਇਹ ਕਮੇਟੀ ਖੇਤੀਬਾੜੀ ਭਾਈਚਾਰੇ ਦੇ ਹਰ ਦਰਦ ਅਤੇ ਹਰ ਮੁੱਦੇ ਲਈ ਇੱਕ ਥੰਮ੍ਹ ਵਾਂਗ ਖੜ੍ਹਦੀ ਹੈ।
             </p>
           </motion.div>
