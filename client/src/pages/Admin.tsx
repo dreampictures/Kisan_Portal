@@ -155,25 +155,6 @@ function LoginForm() {
                   </Button>
                 </form>
 
-                <div className="mt-5 pt-4 border-t border-border/50">
-                  <p className="text-xs text-center text-muted-foreground mb-3">ਹੋਰ ਪੰਨੇ</p>
-                  <div className="flex flex-wrap gap-1.5 justify-center">
-                    {[
-                      { href: "/", label: "ਮੁੱਖ ਪੰਨਾ" },
-                      { href: "/about", label: "ਯੂਨੀਅਨ ਬਾਰੇ" },
-                      { href: "/updates", label: "ਖ਼ਬਰਾਂ" },
-                      { href: "/contact", label: "ਸੰਪਰਕ" },
-                      { href: "/track", label: "ਟਰੈਕ" },
-                      { href: "/verify", label: "ਵੈਰੀਫਾਈ" },
-                    ].map((link) => (
-                      <Link key={link.href + link.label} href={link.href}>
-                        <Button variant="outline" size="sm" className="text-xs h-7 px-2">
-                          {link.label}
-                        </Button>
-                      </Link>
-                    ))}
-                  </div>
-                </div>
               </CardContent>
             </Card>
           </motion.div>
