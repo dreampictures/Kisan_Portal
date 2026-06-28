@@ -216,7 +216,7 @@ export default function Track() {
   };
 
   return (
-    <div className="min-h-screen bg-background py-12 px-4">
+    <div className="min-h-screen py-12 px-4">
       <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} className="max-w-2xl mx-auto">
         <div className="text-center mb-10">
           <div className="mx-auto bg-primary/10 p-4 rounded-full w-fit mb-4">

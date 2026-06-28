@@ -175,7 +175,7 @@ export default function Contact() {
   const fileRef = form.register("photo");
 
   return (
-    <div className="min-h-screen bg-background py-12 px-4">
+    <div className="min-h-screen py-12 px-4">
       {successData && (
         <SuccessModal
           trackingId={successData.trackingId}

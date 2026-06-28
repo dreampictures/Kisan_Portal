@@ -32,8 +32,38 @@ function Router() {
     }).catch(() => {});
   }, [location]);
 
+  const isPublicPage = !isAdminPage && !isVerifyPage;
+
   return (
-    <div className="flex flex-col min-h-screen">
+    <div className="flex flex-col min-h-screen relative">
+      {/* Global blurred field background — public pages only */}
+      {isPublicPage && (
+        <>
+          <div
+            aria-hidden="true"
+            style={{
+              position: "fixed",
+              inset: 0,
+              zIndex: -10,
+              backgroundImage: `url('https://images.unsplash.com/photo-1625246333195-78d9c38ad449?w=1920&q=80')`,
+              backgroundSize: "cover",
+              backgroundPosition: "center",
+              filter: "blur(7px) brightness(0.45)",
+              transform: "scale(1.06)",
+            }}
+          />
+          <div
+            aria-hidden="true"
+            style={{
+              position: "fixed",
+              inset: 0,
+              zIndex: -9,
+              background: "linear-gradient(to bottom, rgba(0,60,20,0.35) 0%, rgba(255,255,255,0.72) 60%, rgba(255,255,255,0.90) 100%)",
+            }}
+          />
+        </>
+      )}
+
       {!isAdminPage && !isVerifyPage && <Navbar />}
       <main className="flex-grow">
         <Switch>

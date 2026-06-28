@@ -32,9 +32,9 @@ export default function Home() {
   };
 
   return (
-    <div className="min-h-screen bg-background">
+    <div className="min-h-screen bg-transparent">
       {/* Hero Section */}
-      <section className="relative pt-20 pb-32 overflow-hidden bg-gradient-to-b from-primary/5 to-background">
+      <section className="relative pt-20 pb-32 overflow-hidden bg-gradient-to-b from-primary/20 to-white/80">
         <div className="absolute inset-0 bg-grid-black/[0.02] -z-10" />
 
         <div className="container mx-auto px-4 text-center">
@@ -102,7 +102,7 @@ export default function Home() {
       </section>
 
       {/* Features Section */}
-      <section className="py-24 bg-background">
+      <section className="py-24 bg-white/85">
         <div className="container mx-auto px-4">
           <motion.div
             variants={container}

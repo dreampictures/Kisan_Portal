@@ -17,9 +17,9 @@ export default function Updates() {
   });
 
   return (
-    <div className="min-h-screen bg-background">
+    <div className="min-h-screen">
       {/* Header */}
-      <div className="bg-gradient-to-b from-primary/10 to-background pt-14 pb-10 text-center px-4">
+      <div className="bg-gradient-to-b from-primary/25 to-white/80 pt-14 pb-10 text-center px-4">
         <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }}>
           <div className="inline-flex items-center justify-center bg-primary/10 p-4 rounded-full mb-4">
             <Megaphone className="h-8 w-8 text-primary" />

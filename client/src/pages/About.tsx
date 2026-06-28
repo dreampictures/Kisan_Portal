@@ -65,9 +65,9 @@ export default function About() {
   ];
 
   return (
-    <div className="min-h-screen bg-background pb-20">
+    <div className="min-h-screen pb-20">
       {/* Header */}
-      <div className="bg-secondary/30 pt-16 pb-24 border-b border-border">
+      <div className="bg-white/80 pt-16 pb-24 border-b border-border/50">
         <div className="container mx-auto px-4 text-center">
           <motion.div
             initial={{ opacity: 0, y: 10 }}
