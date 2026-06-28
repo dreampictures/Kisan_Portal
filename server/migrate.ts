@@ -104,6 +104,7 @@ export async function runMigrations() {
       ALTER TABLE registrations ADD COLUMN IF NOT EXISTS card_number TEXT;
       ALTER TABLE registrations ADD COLUMN IF NOT EXISTS designation TEXT DEFAULT 'ਮੈਂਬਰ';
 
+      ALTER TABLE registrations ADD COLUMN IF NOT EXISTS status TEXT NOT NULL DEFAULT 'pending';
       ALTER TABLE registrations ADD COLUMN IF NOT EXISTS tracking_id TEXT UNIQUE;
       ALTER TABLE registrations ADD COLUMN IF NOT EXISTS current_stage TEXT DEFAULT 'submitted';
       ALTER TABLE registrations ADD COLUMN IF NOT EXISTS submitted_at TIMESTAMP;
