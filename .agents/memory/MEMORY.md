@@ -1,3 +1,4 @@
 - [Multi-level approval workflow](approval-workflow.md) — 3-stage approval: state_meet_president → state_president → admin; currentStage drives PendingCard button visibility.
 - [Staff auth flow](staff-auth.md) — POST /api/admin/login checks staff_users table first, falls back to env vars. Admin needs 4-digit PIN (session: pinVerified). Others skip PIN.
 - [Tracking ID system](tracking-ids.md) — registrations get TRK-XXXXXX on creation; public /api/track?trackingId= or ?mobile= endpoint (no auth); visible in success modal.
+- [Deploy/env node_modules drift](node-modules-drift.md) — workflow crash "Cannot find package X" (helmet/bcryptjs/etc) even though declared in package.json means node_modules is stale; run `npm install` before debugging code.
