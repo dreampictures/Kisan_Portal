@@ -911,6 +911,34 @@ export async function registerRoutes(httpServer: Server, app: Express): Promise<
     }
   });
 
+  // ── Admin: edit update ───────────────────────────────────
+  app.put("/api/admin/updates/:id", isAdminAuth, upload.single("image"), async (req: any, res: any) => {
+    try {
+      const id = parseInt(req.params.id);
+      const { title, content, eventDate, removeImage } = req.body;
+      if (!title || !content) return res.status(400).json({ message: "title ਅਤੇ content ਲੋੜੀਂਦੇ ਹਨ" });
+      let imageUrl: string | null | undefined = undefined;
+      if (req.file) {
+        const ext = req.file.mimetype.split("/")[1] || "jpg";
+        const fileName = `updates/${Date.now()}-${Math.random().toString(36).slice(2)}.${ext}`;
+        try { imageUrl = await uploadPhotoToR2(req.file.buffer, req.file.mimetype, fileName); } catch (e) { console.error(e); }
+      } else if (removeImage === "true") {
+        imageUrl = null;
+      }
+      const updated = await storage.updateUpdate(id, {
+        title,
+        content,
+        imageUrl,
+        eventDate: eventDate ? new Date(eventDate) : (eventDate === "" ? null : undefined),
+      });
+      if (!updated) return res.status(404).json({ message: "Update ਨਹੀਂ ਮਿਲਿਆ" });
+      res.json(updated);
+    } catch (err) {
+      console.error(err);
+      res.status(500).json({ message: "Update ਸੇਵ ਨਹੀਂ ਹੋਇਆ" });
+    }
+  });
+
   // ── Admin: delete update ─────────────────────────────────
   app.delete("/api/admin/updates/:id", isAdminAuth, async (req: any, res: any) => {
     try {

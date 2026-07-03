@@ -53,6 +53,7 @@ export interface IStorage {
 
   getUpdates(): Promise<Update[]>;
   createUpdate(data: { title: string; content: string; imageUrl?: string; eventDate?: Date }): Promise<Update>;
+  updateUpdate(id: number, data: { title: string; content: string; imageUrl?: string | null; eventDate?: Date | null }): Promise<Update | undefined>;
   deleteUpdate(id: number): Promise<boolean>;
 
   recordPageView(page: string): Promise<void>;
@@ -291,6 +292,16 @@ export class DatabaseStorage implements IStorage {
       eventDate: data.eventDate || null,
     }).returning();
     return update;
+  }
+
+  async updateUpdate(id: number, data: { title: string; content: string; imageUrl?: string | null; eventDate?: Date | null }): Promise<Update | undefined> {
+    const [updated] = await db.update(updates).set({
+      title: data.title,
+      content: data.content,
+      ...(data.imageUrl !== undefined ? { imageUrl: data.imageUrl } : {}),
+      ...(data.eventDate !== undefined ? { eventDate: data.eventDate } : {}),
+    }).where(eq(updates.id, id)).returning();
+    return updated;
   }
 
   async deleteUpdate(id: number): Promise<boolean> {

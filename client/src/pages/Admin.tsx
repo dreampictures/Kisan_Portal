@@ -1163,6 +1163,11 @@ function UpdatesManager() {
   const [image, setImage] = useState<File | null>(null);
   const [adding, setAdding] = useState(false);
   const [showForm, setShowForm] = useState(false);
+  const [editingId, setEditingId] = useState<number | null>(null);
+  const [editForm, setEditForm] = useState({ title: "", content: "", eventDate: "" });
+  const [editImage, setEditImage] = useState<File | null>(null);
+  const [editRemoveImage, setEditRemoveImage] = useState(false);
+  const [saving, setSaving] = useState(false);
 
   const handleAdd = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -1182,6 +1187,41 @@ function UpdatesManager() {
     finally { setAdding(false); }
   };
 
+  const startEdit = (u: Update) => {
+    setEditingId(u.id);
+    setEditForm({
+      title: u.title,
+      content: u.content,
+      eventDate: u.eventDate ? new Date(u.eventDate).toISOString().split("T")[0] : "",
+    });
+    setEditImage(null);
+    setEditRemoveImage(false);
+    setShowForm(false);
+  };
+
+  const cancelEdit = () => { setEditingId(null); setEditImage(null); setEditRemoveImage(false); };
+
+  const handleEdit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!editingId) return;
+    setSaving(true);
+    try {
+      const fd = new FormData();
+      fd.append("title", editForm.title);
+      fd.append("content", editForm.content);
+      fd.append("eventDate", editForm.eventDate);
+      if (editImage) fd.append("image", editImage);
+      if (editRemoveImage) fd.append("removeImage", "true");
+      const res = await fetch(`/api/admin/updates/${editingId}`, { method: "PUT", body: fd, credentials: "include" });
+      const data = await res.json();
+      if (!res.ok) throw new Error(data.message);
+      toast({ title: "✓ ਅੱਪਡੇਟ ਸੇਵ ਕੀਤੀ!" });
+      cancelEdit();
+      queryClient.invalidateQueries({ queryKey: ["/api/updates"] });
+    } catch (err: any) { toast({ title: "ਗਲਤੀ", description: err.message, variant: "destructive" }); }
+    finally { setSaving(false); }
+  };
+
   const deleteMut = useMutation({
     mutationFn: async (id: number) => { const r = await fetch(`/api/admin/updates/${id}`, { method: "DELETE", credentials: "include" }); return r.json(); },
     onSuccess: () => { toast({ title: "Delete ਕੀਤੀ" }); queryClient.invalidateQueries({ queryKey: ["/api/updates"] }); },
@@ -1191,7 +1231,7 @@ function UpdatesManager() {
     <div className="space-y-4">
       <div className="flex items-center justify-between">
         <h3 className="text-lg font-semibold flex items-center gap-2"><Newspaper className="h-5 w-5 text-primary" /> ਅੱਪਡੇਟਸ ਮੈਨੇਜ ਕਰੋ</h3>
-        <Button size="sm" onClick={() => setShowForm(!showForm)} className="gap-1.5">
+        <Button size="sm" onClick={() => { setShowForm(!showForm); cancelEdit(); }} className="gap-1.5">
           {showForm ? <><X className="h-4 w-4" /> ਰੱਦ ਕਰੋ</> : <><Plus className="h-4 w-4" /> ਨਵੀਂ ਅੱਪਡੇਟ</>}
         </Button>
       </div>
@@ -1219,15 +1259,49 @@ function UpdatesManager() {
             {updates.map((u) => (
               <Card key={u.id} className="overflow-hidden">
                 <CardContent className="p-4">
-                  <div className="flex items-start justify-between gap-3">
-                    <div className="flex-1 min-w-0">
-                      <div className="flex items-center gap-2 mb-1"><p className="font-semibold truncate">{u.title}</p>{u.imageUrl && <span className="text-xs bg-green-100 text-green-700 px-1.5 py-0.5 rounded">📷</span>}</div>
-                      <p className="text-sm text-muted-foreground line-clamp-2">{u.content}</p>
-                      <p className="text-xs text-muted-foreground/60 mt-1">{u.eventDate && `ਘਟਨਾ: ${new Date(u.eventDate).toLocaleDateString("pa-IN")} • `}ਪੋਸਟ: {new Date(u.createdAt!).toLocaleDateString("pa-IN")}</p>
+                  {editingId === u.id ? (
+                    <form onSubmit={handleEdit} className="space-y-3">
+                      <div className="flex items-center justify-between mb-1">
+                        <p className="text-sm font-medium text-primary">✏️ ਅੱਪਡੇਟ ਸੋਧੋ</p>
+                        <Button type="button" size="sm" variant="ghost" onClick={cancelEdit}><X className="h-4 w-4" /></Button>
+                      </div>
+                      <div className="space-y-1.5"><Label className="text-xs">ਸਿਰਲੇਖ *</Label><Input value={editForm.title} onChange={(e) => setEditForm(f => ({ ...f, title: e.target.value }))} placeholder="ਖ਼ਬਰ ਦਾ ਸਿਰਲੇਖ" required /></div>
+                      <div className="space-y-1.5"><Label className="text-xs">ਵੇਰਵਾ *</Label><Textarea value={editForm.content} onChange={(e) => setEditForm(f => ({ ...f, content: e.target.value }))} placeholder="ਵਿਸਥਾਰ ਨਾਲ ਲਿਖੋ..." rows={4} required /></div>
+                      <div className="space-y-1.5"><Label className="text-xs">ਘਟਨਾ ਦੀ ਤਾਰੀਖ਼</Label><Input type="date" value={editForm.eventDate} onChange={(e) => setEditForm(f => ({ ...f, eventDate: e.target.value }))} /></div>
+                      <div className="space-y-2">
+                        <Label className="text-xs">ਫ਼ੋਟੋ</Label>
+                        {u.imageUrl && !editRemoveImage && !editImage && (
+                          <div className="flex items-center gap-3 p-2 bg-muted rounded-lg">
+                            <img src={u.imageUrl} alt="" className="w-12 h-12 rounded object-cover border" />
+                            <div className="flex-1 text-xs text-muted-foreground">ਮੌਜੂਦਾ ਫ਼ੋਟੋ</div>
+                            <Button type="button" size="sm" variant="ghost" className="text-destructive text-xs h-7" onClick={() => setEditRemoveImage(true)}>ਹਟਾਓ</Button>
+                          </div>
+                        )}
+                        {editRemoveImage && <p className="text-xs text-destructive">ਫ਼ੋਟੋ ਹਟਾਈ ਜਾਵੇਗੀ</p>}
+                        {editImage && <p className="text-xs text-green-600">ਨਵੀਂ ਫ਼ੋਟੋ ਚੁਣੀ: {editImage.name}</p>}
+                        <Input type="file" accept="image/*" onChange={(e) => { setEditImage(e.target.files?.[0] || null); setEditRemoveImage(false); }} />
+                      </div>
+                      <div className="flex gap-2">
+                        <Button type="submit" disabled={saving || !editForm.title || !editForm.content} className="flex-1">
+                          {saving ? <><Loader2 className="mr-2 h-4 w-4 animate-spin" />ਸੇਵ ਹੋ ਰਿਹਾ...</> : "✓ ਸੇਵ ਕਰੋ"}
+                        </Button>
+                        <Button type="button" variant="outline" onClick={cancelEdit}>ਰੱਦ</Button>
+                      </div>
+                    </form>
+                  ) : (
+                    <div className="flex items-start justify-between gap-3">
+                      <div className="flex-1 min-w-0">
+                        <div className="flex items-center gap-2 mb-1"><p className="font-semibold truncate">{u.title}</p>{u.imageUrl && <span className="text-xs bg-green-100 text-green-700 px-1.5 py-0.5 rounded">📷</span>}</div>
+                        <p className="text-sm text-muted-foreground line-clamp-2">{u.content}</p>
+                        <p className="text-xs text-muted-foreground/60 mt-1">{u.eventDate && `ਘਟਨਾ: ${new Date(u.eventDate).toLocaleDateString("pa-IN")} • `}ਪੋਸਟ: {new Date(u.createdAt!).toLocaleDateString("pa-IN")}</p>
+                      </div>
+                      {u.imageUrl && <img src={u.imageUrl} alt="" className="w-16 h-16 rounded-lg object-cover flex-shrink-0 border" />}
+                      <div className="flex flex-col gap-1 flex-shrink-0">
+                        <Button size="sm" variant="ghost" className="text-primary hover:bg-primary/10" onClick={() => startEdit(u)}><Pencil className="h-4 w-4" /></Button>
+                        <Button size="sm" variant="ghost" className="text-destructive hover:bg-destructive/10" onClick={() => deleteMut.mutate(u.id)} disabled={deleteMut.isPending}><Trash2 className="h-4 w-4" /></Button>
+                      </div>
                     </div>
-                    {u.imageUrl && <img src={u.imageUrl} alt="" className="w-16 h-16 rounded-lg object-cover flex-shrink-0 border" />}
-                    <Button size="sm" variant="ghost" className="text-destructive hover:bg-destructive/10 flex-shrink-0" onClick={() => deleteMut.mutate(u.id)} disabled={deleteMut.isPending}><Trash2 className="h-4 w-4" /></Button>
-                  </div>
+                  )}
                 </CardContent>
               </Card>
             ))}
