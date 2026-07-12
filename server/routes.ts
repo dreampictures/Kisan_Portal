@@ -307,8 +307,10 @@ export async function registerRoutes(httpServer: Server, app: Express): Promise<
       let photoUrl: string | undefined;
       let photoData: string | undefined;
       let photoMimeType: string | undefined;
+      let photoSize: number | undefined;
 
       if (req.file) {
+        photoSize = req.file.buffer.length;
         const ext = req.file.mimetype.split("/")[1] || "jpg";
         const fileName = `photos/${Date.now()}-${Math.random().toString(36).slice(2)}.${ext}`;
         try {
@@ -331,6 +333,7 @@ export async function registerRoutes(httpServer: Server, app: Express): Promise<
         photoUrl,
         photoData,
         photoMimeType,
+        photoSize,
         status: "pending",
       });
 
@@ -447,14 +450,13 @@ export async function registerRoutes(httpServer: Server, app: Express): Promise<
     }
   });
 
-  // ── Admin: approve registration (auto-issues card with 1 year validity) ──
+  // ── Admin: approve registration (issues card with manual or auto 1-year validity) ──
   app.post("/api/admin/registrations/:id/approve", isAdminAuth, async (req: any, res: any) => {
     try {
       const id = parseInt(req.params.id);
       const by = getPerformedBy(req);
-      const validFrom = new Date();
-      const validUntil = new Date();
-      validUntil.setFullYear(validUntil.getFullYear() + 1);
+      const validFrom = req.body?.validFrom ? new Date(req.body.validFrom) : new Date();
+      const validUntil = req.body?.validUntil ? new Date(req.body.validUntil) : (() => { const d = new Date(); d.setFullYear(d.getFullYear() + 1); return d; })();
       // Approve + immediately issue card in one step so currentStage = card_issued
       const updated = await storage.updateRegistrationCard(id, { validFrom, validUntil, performedBy: by });
       if (!updated) return res.status(404).json({ message: "ਰਜਿਸਟ੍ਰੇਸ਼ਨ ਨਹੀਂ ਮਿਲੀ" });
@@ -560,14 +562,18 @@ export async function registerRoutes(httpServer: Server, app: Express): Promise<
         mohalla: z.string().optional(),
         mobileNumber: z.string().optional(),
         aadhaarNumber: z.string().optional(),
+        validFrom: z.string().optional(),
+        validUntil: z.string().optional(),
       });
       const parsed = editSchema.parse(req.body);
 
       let photoUrl: string | undefined;
       let photoData: string | undefined;
       let photoMimeType: string | undefined;
+      let photoSize: number | undefined;
 
       if (req.file) {
+        photoSize = req.file.buffer.length;
         const ext = req.file.mimetype.split("/")[1] || "jpg";
         const fileName = `photos/${Date.now()}-${Math.random().toString(36).slice(2)}.${ext}`;
         try {
@@ -580,10 +586,13 @@ export async function registerRoutes(httpServer: Server, app: Express): Promise<
         }
       }
 
-      const updateData: any = { ...parsed };
+      const { validFrom: vf, validUntil: vu, ...rest } = parsed;
+      const updateData: any = { ...rest };
+      if (vf) updateData.validFrom = new Date(vf);
+      if (vu) updateData.validUntil = new Date(vu);
       if (req.file) {
-        if (photoUrl) { updateData.photoUrl = photoUrl; updateData.photoData = null; updateData.photoMimeType = null; }
-        else { updateData.photoData = photoData; updateData.photoMimeType = photoMimeType; updateData.photoUrl = null; }
+        if (photoUrl) { updateData.photoUrl = photoUrl; updateData.photoData = null; updateData.photoMimeType = null; updateData.photoSize = photoSize; }
+        else { updateData.photoData = photoData; updateData.photoMimeType = photoMimeType; updateData.photoUrl = null; updateData.photoSize = photoSize; }
       }
 
       const updated = await storage.updateRegistration(id, updateData);

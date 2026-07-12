@@ -20,6 +20,7 @@ export const registrations = pgTable("registrations", {
   photoUrl: text("photo_url"),
   photoData: text("photo_data"),
   photoMimeType: text("photo_mime_type"),
+  photoSize: integer("photo_size"),
   validFrom: timestamp("valid_from"),
   validUntil: timestamp("valid_until"),
   status: text("status").default("pending").notNull(),

@@ -123,6 +123,7 @@ export async function runMigrations() {
       ALTER TABLE registrations ADD COLUMN IF NOT EXISTS rejected_at TIMESTAMP;
       ALTER TABLE registrations ADD COLUMN IF NOT EXISTS created_by TEXT;
       ALTER TABLE registrations ADD COLUMN IF NOT EXISTS created_by_role TEXT;
+      ALTER TABLE registrations ADD COLUMN IF NOT EXISTS photo_size INTEGER;
     `);
 
     await client.query(`

@@ -438,7 +438,7 @@ function EditDialog({ reg }: { reg: Registration }) {
   const [open, setOpen] = useState(false);
   const { toast } = useToast();
   const queryClient = useQueryClient();
-  const [form, setForm] = useState({ name: reg.name, designation: reg.designation || "ਮੈਂਬਰ", district: reg.district, tehsil: reg.tehsil, village: reg.village, areaType: (reg.areaType || "rural") as "rural" | "urban", wardNumber: reg.wardNumber || "", mohalla: reg.mohalla || "", mobileNumber: reg.mobileNumber || "", aadhaarNumber: reg.aadhaarNumber || "" });
+  const [form, setForm] = useState({ name: reg.name, designation: reg.designation || "ਮੈਂਬਰ", district: reg.district, tehsil: reg.tehsil, village: reg.village, areaType: (reg.areaType || "rural") as "rural" | "urban", wardNumber: reg.wardNumber || "", mohalla: reg.mohalla || "", mobileNumber: reg.mobileNumber || "", aadhaarNumber: reg.aadhaarNumber || "", validFrom: reg.validFrom ? new Date(reg.validFrom).toISOString().split("T")[0] : "", validUntil: reg.validUntil ? new Date(reg.validUntil).toISOString().split("T")[0] : "" });
   const [photoFile, setPhotoFile] = useState<File | null>(null);
   const [photoPreview, setPhotoPreview] = useState<string | null>(null);
   const [compressing, setCompressing] = useState(false);
@@ -467,7 +467,7 @@ function EditDialog({ reg }: { reg: Registration }) {
   const resetDialog = (o: boolean) => {
     setOpen(o);
     if (o) {
-      setForm({ name: reg.name, designation: reg.designation || "ਮੈਂਬਰ", district: reg.district, tehsil: reg.tehsil, village: reg.village, areaType: (reg.areaType || "rural") as "rural" | "urban", wardNumber: reg.wardNumber || "", mohalla: reg.mohalla || "", mobileNumber: reg.mobileNumber || "", aadhaarNumber: reg.aadhaarNumber || "" });
+      setForm({ name: reg.name, designation: reg.designation || "ਮੈਂਬਰ", district: reg.district, tehsil: reg.tehsil, village: reg.village, areaType: (reg.areaType || "rural") as "rural" | "urban", wardNumber: reg.wardNumber || "", mohalla: reg.mohalla || "", mobileNumber: reg.mobileNumber || "", aadhaarNumber: reg.aadhaarNumber || "", validFrom: reg.validFrom ? new Date(reg.validFrom).toISOString().split("T")[0] : "", validUntil: reg.validUntil ? new Date(reg.validUntil).toISOString().split("T")[0] : "" });
       setPhotoFile(null); setPhotoPreview(null);
     }
   };
@@ -561,6 +561,21 @@ function EditDialog({ reg }: { reg: Registration }) {
           {f(form.areaType === "urban" ? "ਸ਼ਹਿਰ/ਨਗਰ *" : "ਪਿੰਡ *", "village", form.areaType === "urban" ? "ਸ਼ਹਿਰ ਦਾ ਨਾਮ" : "ਪਿੰਡ ਦਾ ਨਾਮ")}
           {form.areaType === "urban" && <div className="grid grid-cols-2 gap-3">{f("ਵਾਰਡ ਨੰਬਰ", "wardNumber", "ਵਿਕਲਪਿਕ")}{f("ਮੁਹੱਲਾ", "mohalla", "ਵਿਕਲਪਿਕ")}</div>}
           <div className="grid grid-cols-2 gap-3">{f("ਮੋਬਾਈਲ", "mobileNumber", "10 ਅੰਕ")}{f("ਆਧਾਰ ਨੰਬਰ", "aadhaarNumber", "12 ਅੰਕ")}</div>
+          {reg.status === "card_issued" && (
+            <div className="space-y-1 pt-1 border-t">
+              <Label className="text-xs font-semibold text-primary">📅 ਕਾਰਡ ਦੀ ਵੈਧਤਾ</Label>
+              <div className="grid grid-cols-2 gap-2">
+                <div className="space-y-1">
+                  <Label className="text-xs">ਸ਼ੁਰੂਆਤੀ ਤਾਰੀਖ਼</Label>
+                  <Input type="date" value={form.validFrom} onChange={e => setForm(p => ({ ...p, validFrom: e.target.value }))} className="h-8 text-sm" />
+                </div>
+                <div className="space-y-1">
+                  <Label className="text-xs">ਅੰਤਿਮ ਤਾਰੀਖ਼</Label>
+                  <Input type="date" value={form.validUntil} onChange={e => setForm(p => ({ ...p, validUntil: e.target.value }))} className="h-8 text-sm" />
+                </div>
+              </div>
+            </div>
+          )}
         </div>
         <Button onClick={() => editMut.mutate()} disabled={editMut.isPending || compressing || !form.name || !form.village || !form.tehsil || !form.district} className="w-full">
           {editMut.isPending ? <><Loader2 className="mr-2 h-4 w-4 animate-spin" />ਸੇਵ ਹੋ ਰਿਹਾ...</> : <><Pencil className="mr-2 h-4 w-4" />ਸੇਵ ਕਰੋ</>}
@@ -660,6 +675,21 @@ function RejectDialog({ regId, onReject, endpoint }: { regId: number; onReject: 
 }
 
 // ─── Pending Card (stage-aware) ───────────────────────────────
+function photoSizeLabel(reg: Registration): string | null {
+  if (reg.photoSize) {
+    return reg.photoSize >= 1024 * 1024
+      ? `${(reg.photoSize / (1024 * 1024)).toFixed(1)} MB`
+      : `${Math.round(reg.photoSize / 1024)} KB`;
+  }
+  if (reg.photoData) {
+    const bytes = Math.round(reg.photoData.length * 0.75);
+    return bytes >= 1024 * 1024
+      ? `${(bytes / (1024 * 1024)).toFixed(1)} MB`
+      : `${Math.round(bytes / 1024)} KB`;
+  }
+  return null;
+}
+
 function PendingCard({ reg, userRole }: { reg: Registration; userRole: StaffRole }) {
   const { toast } = useToast();
   const queryClient = useQueryClient();
@@ -668,6 +698,10 @@ function PendingCard({ reg, userRole }: { reg: Registration; userRole: StaffRole
   const canMeetPresAct = userRole === "state_meet_president" && stage === "submitted";
   const canStatePresAct = userRole === "state_president" && stage === "state_president_review";
   const canAdminAct = userRole === "admin" && reg.status === "pending";
+
+  const [validFrom, setValidFrom] = useState("");
+  const [validUntil, setValidUntil] = useState("");
+  const [showValidity, setShowValidity] = useState(false);
 
   const meetApprove = useMutation({
     mutationFn: async () => { const r = await apiRequest("POST", `/api/admin/registrations/${reg.id}/meet-president-approve`); if (!r.ok) throw new Error(); return r.json(); },
@@ -682,22 +716,33 @@ function PendingCard({ reg, userRole }: { reg: Registration; userRole: StaffRole
   });
 
   const adminApprove = useMutation({
-    mutationFn: async () => { const r = await apiRequest("POST", `/api/admin/registrations/${reg.id}/approve`); if (!r.ok) throw new Error(); return r.json(); },
+    mutationFn: async () => {
+      const r = await apiRequest("POST", `/api/admin/registrations/${reg.id}/approve`, { validFrom, validUntil });
+      if (!r.ok) throw new Error();
+      return r.json();
+    },
     onSuccess: () => { toast({ title: "✓ ਅਪ੍ਰੂਵ ਕੀਤਾ" }); queryClient.invalidateQueries({ queryKey: ["/api/admin/registrations"] }); },
     onError: () => toast({ title: "ਗਲਤੀ", variant: "destructive" }),
   });
+
+  const sizeLabel = photoSizeLabel(reg);
 
   return (
     <Card className="border-amber-200 bg-amber-50/30 overflow-hidden">
       <CardContent className="p-4">
         <div className="flex items-start gap-3">
-          {reg.photoUrl || reg.photoData ? (
-            <PhotoPreviewDialog reg={reg} />
-          ) : (
-            <Avatar className="h-14 w-14 flex-shrink-0 border-2 border-amber-200">
-              <AvatarFallback className="text-xl font-bold bg-amber-100">{reg.name[0]}</AvatarFallback>
-            </Avatar>
-          )}
+          <div className="flex-shrink-0 flex flex-col items-center gap-1">
+            {reg.photoUrl || reg.photoData ? (
+              <PhotoPreviewDialog reg={reg} />
+            ) : (
+              <Avatar className="h-14 w-14 border-2 border-amber-200">
+                <AvatarFallback className="text-xl font-bold bg-amber-100">{reg.name[0]}</AvatarFallback>
+              </Avatar>
+            )}
+            {sizeLabel && (
+              <span className="text-[10px] font-mono bg-amber-100 text-amber-700 px-1.5 py-0.5 rounded border border-amber-200">{sizeLabel}</span>
+            )}
+          </div>
           <div className="flex-1 min-w-0">
             <div className="flex items-start justify-between gap-2">
               <div><p className="font-semibold leading-tight">{reg.name}</p><p className="text-sm text-muted-foreground">{reg.designation}</p></div>
@@ -732,11 +777,35 @@ function PendingCard({ reg, userRole }: { reg: Registration; userRole: StaffRole
             </div>
           )}
           {canAdminAct && (
-            <div className="grid grid-cols-2 gap-2">
-              <Button size="sm" className="bg-green-600 hover:bg-green-700 gap-1.5 flex-1" onClick={() => adminApprove.mutate()} disabled={adminApprove.isPending}>
-                {adminApprove.isPending ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : <ThumbsUp className="h-3.5 w-3.5" />} Approve
-              </Button>
-              <RejectDialog regId={reg.id} endpoint={`/api/admin/registrations/${reg.id}/reject`} onReject={() => {}} />
+            <div className="space-y-2">
+              {!showValidity ? (
+                <div className="grid grid-cols-2 gap-2">
+                  <Button size="sm" className="bg-green-600 hover:bg-green-700 gap-1.5 flex-1" onClick={() => setShowValidity(true)}>
+                    <ThumbsUp className="h-3.5 w-3.5" /> Approve
+                  </Button>
+                  <RejectDialog regId={reg.id} endpoint={`/api/admin/registrations/${reg.id}/reject`} onReject={() => {}} />
+                </div>
+              ) : (
+                <div className="bg-green-50 border border-green-200 rounded-lg p-3 space-y-2">
+                  <p className="text-xs font-semibold text-green-800">📅 ਕਾਰਡ ਦੀ ਵੈਧਤਾ ਦੀਆਂ ਤਾਰੀਖ਼ਾਂ ਚੁਣੋ</p>
+                  <div className="grid grid-cols-2 gap-2">
+                    <div className="space-y-1">
+                      <Label className="text-[10px] text-green-700">ਸ਼ੁਰੂਆਤੀ ਤਾਰੀਖ਼ *</Label>
+                      <Input type="date" value={validFrom} onChange={e => setValidFrom(e.target.value)} className="h-7 text-xs" />
+                    </div>
+                    <div className="space-y-1">
+                      <Label className="text-[10px] text-green-700">ਅੰਤਿਮ ਤਾਰੀਖ਼ *</Label>
+                      <Input type="date" value={validUntil} onChange={e => setValidUntil(e.target.value)} className="h-7 text-xs" />
+                    </div>
+                  </div>
+                  <div className="grid grid-cols-2 gap-2">
+                    <Button size="sm" className="bg-green-600 hover:bg-green-700 gap-1" onClick={() => adminApprove.mutate()} disabled={adminApprove.isPending || !validFrom || !validUntil}>
+                      {adminApprove.isPending ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : <ThumbsUp className="h-3.5 w-3.5" />} ਕਾਰਡ ਜਾਰੀ ਕਰੋ
+                    </Button>
+                    <Button size="sm" variant="outline" onClick={() => { setShowValidity(false); setValidFrom(""); setValidUntil(""); }}>ਰੱਦ</Button>
+                  </div>
+                </div>
+              )}
             </div>
           )}
           {!canMeetPresAct && !canStatePresAct && !canAdminAct && (
