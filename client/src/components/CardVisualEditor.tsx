@@ -6,6 +6,17 @@ import { Label } from "@/components/ui/label";
 const CANVAS_W = 2480;
 const CANVAS_H = 926;
 
+// Demo data shown as overlay for calibration
+const DEMO_TEXT: Record<string, string> = {
+  cardNumber:  "KU-2024-00001",
+  name:        "ਹਰਜਿੰਦਰ ਸਿੰਘ",
+  designation: "ਮੈਂਬਰ",
+  validUntil:  "31/12/2025",
+  address:     "ਪਿੰਡ: ਲੁਧਿਆਣਾ",
+  mobile:      "98765-43210",
+  aadhaar:     "XXXX-XXXX-1234",
+};
+
 type FieldKey = keyof CardFieldConfig;
 
 const FIELD_META: {
@@ -44,6 +55,7 @@ export function CardVisualEditor({ config, onChange, templateTs = 0 }: Props) {
   const containerRef = useRef<HTMLDivElement>(null);
   const [scale, setScale] = useState(0.3);
   const [selected, setSelected] = useState<FieldKey | null>(null);
+  const [stampUrl, setStampUrl] = useState<string | null>(null);
   const dragRef = useRef<DragState | null>(null);
 
   useEffect(() => {
@@ -57,6 +69,16 @@ export function CardVisualEditor({ config, onChange, templateTs = 0 }: Props) {
     ro.observe(el);
     return () => ro.disconnect();
   }, []);
+
+  // Load stamp preview
+  useEffect(() => {
+    fetch(`/api/admin/stamp?t=${Date.now()}`, { credentials: "include" })
+      .then(r => r.ok ? r.blob() : null)
+      .then(blob => {
+        if (blob) setStampUrl(URL.createObjectURL(blob));
+      })
+      .catch(() => {});
+  }, [templateTs]);
 
   const updateField = useCallback(
     (key: FieldKey, updates: Record<string, number | string>) => {
@@ -123,9 +145,9 @@ export function CardVisualEditor({ config, onChange, templateTs = 0 }: Props) {
       <div className="rounded-md bg-blue-50 border border-blue-200 px-3 py-2 text-xs text-blue-800 flex items-start gap-2">
         <span className="text-base">💡</span>
         <span>
-          <b>ਕਿਵੇਂ ਵਰਤਣਾ:</b> ਹੇਠਾਂ ਤਸਵੀਰ ਉੱਤੇ ਕਿਸੇ ਵੀ <b>ਰੰਗਦਾਰ ਬਾਕਸ / ਬਿੰਦੀ</b> ਨੂੰ ਖਿੱਚੋ (drag ਕਰੋ) ਅਤੇ ਛੱਡੋ।
+          <b>ਕਿਵੇਂ ਵਰਤਣਾ:</b> ਹੇਠਾਂ ਤਸਵੀਰ ਉੱਤੇ ਕਿਸੇ ਵੀ <b>ਰੰਗਦਾਰ ਬਾਕਸ / ਟੈਕਸਟ</b> ਨੂੰ ਖਿੱਚੋ (drag ਕਰੋ) ਅਤੇ ਛੱਡੋ।
           ਬਾਕਸ ਦੇ ਹੇਠਲੇ-ਸੱਜੇ ਕੋਨੇ ਦੀ ਛੋਟੀ ਚੌਕ ਨੂੰ ਖਿੱਚ ਕੇ resize ਕਰੋ।
-          ਚੁਣੇ field ਦੀਆਂ ਸੈਟਿੰਗਾਂ ਹੇਠਾਂ ਦਿਖਣਗੀਆਂ।
+          Demo ਡੇਟਾ ਦਿਖਾਇਆ ਗਿਆ ਹੈ ਤਾਂ ਜੋ calibration ਸਹੀ ਹੋਵੇ।
         </span>
       </div>
 
@@ -195,8 +217,27 @@ export function CardVisualEditor({ config, onChange, templateTs = 0 }: Props) {
                   boxSizing: "border-box",
                   zIndex: isSelected ? 20 : 10,
                   boxShadow: isSelected ? `0 0 0 2px ${color}55` : "none",
+                  overflow: "hidden",
                 }}
               >
+                {/* Stamp image preview inside stamp box */}
+                {key === "stamp" && stampUrl && (
+                  <img
+                    src={stampUrl}
+                    alt="stamp"
+                    style={{
+                      position: "absolute",
+                      inset: 0,
+                      width: "100%",
+                      height: "100%",
+                      objectFit: "contain",
+                      pointerEvents: "none",
+                      opacity: 0.85,
+                    }}
+                    draggable={false}
+                  />
+                )}
+
                 {/* Move handle */}
                 <div
                   style={{
@@ -212,6 +253,7 @@ export function CardVisualEditor({ config, onChange, templateTs = 0 }: Props) {
                     borderRadius: "0 0 4px 0",
                     userSelect: "none",
                     lineHeight: "1.5",
+                    zIndex: 5,
                   }}
                   onMouseDown={(e) => onHandleMouseDown(e, key, "move")}
                 >
@@ -237,53 +279,96 @@ export function CardVisualEditor({ config, onChange, templateTs = 0 }: Props) {
               </div>
             );
           } else {
-            // Point field — circle dot
-            const cx = (f.x as number) * scale;
-            const cy = (f.y as number) * scale;
-            const r = Math.max(7, Math.min(18, 18 * scale * 3));
-            const labelSize = Math.max(7, Math.min(11, 11 * scale * 3));
+            // Point (text) field — show demo text + draggable label
+            const fx = (f.x as number) * scale;
+            const fy = (f.y as number) * scale;
+            const fs = (f.fontSize as number) * scale;
+            const maxW = f.maxWidth ? (f.maxWidth as number) * scale : undefined;
+            const align = (f.textAlign as string) || "left";
+            const demoText = DEMO_TEXT[key] ?? label;
+
+            // For right-aligned: x is the right edge, so position using 'right'
+            const posStyle: React.CSSProperties =
+              align === "right"
+                ? { right: (CANVAS_W - (f.x as number)) * scale, top: fy }
+                : align === "center"
+                ? { left: fx, top: fy, transform: "translateX(-50%)" }
+                : { left: fx, top: fy };
 
             return (
               <div
                 key={key}
                 style={{
                   position: "absolute",
-                  left: cx - r,
-                  top: cy - r,
-                  width: r * 2,
-                  height: r * 2,
-                  borderRadius: "50%",
-                  backgroundColor: color,
-                  border: isSelected ? "3px solid white" : "2px solid rgba(255,255,255,0.8)",
-                  boxShadow: isSelected
-                    ? `0 0 0 2px ${color}, 0 2px 8px rgba(0,0,0,0.4)`
-                    : "0 2px 6px rgba(0,0,0,0.3)",
-                  cursor: "move",
+                  ...posStyle,
                   zIndex: isSelected ? 20 : 10,
-                  display: "flex",
-                  alignItems: "center",
-                  justifyContent: "center",
+                  cursor: "move",
                   userSelect: "none",
                 }}
                 onMouseDown={(e) => onHandleMouseDown(e, key, "move")}
                 title={label}
               >
-                <span
+                {/* Demo text rendered at actual position */}
+                <div
                   style={{
-                    color: "#fff",
-                    fontSize: labelSize + "px",
-                    fontWeight: "bold",
-                    textAlign: "center",
-                    lineHeight: 1,
-                    pointerEvents: "none",
-                    maxWidth: r * 2 - 4 + "px",
-                    overflow: "hidden",
-                    textOverflow: "clip",
+                    fontSize: fs + "px",
+                    fontFamily: "'Noto Sans Gurmukhi', system-ui, sans-serif",
+                    fontWeight: 500,
+                    color: f.color as string || color,
                     whiteSpace: "nowrap",
+                    maxWidth: maxW ? maxW + "px" : undefined,
+                    overflow: "visible",
+                    lineHeight: 1,
+                    textAlign: align as "left" | "right" | "center",
+                    // Outline so it's always readable on any background
+                    textShadow: "0 0 3px rgba(255,255,255,0.9), 0 0 6px rgba(255,255,255,0.7)",
+                    transform: "translateY(-100%)",
+                    pointerEvents: "none",
                   }}
                 >
-                  {label.replace(/^[^\s]+ /, "").slice(0, 3)}
-                </span>
+                  {demoText}
+                </div>
+
+                {/* Colored drag handle dot */}
+                <div
+                  style={{
+                    position: "absolute",
+                    top: "-100%",
+                    ...(align === "right" ? { right: 0 } : { left: 0 }),
+                    transform: "translate(0, -" + (fs * 0.1) + "px)",
+                    width: Math.max(8, fs * 0.4),
+                    height: Math.max(8, fs * 0.4),
+                    borderRadius: "50%",
+                    backgroundColor: color,
+                    border: isSelected ? "2px solid white" : "1.5px solid rgba(255,255,255,0.8)",
+                    boxShadow: isSelected
+                      ? `0 0 0 2px ${color}, 0 2px 8px rgba(0,0,0,0.4)`
+                      : "0 2px 6px rgba(0,0,0,0.3)",
+                    zIndex: 2,
+                  }}
+                />
+
+                {/* Label tag on hover / selected */}
+                {isSelected && (
+                  <div
+                    style={{
+                      position: "absolute",
+                      top: "-100%",
+                      ...(align === "right" ? { right: 0 } : { left: 0 }),
+                      transform: `translateY(${-fs * 0.05}px)`,
+                      backgroundColor: color,
+                      color: "#fff",
+                      fontSize: Math.max(8, fs * 0.55) + "px",
+                      padding: "1px 5px",
+                      borderRadius: "3px",
+                      whiteSpace: "nowrap",
+                      zIndex: 3,
+                      pointerEvents: "none",
+                    }}
+                  >
+                    {label}
+                  </div>
+                )}
               </div>
             );
           }
