@@ -77,19 +77,34 @@ function drawPhotoFit(
   ctx.restore();
 }
 
-let fontInjected = false;
+// Cache a single promise so concurrent calls all wait on the same load
+let fontPromise: Promise<void> | null = null;
 
-async function ensureFont() {
-  if (fontInjected) return;
-  fontInjected = true;
-  if (!document.getElementById("card-gen-font")) {
-    const link = document.createElement("link");
-    link.id = "card-gen-font";
-    link.rel = "stylesheet";
-    link.href = "https://fonts.googleapis.com/css2?family=Noto+Sans+Gurmukhi:wght@400;500;700&display=swap";
-    document.head.appendChild(link);
-  }
-  try { await document.fonts.ready; } catch (_) { /* ignore */ }
+async function ensureFont(): Promise<void> {
+  if (fontPromise) return fontPromise;
+  fontPromise = (async () => {
+    // Step 1: inject stylesheet and wait until it is actually fetched
+    if (!document.getElementById("card-gen-font")) {
+      await new Promise<void>((resolve) => {
+        const link = document.createElement("link");
+        link.id   = "card-gen-font";
+        link.rel  = "stylesheet";
+        link.href = "https://fonts.googleapis.com/css2?family=Noto+Sans+Gurmukhi:wght@400;500;700&display=swap";
+        link.onload  = () => resolve();
+        link.onerror = () => resolve(); // continue even if Google Fonts is unavailable
+        document.head.appendChild(link);
+      });
+    }
+    // Step 2: wait for the browser to fetch and parse the actual woff2 file
+    try {
+      await Promise.all([
+        document.fonts.load("400 40px 'Noto Sans Gurmukhi'", "ਪੰਜਾਬ ਕਿਸਾਨ"),
+        document.fonts.load("500 40px 'Noto Sans Gurmukhi'", "ਪੰਜਾਬ ਕਿਸਾਨ"),
+        document.fonts.load("700 40px 'Noto Sans Gurmukhi'", "ਪੰਜਾਬ ਕਿਸਾਨ"),
+      ]);
+    } catch (_) { /* fall back to system fonts silently */ }
+  })();
+  return fontPromise;
 }
 
 // ── Main generator ────────────────────────────────────────────
