@@ -1036,10 +1036,11 @@ export async function registerRoutes(httpServer: Server, app: Express): Promise<
     try {
       const url = await storage.getSetting("card_template_url");
       if (url) {
-        const r = await fetch(url);
+        const r = await fetch(url, { headers: { "Cache-Control": "no-cache" } });
         if (r.ok) {
           res.setHeader("Content-Type", "image/png");
-          res.setHeader("Cache-Control", "max-age=60");
+          res.setHeader("Cache-Control", "no-store, no-cache, must-revalidate");
+          res.setHeader("Pragma", "no-cache");
           return res.send(Buffer.from(await r.arrayBuffer()));
         }
       }
@@ -1077,7 +1078,10 @@ export async function registerRoutes(httpServer: Server, app: Express): Promise<
   app.post("/api/admin/card-template", isAdminAuth, upload.single("template"), async (req: any, res: any) => {
     try {
       if (!req.file) return res.status(400).json({ message: "ਫਾਈਲ ਲੋੜੀਂਦੀ ਹੈ" });
-      const url = await uploadPhotoToR2(req.file.buffer, req.file.mimetype, "card-template/current.png");
+      // Use timestamp in filename so R2 CDN never serves a cached old version
+      const ext = req.file.mimetype === "image/jpeg" ? "jpg" : "png";
+      const key = `card-template/v-${Date.now()}.${ext}`;
+      const url = await uploadPhotoToR2(req.file.buffer, req.file.mimetype, key);
       await storage.setSetting("card_template_url", url);
       res.json({ url });
     } catch (err) {
