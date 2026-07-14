@@ -27,6 +27,7 @@ import { apiRequest } from "@/lib/queryClient";
 import type { Registration, Update, DeleteRequest } from "@shared/schema";
 import { PUNJAB_DISTRICTS } from "@/lib/punjab-data";
 import { downloadCard, downloadCalibrationCard, type CardFieldConfig, DEFAULT_CARD_CONFIG } from "@/lib/cardGenerator";
+import { CardVisualEditor } from "@/components/CardVisualEditor";
 
 const selectCls = "flex h-9 w-full rounded-md border border-input bg-background px-3 py-1 text-sm shadow-sm focus:outline-none focus:ring-1 focus:ring-ring";
 
@@ -887,24 +888,6 @@ function StampUploader({ onUploaded }: { onUploaded: () => void }) {
   );
 }
 
-function FieldInput({ label, value, onChange, type = "number" }: { label: string; value: any; onChange: (v: string) => void; type?: string }) {
-  return (
-    <div className="space-y-0.5">
-      <Label className="text-[10px] text-muted-foreground uppercase tracking-wide">{label}</Label>
-      <Input type={type} value={value} onChange={e => onChange(e.target.value)} className="h-7 text-xs font-mono px-2" />
-    </div>
-  );
-}
-
-function ConfigSection({ label, children }: { label: string; children: React.ReactNode }) {
-  return (
-    <div>
-      <p className="text-xs font-semibold text-muted-foreground mb-2">{label}</p>
-      <div className="grid grid-cols-2 sm:grid-cols-4 gap-2">{children}</div>
-    </div>
-  );
-}
-
 function CardTemplateSettings() {
   const { toast } = useToast();
   const [config, setConfig] = useState<CardFieldConfig>(DEFAULT_CARD_CONFIG);
@@ -946,21 +929,6 @@ function CardTemplateSettings() {
     finally { setUploading(false); if (fileRef.current) fileRef.current.value = ""; }
   }
 
-  function setField(key: keyof CardFieldConfig, prop: string, raw: string) {
-    const val = prop === "color" ? raw : (isNaN(Number(raw)) ? raw : Number(raw));
-    setConfig(prev => ({ ...prev, [key]: { ...(prev[key] as any), [prop]: val } }));
-  }
-
-  const textFields: { key: keyof CardFieldConfig; label: string; side: string }[] = [
-    { key: "cardNumber",  label: "ਕਾਰਡ ਨੰ",  side: "Front" },
-    { key: "name",        label: "ਨਾਮ",        side: "Front" },
-    { key: "designation", label: "ਅਹੁਦਾ",     side: "Front" },
-    { key: "validUntil",  label: "ਮਿਆਦ",       side: "Front" },
-    { key: "address",     label: "ਪਤਾ",        side: "Back"  },
-    { key: "mobile",      label: "ਫ਼ੋਨ",       side: "Back"  },
-    { key: "aadhaar",     label: "ਆਧਾਰ ਨੰ",   side: "Back"  },
-  ];
-
   if (isLoading) return <div className="flex justify-center py-16"><Loader2 className="h-8 w-8 animate-spin text-primary" /></div>;
 
   return (
@@ -993,37 +961,23 @@ function CardTemplateSettings() {
         </CardContent>
       </Card>
 
-      {/* Field positions */}
+      {/* Visual Field Editor */}
       <Card>
         <CardHeader>
-          <CardTitle className="text-base">ਫੀਲਡ ਪੋਜ਼ੀਸ਼ਨਾਂ</CardTitle>
-          <p className="text-xs text-muted-foreground">ਟੈਂਪਲੇਟ ਸਕੇਲ: 2480×926 px ਅਨੁਸਾਰ pixels</p>
+          <CardTitle className="text-base flex items-center gap-2">
+            🎯 Visual Card Editor
+          </CardTitle>
+          <p className="text-xs text-muted-foreground">
+            ਟੈਂਪਲੇਟ ਉੱਤੇ ਸਿੱਧਾ drag ਕਰੋ — ਬਾਕਸ ਨੂੰ ਖਿੱਚੋ, ਕੋਨੇ ਤੋਂ resize ਕਰੋ
+          </p>
         </CardHeader>
-        <CardContent className="space-y-5">
-          <ConfigSection label="📷 ਫੋਟੋ ਬਾਕਸ (Front)">
-            {(["x","y","w","h"] as const).map(k => (
-              <FieldInput key={k} label={k.toUpperCase()} value={(config.photoBox as any)[k]} onChange={v => setField("photoBox", k, v)} />
-            ))}
-          </ConfigSection>
-          <ConfigSection label="💮 ਸਟੈਂਪ (Front — ਫੋਟੋ ਉੱਪਰ)">
-            {(["x","y","w","h"] as const).map(k => (
-              <FieldInput key={k} label={k.toUpperCase()} value={(config.stamp as any)?.[k] ?? ""} onChange={v => setField("stamp" as any, k, v)} />
-            ))}
-          </ConfigSection>
-          <ConfigSection label="📱 QR ਕੋਡ (Back)">
-            {(["x","y","size"] as const).map(k => (
-              <FieldInput key={k} label={k.toUpperCase()} value={(config.qrCode as any)[k]} onChange={v => setField("qrCode", k, v)} />
-            ))}
-          </ConfigSection>
-          {textFields.map(({ key, label, side }) => (
-            <ConfigSection key={key} label={`✏️ ${label} (${side})`}>
-              {(["x","y","fontSize"] as const).map(k => (
-                <FieldInput key={k} label={k} value={(config[key] as any)[k]} onChange={v => setField(key, k, v)} />
-              ))}
-              <FieldInput label="Color" value={(config[key] as any).color} type="color" onChange={v => setField(key, "color", v)} />
-            </ConfigSection>
-          ))}
-          <Button onClick={saveConfig} disabled={saving} className="w-full">
+        <CardContent>
+          <CardVisualEditor
+            config={config}
+            onChange={setConfig}
+            templateTs={templateTs}
+          />
+          <Button onClick={saveConfig} disabled={saving} className="w-full mt-4">
             {saving ? <Loader2 className="h-4 w-4 animate-spin mr-1" /> : null}
             ✓ ਕੌਨਫਿਗ ਸੇਵ ਕਰੋ
           </Button>
