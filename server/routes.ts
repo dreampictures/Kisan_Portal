@@ -1053,10 +1053,11 @@ export async function registerRoutes(httpServer: Server, app: Express): Promise<
     try {
       const url = await storage.getSetting("stamp_url");
       if (!url) return res.status(404).send("No stamp uploaded");
-      const r = await fetch(url);
+      const r = await fetch(url, { headers: { "Cache-Control": "no-cache" } });
       if (!r.ok) return res.status(404).send("Stamp not found");
       res.setHeader("Content-Type", r.headers.get("content-type") || "image/png");
-      res.setHeader("Cache-Control", "max-age=3600");
+      res.setHeader("Cache-Control", "no-store, no-cache, must-revalidate");
+      res.setHeader("Pragma", "no-cache");
       res.send(Buffer.from(await r.arrayBuffer()));
     } catch (err) { console.error(err); res.status(500).send("Error"); }
   });
@@ -1065,7 +1066,10 @@ export async function registerRoutes(httpServer: Server, app: Express): Promise<
   app.post("/api/admin/stamp", isAdminAuth, upload.single("stamp"), async (req: any, res: any) => {
     try {
       if (!req.file) return res.status(400).json({ message: "ਫਾਈਲ ਲੋੜੀਂਦੀ ਹੈ" });
-      const url = await uploadPhotoToR2(req.file.buffer, req.file.mimetype, "stamp/current.png");
+      // Use timestamp in filename so R2 CDN never serves a cached old version
+      const ext = req.file.mimetype === "image/jpeg" ? "jpg" : "png";
+      const key = `stamp/v-${Date.now()}.${ext}`;
+      const url = await uploadPhotoToR2(req.file.buffer, req.file.mimetype, key);
       await storage.setSetting("stamp_url", url);
       res.json({ url });
     } catch (err) {
@@ -1109,7 +1113,13 @@ export async function registerRoutes(httpServer: Server, app: Express): Promise<
         mobile:      { x: 2192, y: 372, fontSize: 34, color: "#1a1a1a", maxWidth: 280, textAlign: "left" },
         aadhaar:     { x: 2192, y: 419, fontSize: 34, color: "#1a1a1a", maxWidth: 280, textAlign: "left" },
       };
-      const config = cfgVal ? JSON.parse(cfgVal) : DEFAULT;
+      // Merge saved config with DEFAULT so any missing fields (e.g. stamp)
+      // always get a sensible value even if the saved JSON predates that field.
+      const saved = cfgVal ? JSON.parse(cfgVal) : {};
+      const config: Record<string, unknown> = {};
+      for (const key of Object.keys(DEFAULT)) {
+        config[key] = (saved as Record<string, unknown>)[key] ?? (DEFAULT as Record<string, unknown>)[key];
+      }
       res.json({ ...config, templateUrl: templateUrl || null });
     } catch (err) {
       console.error(err);
