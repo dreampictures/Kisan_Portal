@@ -32,5 +32,10 @@ npm run db:push
 - `shared/schema.ts` — Database schema (Drizzle)
 - `drizzle.config.ts` — Drizzle config
 
+## Deployment
+- **Production deployment is on fly.io** — NOT Replit Deploy.
+- All production secrets (DATABASE_URL, R2, ADMIN credentials, SESSION_SECRET) are already set on fly.io. **Do not change or recreate them** — use the existing fly.io secrets to avoid data loss or app crashes.
+- To deploy: `fly deploy` (secrets are already configured on fly.io side).
+
 ## User preferences
 - Communicates in Punjabi
