@@ -1,5 +1,5 @@
 import { db } from "./db";
-import { registrations, updates, pageViews, staffUsers, deleteRequests, activityLogs, type Registration, type Update, type StaffUser, type DeleteRequest, type ActivityLog } from "@shared/schema";
+import { registrations, updates, pageViews, staffUsers, deleteRequests, activityLogs, settings, type Registration, type Update, type StaffUser, type DeleteRequest, type ActivityLog } from "@shared/schema";
 import { eq, desc, sql, and, inArray } from "drizzle-orm";
 
 function generateCardNumber(): string {
@@ -87,6 +87,9 @@ export interface IStorage {
     cardIssued: number;
     pendingDeleteRequests: number;
   }>;
+
+  getSetting(key: string): Promise<string | null>;
+  setSetting(key: string, value: string): Promise<void>;
 }
 
 export class DatabaseStorage implements IStorage {
@@ -447,6 +450,14 @@ export class DatabaseStorage implements IStorage {
       cardIssued,
       pendingDeleteRequests: pendingDeletes.length,
     };
+  }
+  async getSetting(key: string): Promise<string | null> {
+    const rows = await db.select().from(settings).where(eq(settings.key, key));
+    return rows[0]?.value ?? null;
+  }
+
+  async setSetting(key: string, value: string): Promise<void> {
+    await db.insert(settings).values({ key, value }).onConflictDoUpdate({ target: settings.key, set: { value, updatedAt: new Date() } });
   }
 }
 

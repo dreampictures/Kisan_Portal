@@ -987,5 +987,115 @@ export async function registerRoutes(httpServer: Server, app: Express): Promise<
     }
   });
 
+  // ── Card: proxy member photo (avoids CORS for canvas) ───
+  app.get("/api/admin/registrations/:id/photo", isStaffAuth, async (req: any, res: any) => {
+    try {
+      const reg = await storage.getRegistration(parseInt(req.params.id));
+      if (!reg) return res.status(404).send("Not found");
+      if (reg.photoData && reg.photoMimeType) {
+        const buf = Buffer.from(reg.photoData, "base64");
+        res.setHeader("Content-Type", reg.photoMimeType);
+        res.setHeader("Cache-Control", "max-age=3600");
+        return res.send(buf);
+      }
+      if (reg.photoUrl) {
+        const r = await fetch(reg.photoUrl);
+        if (!r.ok) return res.status(404).send("Photo not found");
+        const buf = Buffer.from(await r.arrayBuffer());
+        res.setHeader("Content-Type", r.headers.get("content-type") || "image/jpeg");
+        res.setHeader("Cache-Control", "max-age=3600");
+        return res.send(buf);
+      }
+      res.status(404).send("No photo");
+    } catch (err) {
+      console.error(err);
+      res.status(500).send("Error");
+    }
+  });
+
+  // ── Card: QR code PNG for a registration ────────────────
+  app.get("/api/admin/registrations/:id/qr", isStaffAuth, async (req: any, res: any) => {
+    try {
+      const reg = await storage.getRegistration(parseInt(req.params.id));
+      if (!reg) return res.status(404).send("Not found");
+      const qrText = reg.cardNumber
+        ? `https://kisan-union-punjab.fly.dev/?card=${reg.cardNumber}`
+        : `https://kisan-union-punjab.fly.dev/?track=${reg.trackingId || reg.id}`;
+      const buf = await generateQRCodeBuffer(qrText);
+      res.setHeader("Content-Type", "image/png");
+      res.setHeader("Cache-Control", "max-age=3600");
+      res.send(buf);
+    } catch (err) {
+      console.error(err);
+      res.status(500).send("Error");
+    }
+  });
+
+  // ── Card template: serve current (R2 or static default) ─
+  app.get("/api/card-template", async (req: any, res: any) => {
+    try {
+      const url = await storage.getSetting("card_template_url");
+      if (url) {
+        const r = await fetch(url);
+        if (r.ok) {
+          res.setHeader("Content-Type", "image/png");
+          res.setHeader("Cache-Control", "max-age=60");
+          return res.send(Buffer.from(await r.arrayBuffer()));
+        }
+      }
+      res.redirect("/card-template.png");
+    } catch { res.redirect("/card-template.png"); }
+  });
+
+  // ── Admin: upload new card template ─────────────────────
+  app.post("/api/admin/card-template", isAdminAuth, upload.single("template"), async (req: any, res: any) => {
+    try {
+      if (!req.file) return res.status(400).json({ message: "ਫਾਈਲ ਲੋੜੀਂਦੀ ਹੈ" });
+      const url = await uploadPhotoToR2(req.file.buffer, req.file.mimetype, "card-template/current.png");
+      await storage.setSetting("card_template_url", url);
+      res.json({ url });
+    } catch (err) {
+      console.error(err);
+      res.status(500).json({ message: "ਟੈਂਪਲੇਟ ਅੱਪਲੋਡ ਫੇਲ੍ਹ" });
+    }
+  });
+
+  // ── Admin: get card field config ─────────────────────────
+  app.get("/api/admin/card-config", isStaffAuth, async (req: any, res: any) => {
+    try {
+      const [cfgVal, templateUrl] = await Promise.all([
+        storage.getSetting("card_config"),
+        storage.getSetting("card_template_url"),
+      ]);
+      const DEFAULT = {
+        photoBox:    { x: 45,   y: 215, w: 248, h: 295 },
+        qrCode:      { x: 1255, y: 215, size: 238 },
+        cardNumber:  { x: 490,  y: 295, fontSize: 40, color: "#1a1a1a", maxWidth: 670 },
+        name:        { x: 385,  y: 368, fontSize: 42, color: "#1a1a1a", maxWidth: 790 },
+        designation: { x: 500,  y: 438, fontSize: 38, color: "#1a1a1a", maxWidth: 680 },
+        validUntil:  { x: 450,  y: 506, fontSize: 38, color: "#1a1a1a", maxWidth: 720 },
+        address:     { x: 1535, y: 295, fontSize: 34, color: "#1a1a1a", maxWidth: 920 },
+        mobile:      { x: 1535, y: 365, fontSize: 38, color: "#1a1a1a", maxWidth: 920 },
+        aadhaar:     { x: 1535, y: 435, fontSize: 38, color: "#1a1a1a", maxWidth: 920 },
+      };
+      const config = cfgVal ? JSON.parse(cfgVal) : DEFAULT;
+      res.json({ ...config, templateUrl: templateUrl || null });
+    } catch (err) {
+      console.error(err);
+      res.status(500).json({ message: "Config ਲੋਡ ਫੇਲ੍ਹ" });
+    }
+  });
+
+  // ── Admin: save card field config ────────────────────────
+  app.put("/api/admin/card-config", isAdminAuth, async (req: any, res: any) => {
+    try {
+      await storage.setSetting("card_config", JSON.stringify(req.body));
+      res.json({ ok: true });
+    } catch (err) {
+      console.error(err);
+      res.status(500).json({ message: "Config ਸੇਵ ਫੇਲ੍ਹ" });
+    }
+  });
+
   return httpServer;
 }

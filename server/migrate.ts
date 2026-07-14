@@ -127,6 +127,14 @@ export async function runMigrations() {
     `);
 
     await client.query(`
+      CREATE TABLE IF NOT EXISTS settings (
+        key TEXT PRIMARY KEY,
+        value TEXT NOT NULL,
+        updated_at TIMESTAMP DEFAULT NOW()
+      );
+    `);
+
+    await client.query(`
       UPDATE registrations
       SET current_stage = 'card_issued'
       WHERE status = 'approved' AND card_number IS NOT NULL AND current_stage = 'submitted';

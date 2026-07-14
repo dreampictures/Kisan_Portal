@@ -98,6 +98,12 @@ export const activityLogs = pgTable("activity_logs", {
   remarks: text("remarks"),
 });
 
+export const settings = pgTable("settings", {
+  key: text("key").primaryKey(),
+  value: text("value").notNull(),
+  updatedAt: timestamp("updated_at").defaultNow(),
+});
+
 export type PageView = typeof pageViews.$inferSelect;
 export type StaffUser = typeof staffUsers.$inferSelect;
 export type DeleteRequest = typeof deleteRequests.$inferSelect;

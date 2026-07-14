@@ -1,4 +1,4 @@
-import { useState, useRef } from "react";
+import { useState, useRef, useEffect } from "react";
 import { Link } from "wouter";
 import { Navbar } from "@/components/Navbar";
 import { Footer } from "@/components/Footer";
@@ -26,6 +26,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { apiRequest } from "@/lib/queryClient";
 import type { Registration, Update, DeleteRequest } from "@shared/schema";
 import { PUNJAB_DISTRICTS } from "@/lib/punjab-data";
+import { downloadCard, type CardFieldConfig, DEFAULT_CARD_CONFIG } from "@/lib/cardGenerator";
 
 const selectCls = "flex h-9 w-full rounded-md border border-input bg-background px-3 py-1 text-sm shadow-sm focus:outline-none focus:ring-1 focus:ring-ring";
 
@@ -819,6 +820,164 @@ function PendingCard({ reg, userRole }: { reg: Registration; userRole: StaffRole
 }
 
 // ─── Member Card ─────────────────────────────────────────────
+// ── Card Download Button ──────────────────────────────────────
+function CardDownloadButton({ reg }: { reg: Registration }) {
+  const { toast } = useToast();
+  const [loading, setLoading] = useState(false);
+
+  async function handleDownload() {
+    setLoading(true);
+    try {
+      const res = await fetch("/api/admin/card-config", { credentials: "include" });
+      const { templateUrl, ...config } = await res.json();
+      await downloadCard(reg, config as CardFieldConfig, templateUrl ? "/api/card-template" : "/api/card-template");
+      toast({ title: "✓ ਕਾਰਡ ਡਾਊਨਲੋਡ ਸ਼ੁਰੂ ਹੋ ਗਿਆ" });
+    } catch (e) {
+      console.error(e);
+      toast({ title: "ਡਾਊਨਲੋਡ ਫੇਲ੍ਹ", variant: "destructive" });
+    } finally {
+      setLoading(false);
+    }
+  }
+
+  return (
+    <Button size="sm" variant="outline" className="w-full gap-1.5 border-green-300 text-green-700 hover:bg-green-50" onClick={handleDownload} disabled={loading}>
+      {loading ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : <Download className="h-3.5 w-3.5" />}
+      {loading ? "ਕਾਰਡ ਬਣ ਰਿਹਾ ਹੈ..." : "ਕਾਰਡ ਡਾਊਨਲੋਡ ਕਰੋ"}
+    </Button>
+  );
+}
+
+// ── Card Template Settings ────────────────────────────────────
+function FieldInput({ label, value, onChange, type = "number" }: { label: string; value: any; onChange: (v: string) => void; type?: string }) {
+  return (
+    <div className="space-y-0.5">
+      <Label className="text-[10px] text-muted-foreground uppercase tracking-wide">{label}</Label>
+      <Input type={type} value={value} onChange={e => onChange(e.target.value)} className="h-7 text-xs font-mono px-2" />
+    </div>
+  );
+}
+
+function ConfigSection({ label, children }: { label: string; children: React.ReactNode }) {
+  return (
+    <div>
+      <p className="text-xs font-semibold text-muted-foreground mb-2">{label}</p>
+      <div className="grid grid-cols-2 sm:grid-cols-4 gap-2">{children}</div>
+    </div>
+  );
+}
+
+function CardTemplateSettings() {
+  const { toast } = useToast();
+  const [config, setConfig] = useState<CardFieldConfig>(DEFAULT_CARD_CONFIG);
+  const [isLoading, setIsLoading] = useState(true);
+  const [saving, setSaving] = useState(false);
+  const [uploading, setUploading] = useState(false);
+  const [templateTs, setTemplateTs] = useState(Date.now());
+  const fileRef = useRef<HTMLInputElement>(null);
+
+  useEffect(() => {
+    fetch("/api/admin/card-config", { credentials: "include" })
+      .then(r => r.json())
+      .then(({ templateUrl: _url, ...cfg }) => { setConfig(cfg); setIsLoading(false); })
+      .catch(() => setIsLoading(false));
+  }, []);
+
+  async function saveConfig() {
+    setSaving(true);
+    try {
+      const r = await apiRequest("PUT", "/api/admin/card-config", config);
+      if (!r.ok) throw new Error();
+      toast({ title: "✓ ਕੌਨਫਿਗ ਸੇਵ ਕੀਤਾ" });
+    } catch { toast({ title: "ਸੇਵ ਨਹੀਂ ਹੋਇਆ", variant: "destructive" }); }
+    finally { setSaving(false); }
+  }
+
+  async function uploadTemplate(e: React.ChangeEvent<HTMLInputElement>) {
+    const file = e.target.files?.[0];
+    if (!file) return;
+    setUploading(true);
+    try {
+      const fd = new FormData();
+      fd.append("template", file);
+      const r = await fetch("/api/admin/card-template", { method: "POST", body: fd, credentials: "include" });
+      if (!r.ok) throw new Error();
+      setTemplateTs(Date.now());
+      toast({ title: "✓ ਟੈਂਪਲੇਟ ਅੱਪਲੋਡ ਕੀਤਾ" });
+    } catch { toast({ title: "ਅੱਪਲੋਡ ਫੇਲ੍ਹ", variant: "destructive" }); }
+    finally { setUploading(false); if (fileRef.current) fileRef.current.value = ""; }
+  }
+
+  function setField(key: keyof CardFieldConfig, prop: string, raw: string) {
+    const val = prop === "color" ? raw : (isNaN(Number(raw)) ? raw : Number(raw));
+    setConfig(prev => ({ ...prev, [key]: { ...(prev[key] as any), [prop]: val } }));
+  }
+
+  const textFields: { key: keyof CardFieldConfig; label: string; side: string }[] = [
+    { key: "cardNumber",  label: "ਕਾਰਡ ਨੰ",  side: "Front" },
+    { key: "name",        label: "ਨਾਮ",        side: "Front" },
+    { key: "designation", label: "ਅਹੁਦਾ",     side: "Front" },
+    { key: "validUntil",  label: "ਮਿਆਦ",       side: "Front" },
+    { key: "address",     label: "ਪਤਾ",        side: "Back"  },
+    { key: "mobile",      label: "ਫ਼ੋਨ",       side: "Back"  },
+    { key: "aadhaar",     label: "ਆਧਾਰ ਨੰ",   side: "Back"  },
+  ];
+
+  if (isLoading) return <div className="flex justify-center py-16"><Loader2 className="h-8 w-8 animate-spin text-primary" /></div>;
+
+  return (
+    <div className="space-y-5">
+      {/* Template preview + upload */}
+      <Card>
+        <CardHeader><CardTitle className="text-base flex items-center gap-2"><Camera className="h-4 w-4" /> ਕਾਰਡ ਟੈਂਪਲੇਟ</CardTitle></CardHeader>
+        <CardContent className="space-y-3">
+          <img src={`/api/card-template?t=${templateTs}`} alt="Card Template" className="w-full rounded border shadow-sm" crossOrigin="anonymous" />
+          <div className="flex items-center gap-3">
+            <Button size="sm" onClick={() => fileRef.current?.click()} disabled={uploading} variant="outline">
+              {uploading ? <Loader2 className="h-3.5 w-3.5 animate-spin mr-1" /> : <Camera className="h-3.5 w-3.5 mr-1" />}
+              ਨਵਾਂ ਟੈਂਪਲੇਟ ਅੱਪਲੋਡ
+            </Button>
+            <input ref={fileRef} type="file" accept="image/png,image/jpeg" className="hidden" onChange={uploadTemplate} />
+            <p className="text-xs text-muted-foreground">ਸਿਫ਼ਾਰਸ਼: 2480×926 px PNG</p>
+          </div>
+        </CardContent>
+      </Card>
+
+      {/* Field positions */}
+      <Card>
+        <CardHeader>
+          <CardTitle className="text-base">ਫੀਲਡ ਪੋਜ਼ੀਸ਼ਨਾਂ</CardTitle>
+          <p className="text-xs text-muted-foreground">ਟੈਂਪਲੇਟ ਸਕੇਲ: 2480×926 px ਅਨੁਸਾਰ pixels</p>
+        </CardHeader>
+        <CardContent className="space-y-5">
+          <ConfigSection label="📷 ਫੋਟੋ ਬਾਕਸ (Front)">
+            {(["x","y","w","h"] as const).map(k => (
+              <FieldInput key={k} label={k.toUpperCase()} value={(config.photoBox as any)[k]} onChange={v => setField("photoBox", k, v)} />
+            ))}
+          </ConfigSection>
+          <ConfigSection label="📱 QR ਕੋਡ (Back)">
+            {(["x","y","size"] as const).map(k => (
+              <FieldInput key={k} label={k.toUpperCase()} value={(config.qrCode as any)[k]} onChange={v => setField("qrCode", k, v)} />
+            ))}
+          </ConfigSection>
+          {textFields.map(({ key, label, side }) => (
+            <ConfigSection key={key} label={`✏️ ${label} (${side})`}>
+              {(["x","y","fontSize"] as const).map(k => (
+                <FieldInput key={k} label={k} value={(config[key] as any)[k]} onChange={v => setField(key, k, v)} />
+              ))}
+              <FieldInput label="Color" value={(config[key] as any).color} type="color" onChange={v => setField(key, "color", v)} />
+            </ConfigSection>
+          ))}
+          <Button onClick={saveConfig} disabled={saving} className="w-full">
+            {saving ? <Loader2 className="h-4 w-4 animate-spin mr-1" /> : null}
+            ✓ ਕੌਨਫਿਗ ਸੇਵ ਕਰੋ
+          </Button>
+        </CardContent>
+      </Card>
+    </div>
+  );
+}
+
 function MemberCard({ reg, isAdminRole }: { reg: Registration; isAdminRole: boolean }) {
   const { toast } = useToast();
   const queryClient = useQueryClient();
@@ -867,6 +1026,7 @@ function MemberCard({ reg, isAdminRole }: { reg: Registration; isAdminRole: bool
           </div>
         </div>
         <div className="mt-3 space-y-2">
+          {isAdminRole && reg.currentStage === "card_issued" && <CardDownloadButton reg={reg} />}
           {isAdminRole && <IssueQRDialog reg={reg} />}
           <EditDialog reg={reg} />
           {isAdminRole ? (
@@ -1583,6 +1743,9 @@ export default function Admin() {
                 <TabsTrigger value="download" className="flex items-center gap-1 py-2.5 text-xs">
                   <Download className="h-3.5 w-3.5" /><span className="hidden sm:inline">ਡਾਊਨਲੋਡ</span>
                 </TabsTrigger>
+                <TabsTrigger value="cardtemplate" className="flex items-center gap-1 py-2.5 text-xs">
+                  <CreditCard className="h-3.5 w-3.5" /><span className="hidden sm:inline">ਟੈਂਪਲੇਟ</span>
+                </TabsTrigger>
               </>
             )}
           </TabsList>
@@ -1650,6 +1813,9 @@ export default function Admin() {
               </TabsContent>
               <TabsContent value="analytics">
                 <AnalyticsDashboard />
+              </TabsContent>
+              <TabsContent value="cardtemplate">
+                <CardTemplateSettings />
               </TabsContent>
               <TabsContent value="download">
                 <div className="grid gap-4 md:grid-cols-2">
