@@ -12,6 +12,7 @@ export interface TextFieldPos {
 
 export interface CardFieldConfig {
   photoBox:    { x: number; y: number; w: number; h: number };
+  stamp?:      { x: number; y: number; w: number; h: number };
   qrCode:      { x: number; y: number; size: number };
   cardNumber:  TextFieldPos;
   name:        TextFieldPos;
@@ -27,6 +28,7 @@ export interface CardFieldConfig {
 // Back (1240–2480px): text LEFT-ALIGNED starting at x=2192
 export const DEFAULT_CARD_CONFIG: CardFieldConfig = {
   photoBox:    { x: 220,  y: 304, w: 247, h: 322 },
+  stamp:       { x: 339,  y: 530, w: 352, h: 224 },
   qrCode:      { x: 1262, y: 304, size: 247 },
   cardNumber:  { x: 1130, y: 324, fontSize: 38, color: "#1a1a1a", maxWidth: 850, textAlign: "right" },
   name:        { x: 1130, y: 392, fontSize: 38, color: "#1a1a1a", maxWidth: 850, textAlign: "right" },
@@ -142,7 +144,22 @@ export async function generateCardDataUrl(
     } catch (e) { console.warn("Photo skipped:", e); }
   }
 
-  // 3. QR code (served as PNG from server)
+  // 3. Stamp overlay (drawn on top of photo)
+  if (config.stamp) {
+    try {
+      const res = await fetch("/api/admin/stamp", { credentials: "include" });
+      if (res.ok) {
+        const blob = await res.blob();
+        const url  = URL.createObjectURL(blob);
+        const img  = await loadImage(url);
+        const { x, y, w, h } = config.stamp;
+        ctx.drawImage(img, x, y, w, h);
+        URL.revokeObjectURL(url);
+      }
+    } catch (e) { console.warn("Stamp skipped:", e); }
+  }
+
+  // 4. QR code (served as PNG from server)
   try {
     const res = await fetch(`/api/admin/registrations/${reg.id}/qr`, { credentials: "include" });
     if (res.ok) {
@@ -155,7 +172,7 @@ export async function generateCardDataUrl(
     }
   } catch (e) { console.warn("QR skipped:", e); }
 
-  // 4. Front-side text
+  // 5. Front-side text
   if (reg.cardNumber)  drawText(ctx, reg.cardNumber,  config.cardNumber);
   if (reg.name)        drawText(ctx, reg.name,         config.name);
   if (reg.designation) drawText(ctx, reg.designation,  config.designation);
@@ -165,7 +182,7 @@ export async function generateCardDataUrl(
     drawText(ctx, ds, config.validUntil);
   }
 
-  // 5. Back-side text
+  // 6. Back-side text
   const addr = [reg.village, reg.tehsil, reg.district].filter(Boolean).join(", ");
   if (addr)             drawText(ctx, addr, config.address);
   if (reg.mobileNumber) drawText(ctx, reg.mobileNumber, config.mobile);
@@ -225,6 +242,7 @@ export async function downloadCalibrationCard(
 
   const { photoBox: pb, qrCode: qr } = config;
   marker("📷 PHOTO",      pb.x, pb.y, "#e91e63", pb.w, pb.h);
+  if (config.stamp) marker("💮 STAMP", config.stamp.x, config.stamp.y, "#f06292", config.stamp.w, config.stamp.h);
   marker("QR",            qr.x, qr.y, "#9c27b0", qr.size, qr.size);
   marker("1 CARD NO",     config.cardNumber.x,  config.cardNumber.y,  "#f44336");
   marker("2 NAME",        config.name.x,        config.name.y,        "#ff5722");

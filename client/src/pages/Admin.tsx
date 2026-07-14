@@ -849,6 +849,44 @@ function CardDownloadButton({ reg }: { reg: Registration }) {
 }
 
 // ── Card Template Settings ────────────────────────────────────
+function StampUploader({ onUploaded }: { onUploaded: () => void }) {
+  const { toast } = useToast();
+  const [uploading, setUploading] = useState(false);
+  const [hasStamp, setHasStamp] = useState(false);
+  const ref = useRef<HTMLInputElement>(null);
+
+  useEffect(() => {
+    fetch("/api/admin/stamp", { credentials: "include" }).then(r => setHasStamp(r.ok)).catch(() => {});
+  }, []);
+
+  async function upload(e: React.ChangeEvent<HTMLInputElement>) {
+    const file = e.target.files?.[0];
+    if (!file) return;
+    setUploading(true);
+    try {
+      const fd = new FormData();
+      fd.append("stamp", file);
+      const r = await fetch("/api/admin/stamp", { method: "POST", body: fd, credentials: "include" });
+      if (!r.ok) throw new Error();
+      setHasStamp(true);
+      onUploaded();
+    } catch { toast({ title: "ਅੱਪਲੋਡ ਫੇਲ੍ਹ", variant: "destructive" }); }
+    finally { setUploading(false); if (ref.current) ref.current.value = ""; }
+  }
+
+  return (
+    <div className="flex items-center gap-3">
+      <Button size="sm" variant="outline" onClick={() => ref.current?.click()} disabled={uploading}>
+        {uploading ? <Loader2 className="h-3.5 w-3.5 animate-spin mr-1" /> : <Camera className="h-3.5 w-3.5 mr-1" />}
+        {hasStamp ? "ਸਟੈਂਪ ਬਦਲੋ" : "ਸਟੈਂਪ ਅੱਪਲੋਡ ਕਰੋ"}
+      </Button>
+      <input ref={ref} type="file" accept="image/png,image/jpeg,image/webp" className="hidden" onChange={upload} />
+      {hasStamp && <span className="text-xs text-green-600 font-medium">✓ ਸਟੈਂਪ ਅੱਪਲੋਡ ਹੈ</span>}
+      <p className="text-xs text-muted-foreground">PNG transparent ਸਭ ਤੋਂ ਵਧੀਆ</p>
+    </div>
+  );
+}
+
 function FieldInput({ label, value, onChange, type = "number" }: { label: string; value: any; onChange: (v: string) => void; type?: string }) {
   return (
     <div className="space-y-0.5">
@@ -947,6 +985,14 @@ function CardTemplateSettings() {
         </CardContent>
       </Card>
 
+      {/* Stamp upload */}
+      <Card>
+        <CardHeader><CardTitle className="text-base flex items-center gap-2">💮 ਸਟੈਂਪ</CardTitle></CardHeader>
+        <CardContent className="space-y-3">
+          <StampUploader onUploaded={() => toast({ title: "✓ ਸਟੈਂਪ ਅੱਪਲੋਡ ਕੀਤਾ" })} />
+        </CardContent>
+      </Card>
+
       {/* Field positions */}
       <Card>
         <CardHeader>
@@ -957,6 +1003,11 @@ function CardTemplateSettings() {
           <ConfigSection label="📷 ਫੋਟੋ ਬਾਕਸ (Front)">
             {(["x","y","w","h"] as const).map(k => (
               <FieldInput key={k} label={k.toUpperCase()} value={(config.photoBox as any)[k]} onChange={v => setField("photoBox", k, v)} />
+            ))}
+          </ConfigSection>
+          <ConfigSection label="💮 ਸਟੈਂਪ (Front — ਫੋਟੋ ਉੱਪਰ)">
+            {(["x","y","w","h"] as const).map(k => (
+              <FieldInput key={k} label={k.toUpperCase()} value={(config.stamp as any)?.[k] ?? ""} onChange={v => setField("stamp" as any, k, v)} />
             ))}
           </ConfigSection>
           <ConfigSection label="📱 QR ਕੋਡ (Back)">

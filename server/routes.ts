@@ -1047,6 +1047,32 @@ export async function registerRoutes(httpServer: Server, app: Express): Promise<
     } catch { res.redirect("/card-template.png"); }
   });
 
+  // ── Admin: serve stamp image ─────────────────────────────
+  app.get("/api/admin/stamp", isStaffAuth, async (req: any, res: any) => {
+    try {
+      const url = await storage.getSetting("stamp_url");
+      if (!url) return res.status(404).send("No stamp uploaded");
+      const r = await fetch(url);
+      if (!r.ok) return res.status(404).send("Stamp not found");
+      res.setHeader("Content-Type", r.headers.get("content-type") || "image/png");
+      res.setHeader("Cache-Control", "max-age=3600");
+      res.send(Buffer.from(await r.arrayBuffer()));
+    } catch (err) { console.error(err); res.status(500).send("Error"); }
+  });
+
+  // ── Admin: upload stamp image ────────────────────────────
+  app.post("/api/admin/stamp", isAdminAuth, upload.single("stamp"), async (req: any, res: any) => {
+    try {
+      if (!req.file) return res.status(400).json({ message: "ਫਾਈਲ ਲੋੜੀਂਦੀ ਹੈ" });
+      const url = await uploadPhotoToR2(req.file.buffer, req.file.mimetype, "stamp/current.png");
+      await storage.setSetting("stamp_url", url);
+      res.json({ url });
+    } catch (err) {
+      console.error(err);
+      res.status(500).json({ message: "ਸਟੈਂਪ ਅੱਪਲੋਡ ਫੇਲ੍ਹ" });
+    }
+  });
+
   // ── Admin: upload new card template ─────────────────────
   app.post("/api/admin/card-template", isAdminAuth, upload.single("template"), async (req: any, res: any) => {
     try {
@@ -1069,6 +1095,7 @@ export async function registerRoutes(httpServer: Server, app: Express): Promise<
       ]);
       const DEFAULT = {
         photoBox:    { x: 220,  y: 304, w: 247, h: 322 },
+        stamp:       { x: 339,  y: 530, w: 352, h: 224 },
         qrCode:      { x: 1262, y: 304, size: 247 },
         cardNumber:  { x: 1130, y: 324, fontSize: 38, color: "#1a1a1a", maxWidth: 850, textAlign: "right" },
         name:        { x: 1130, y: 392, fontSize: 38, color: "#1a1a1a", maxWidth: 850, textAlign: "right" },
