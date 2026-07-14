@@ -173,6 +173,79 @@ export async function generateCardDataUrl(
   return canvas.toDataURL("image/png");
 }
 
+// ── Calibration card (shows colored markers at each field position) ──
+export async function downloadCalibrationCard(
+  config: CardFieldConfig = DEFAULT_CARD_CONFIG,
+  templateUrl = "/api/card-template"
+): Promise<void> {
+  await ensureFont();
+
+  const canvas = document.createElement("canvas");
+  canvas.width  = 2480;
+  canvas.height = 926;
+  const ctx = canvas.getContext("2d")!;
+
+  // Template background
+  try {
+    const template = await loadImage(templateUrl);
+    ctx.drawImage(template, 0, 0);
+  } catch (_) { ctx.fillStyle = "#fffde7"; ctx.fillRect(0, 0, 2480, 926); }
+
+  // Semi-transparent overlay so markers stand out
+  ctx.fillStyle = "rgba(0,0,0,0.18)";
+  ctx.fillRect(0, 0, 2480, 926);
+
+  function marker(label: string, x: number, y: number, color: string, w = 0, h = 0) {
+    ctx.save();
+    if (w && h) {
+      ctx.strokeStyle = color;
+      ctx.lineWidth = 8;
+      ctx.strokeRect(x, y, w, h);
+      ctx.fillStyle = color + "44";
+      ctx.fillRect(x, y, w, h);
+    } else {
+      ctx.fillStyle = color;
+      ctx.beginPath();
+      ctx.arc(x, y, 22, 0, Math.PI * 2);
+      ctx.fill();
+    }
+    ctx.fillStyle = "#ffffff";
+    ctx.font = "bold 36px monospace";
+    ctx.textAlign = w ? "left" : "center";
+    ctx.textBaseline = w ? "top" : "middle";
+    ctx.fillText(label, w ? x + 10 : x, w ? y + 10 : y);
+    ctx.restore();
+  }
+
+  const { photoBox: pb, qrCode: qr } = config;
+  marker("📷 PHOTO",      pb.x, pb.y, "#e91e63", pb.w, pb.h);
+  marker("QR",            qr.x, qr.y, "#9c27b0", qr.size, qr.size);
+  marker("1 CARD NO",     config.cardNumber.x,  config.cardNumber.y,  "#f44336");
+  marker("2 NAME",        config.name.x,        config.name.y,        "#ff5722");
+  marker("3 DESIGN",      config.designation.x, config.designation.y, "#ff9800");
+  marker("4 VALID",       config.validUntil.x,  config.validUntil.y,  "#ffc107");
+  marker("5 ADDRESS",     config.address.x,      config.address.y,     "#4caf50");
+  marker("6 MOBILE",      config.mobile.x,       config.mobile.y,      "#2196f3");
+  marker("7 AADHAAR",     config.aadhaar.x,      config.aadhaar.y,     "#00bcd4");
+
+  // Legend
+  ctx.fillStyle = "rgba(0,0,0,0.7)";
+  ctx.fillRect(0, 860, 2480, 66);
+  ctx.fillStyle = "#fff";
+  ctx.font = "bold 30px monospace";
+  ctx.textAlign = "left";
+  ctx.textBaseline = "middle";
+  ctx.fillText("CALIBRATION — ਹਰ circle ਦਾ center = text baseline (x,y). box = photo/QR box (x,y,w,h). admin ਪੈਨਲ ਤੋਂ adjust ਕਰੋ।", 20, 893);
+
+  const dataUrl = canvas.toDataURL("image/png");
+  const a = document.createElement("a");
+  a.download = "card-calibration.png";
+  a.href = dataUrl;
+  document.body.appendChild(a);
+  a.click();
+  document.body.removeChild(a);
+}
+
 export async function downloadCard(
   reg: Registration,
   config?: CardFieldConfig,

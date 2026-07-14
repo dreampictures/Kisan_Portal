@@ -26,7 +26,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { apiRequest } from "@/lib/queryClient";
 import type { Registration, Update, DeleteRequest } from "@shared/schema";
 import { PUNJAB_DISTRICTS } from "@/lib/punjab-data";
-import { downloadCard, type CardFieldConfig, DEFAULT_CARD_CONFIG } from "@/lib/cardGenerator";
+import { downloadCard, downloadCalibrationCard, type CardFieldConfig, DEFAULT_CARD_CONFIG } from "@/lib/cardGenerator";
 
 const selectCls = "flex h-9 w-full rounded-md border border-input bg-background px-3 py-1 text-sm shadow-sm focus:outline-none focus:ring-1 focus:ring-ring";
 
@@ -938,6 +938,10 @@ function CardTemplateSettings() {
               ਨਵਾਂ ਟੈਂਪਲੇਟ ਅੱਪਲੋਡ
             </Button>
             <input ref={fileRef} type="file" accept="image/png,image/jpeg" className="hidden" onChange={uploadTemplate} />
+            <Button size="sm" variant="outline" className="border-blue-300 text-blue-700 hover:bg-blue-50"
+              onClick={async () => { try { await downloadCalibrationCard(config); } catch(e) { toast({ title: "ਕੈਲੀਬ੍ਰੇਸ਼ਨ ਫੇਲ੍ਹ", variant: "destructive" }); } }}>
+              🎯 ਕੈਲੀਬ੍ਰੇਸ਼ਨ ਕਾਰਡ ਡਾਊਨਲੋਡ ਕਰੋ
+            </Button>
             <p className="text-xs text-muted-foreground">ਸਿਫ਼ਾਰਸ਼: 2480×926 px PNG</p>
           </div>
         </CardContent>
