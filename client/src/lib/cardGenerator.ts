@@ -21,17 +21,19 @@ export interface CardFieldConfig {
   aadhaar:     TextFieldPos;  // back side
 }
 
-// ── Defaults tuned for the 2480×926 template ─────────────────
+// ── Defaults measured from the 2480×926 dual-sided template ──
+// Front (0–1240px): photo box top-left, card-no/name/designation/validUntil to the right
+// Back (1240–2480px): QR top-left of back, address/mobile/aadhaar to the right
 export const DEFAULT_CARD_CONFIG: CardFieldConfig = {
-  photoBox:    { x: 45,   y: 215, w: 248, h: 295 },
-  qrCode:      { x: 1255, y: 215, size: 238 },
-  cardNumber:  { x: 490,  y: 295, fontSize: 40, color: "#1a1a1a", maxWidth: 670 },
-  name:        { x: 385,  y: 368, fontSize: 42, color: "#1a1a1a", maxWidth: 790 },
-  designation: { x: 500,  y: 438, fontSize: 38, color: "#1a1a1a", maxWidth: 680 },
-  validUntil:  { x: 450,  y: 506, fontSize: 38, color: "#1a1a1a", maxWidth: 720 },
-  address:     { x: 1535, y: 295, fontSize: 34, color: "#1a1a1a", maxWidth: 920 },
-  mobile:      { x: 1535, y: 365, fontSize: 38, color: "#1a1a1a", maxWidth: 920 },
-  aadhaar:     { x: 1535, y: 435, fontSize: 38, color: "#1a1a1a", maxWidth: 920 },
+  photoBox:    { x: 38,   y: 224, w: 219, h: 308 },
+  qrCode:      { x: 1205, y: 224, size: 224 },
+  cardNumber:  { x: 450,  y: 213, fontSize: 38, color: "#1a1a1a", maxWidth: 660 },
+  name:        { x: 351,  y: 319, fontSize: 40, color: "#1a1a1a", maxWidth: 790 },
+  designation: { x: 376,  y: 405, fontSize: 36, color: "#1a1a1a", maxWidth: 680 },
+  validUntil:  { x: 358,  y: 491, fontSize: 36, color: "#1a1a1a", maxWidth: 680 },
+  address:     { x: 1532, y: 201, fontSize: 32, color: "#1a1a1a", maxWidth: 910 },
+  mobile:      { x: 1403, y: 305, fontSize: 36, color: "#1a1a1a", maxWidth: 960 },
+  aadhaar:     { x: 1403, y: 379, fontSize: 36, color: "#1a1a1a", maxWidth: 960 },
 };
 
 // ── Helpers ───────────────────────────────────────────────────
