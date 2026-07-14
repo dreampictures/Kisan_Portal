@@ -167,6 +167,9 @@ export async function generateCardDataUrl(
       const url  = URL.createObjectURL(blob);
       const qr   = await loadImage(url);
       const { x, y, size } = config.qrCode;
+      const pad = 5;
+      ctx.fillStyle = "#ffffff";
+      ctx.fillRect(x - pad, y - pad, size + pad * 2, size + pad * 2);
       ctx.drawImage(qr, x, y, size, size);
       URL.revokeObjectURL(url);
     }
