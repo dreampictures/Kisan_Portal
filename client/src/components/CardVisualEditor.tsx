@@ -409,6 +409,22 @@ export function CardVisualEditor({ config, onChange, templateTs = 0 }: Props) {
                 </div>
               ))}
 
+            {"fontWeight" in selectedField && (
+              <div className="space-y-1">
+                <Label className="text-xs font-medium uppercase tracking-wide">ਮੋਟਾਈ (Bold)</Label>
+                <select
+                  value={(selectedField.fontWeight as number) || 500}
+                  onChange={(e) => updateField(selected, { fontWeight: Number(e.target.value) })}
+                  className="flex h-8 w-full rounded-md border border-input bg-background px-2 py-1 text-sm shadow-sm focus:outline-none focus:ring-1 focus:ring-ring"
+                >
+                  <option value={400}>400 — ਪਤਲਾ (Regular)</option>
+                  <option value={500}>500 — Medium</option>
+                  <option value={700}>700 — ਮੋਟਾ (Bold)</option>
+                  <option value={900}>900 — ਬਹੁਤ ਮੋਟਾ (Black)</option>
+                </select>
+              </div>
+            )}
+
             {"maxWidth" in selectedField && (
               <div className="space-y-1">
                 <Label className="text-xs font-medium uppercase tracking-wide">Max Width</Label>

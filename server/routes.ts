@@ -1105,13 +1105,13 @@ export async function registerRoutes(httpServer: Server, app: Express): Promise<
         photoBox:    { x: 220,  y: 304, w: 247, h: 322 },
         stamp:       { x: 339,  y: 530, w: 352, h: 224 },
         qrCode:      { x: 1262, y: 304, size: 247 },
-        cardNumber:  { x: 1130, y: 324, fontSize: 38, color: "#1a1a1a", maxWidth: 850, textAlign: "right" },
-        name:        { x: 1130, y: 392, fontSize: 38, color: "#1a1a1a", maxWidth: 850, textAlign: "right" },
-        designation: { x: 1130, y: 459, fontSize: 38, color: "#1a1a1a", maxWidth: 850, textAlign: "right" },
-        validUntil:  { x: 1130, y: 527, fontSize: 38, color: "#1a1a1a", maxWidth: 850, textAlign: "right" },
-        address:     { x: 2192, y: 325, fontSize: 34, color: "#1a1a1a", maxWidth: 280, textAlign: "left" },
-        mobile:      { x: 2192, y: 372, fontSize: 34, color: "#1a1a1a", maxWidth: 280, textAlign: "left" },
-        aadhaar:     { x: 2192, y: 419, fontSize: 34, color: "#1a1a1a", maxWidth: 280, textAlign: "left" },
+        cardNumber:  { x: 1130, y: 324, fontSize: 38, fontWeight: 700, color: "#1a1a1a", maxWidth: 850, textAlign: "right" },
+        name:        { x: 1130, y: 392, fontSize: 42, fontWeight: 700, color: "#1a1a1a", maxWidth: 850, textAlign: "right" },
+        designation: { x: 1130, y: 459, fontSize: 36, fontWeight: 500, color: "#1a1a1a", maxWidth: 850, textAlign: "right" },
+        validUntil:  { x: 1130, y: 527, fontSize: 36, fontWeight: 500, color: "#1a1a1a", maxWidth: 850, textAlign: "right" },
+        address:     { x: 2192, y: 325, fontSize: 34, fontWeight: 500, color: "#1a1a1a", maxWidth: 280, textAlign: "left" },
+        mobile:      { x: 2192, y: 372, fontSize: 34, fontWeight: 500, color: "#1a1a1a", maxWidth: 280, textAlign: "left" },
+        aadhaar:     { x: 2192, y: 419, fontSize: 34, fontWeight: 400, color: "#1a1a1a", maxWidth: 280, textAlign: "left" },
       };
       // Merge saved config with DEFAULT so any missing fields (e.g. stamp)
       // always get a sensible value even if the saved JSON predates that field.

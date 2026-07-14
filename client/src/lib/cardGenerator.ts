@@ -5,6 +5,7 @@ export interface TextFieldPos {
   x: number;
   y: number;
   fontSize: number;
+  fontWeight?: 400 | 500 | 700 | 900;
   color: string;
   maxWidth?: number;
   textAlign?: "left" | "right" | "center";
@@ -18,25 +19,25 @@ export interface CardFieldConfig {
   name:        TextFieldPos;
   designation: TextFieldPos;
   validUntil:  TextFieldPos;
-  address:     TextFieldPos;  // back side: village, tehsil, district
+  address:     TextFieldPos;  // back side: only village now
   mobile:      TextFieldPos;  // back side
   aadhaar:     TextFieldPos;  // back side
 }
 
-// ── Defaults set per user-specified pixel positions ───────────
-// Front (0–1240px): text RIGHT-ALIGNED at x=1130 so nothing bleeds into back side
-// Back (1240–2480px): text LEFT-ALIGNED starting at x=2192
+// ── Defaults ──────────────────────────────────────────────────
+// Front (0–1240px): RIGHT-ALIGNED at x=1130
+// Back (1240–2480px): LEFT-ALIGNED starting at x=1590 (relative to back half start 1240)
 export const DEFAULT_CARD_CONFIG: CardFieldConfig = {
   photoBox:    { x: 220,  y: 304, w: 247, h: 322 },
   stamp:       { x: 339,  y: 530, w: 352, h: 224 },
   qrCode:      { x: 1262, y: 304, size: 247 },
-  cardNumber:  { x: 1130, y: 324, fontSize: 38, color: "#1a1a1a", maxWidth: 850, textAlign: "right" },
-  name:        { x: 1130, y: 392, fontSize: 38, color: "#1a1a1a", maxWidth: 850, textAlign: "right" },
-  designation: { x: 1130, y: 459, fontSize: 38, color: "#1a1a1a", maxWidth: 850, textAlign: "right" },
-  validUntil:  { x: 1130, y: 527, fontSize: 38, color: "#1a1a1a", maxWidth: 850, textAlign: "right" },
-  address:     { x: 2192, y: 325, fontSize: 34, color: "#1a1a1a", maxWidth: 280, textAlign: "left" },
-  mobile:      { x: 2192, y: 372, fontSize: 34, color: "#1a1a1a", maxWidth: 280, textAlign: "left" },
-  aadhaar:     { x: 2192, y: 419, fontSize: 34, color: "#1a1a1a", maxWidth: 280, textAlign: "left" },
+  cardNumber:  { x: 1130, y: 324, fontSize: 38, fontWeight: 700, color: "#1a1a1a", maxWidth: 850, textAlign: "right" },
+  name:        { x: 1130, y: 392, fontSize: 42, fontWeight: 700, color: "#1a1a1a", maxWidth: 850, textAlign: "right" },
+  designation: { x: 1130, y: 459, fontSize: 36, fontWeight: 500, color: "#1a1a1a", maxWidth: 850, textAlign: "right" },
+  validUntil:  { x: 1130, y: 527, fontSize: 36, fontWeight: 500, color: "#1a1a1a", maxWidth: 850, textAlign: "right" },
+  address:     { x: 2192, y: 325, fontSize: 34, fontWeight: 500, color: "#1a1a1a", maxWidth: 280, textAlign: "left" },
+  mobile:      { x: 2192, y: 372, fontSize: 34, fontWeight: 500, color: "#1a1a1a", maxWidth: 280, textAlign: "left" },
+  aadhaar:     { x: 2192, y: 419, fontSize: 34, fontWeight: 400, color: "#1a1a1a", maxWidth: 280, textAlign: "left" },
 };
 
 // ── Helpers ───────────────────────────────────────────────────
@@ -55,7 +56,8 @@ function drawText(
   text: string,
   f: TextFieldPos
 ) {
-  ctx.font = `500 ${f.fontSize}px 'Noto Sans Gurmukhi', system-ui, sans-serif`;
+  const weight = f.fontWeight ?? 500;
+  ctx.font = `${weight} ${f.fontSize}px 'Noto Sans Gurmukhi', system-ui, sans-serif`;
   ctx.fillStyle = f.color || "#000000";
   ctx.textAlign = f.textAlign || "left";
   ctx.textBaseline = "alphabetic";
@@ -88,24 +90,23 @@ let fontPromise: Promise<void> | null = null;
 async function ensureFont(): Promise<void> {
   if (fontPromise) return fontPromise;
   fontPromise = (async () => {
-    // Step 1: inject stylesheet and wait until it is actually fetched
     if (!document.getElementById("card-gen-font")) {
       await new Promise<void>((resolve) => {
         const link = document.createElement("link");
         link.id   = "card-gen-font";
         link.rel  = "stylesheet";
-        link.href = "https://fonts.googleapis.com/css2?family=Noto+Sans+Gurmukhi:wght@400;500;700&display=swap";
+        link.href = "https://fonts.googleapis.com/css2?family=Noto+Sans+Gurmukhi:wght@400;500;700;900&display=swap";
         link.onload  = () => resolve();
-        link.onerror = () => resolve(); // continue even if Google Fonts is unavailable
+        link.onerror = () => resolve();
         document.head.appendChild(link);
       });
     }
-    // Step 2: wait for the browser to fetch and parse the actual woff2 file
     try {
       await Promise.all([
         document.fonts.load("400 40px 'Noto Sans Gurmukhi'", "ਪੰਜਾਬ ਕਿਸਾਨ"),
         document.fonts.load("500 40px 'Noto Sans Gurmukhi'", "ਪੰਜਾਬ ਕਿਸਾਨ"),
         document.fonts.load("700 40px 'Noto Sans Gurmukhi'", "ਪੰਜਾਬ ਕਿਸਾਨ"),
+        document.fonts.load("900 40px 'Noto Sans Gurmukhi'", "ਪੰਜਾਬ ਕਿਸਾਨ"),
       ]);
     } catch (_) { /* fall back to system fonts silently */ }
   })();
@@ -134,7 +135,6 @@ export async function generateCardDataUrl(
   if (reg.photoData && reg.photoMimeType) {
     photoSrc = `data:${reg.photoMimeType};base64,${reg.photoData}`;
   } else if (reg.photoUrl) {
-    // Proxied through server (avoids R2 CORS issues)
     photoSrc = `/api/admin/registrations/${reg.id}/photo`;
   }
   if (photoSrc) {
@@ -159,7 +159,7 @@ export async function generateCardDataUrl(
     } catch (e) { console.warn("Stamp skipped:", e); }
   }
 
-  // 4. QR code (served as PNG from server)
+  // 4. QR code
   try {
     const res = await fetch(`/api/admin/registrations/${reg.id}/qr`, { credentials: "include" });
     if (res.ok) {
@@ -182,12 +182,11 @@ export async function generateCardDataUrl(
     drawText(ctx, ds, config.validUntil);
   }
 
-  // 6. Back-side text
-  const addr = [reg.village, reg.tehsil, reg.district].filter(Boolean).join(", ");
-  if (addr)             drawText(ctx, addr, config.address);
+  // 6. Back-side text — address shows only village (ਪਿੰਡ)
+  const village = reg.village || "";
+  if (village)          drawText(ctx, village,          config.address);
   if (reg.mobileNumber) drawText(ctx, reg.mobileNumber, config.mobile);
   if (reg.aadhaarNumber) {
-    // Show only last 4 digits: XXXX-XXXX-1234
     const digits = reg.aadhaarNumber.replace(/\D/g, "");
     const masked = "XXXX-XXXX-" + digits.slice(-4);
     drawText(ctx, masked, config.aadhaar);
@@ -196,7 +195,7 @@ export async function generateCardDataUrl(
   return canvas.toDataURL("image/png");
 }
 
-// ── Calibration card (shows colored markers at each field position) ──
+// ── Calibration card ──────────────────────────────────────────
 export async function downloadCalibrationCard(
   config: CardFieldConfig = DEFAULT_CARD_CONFIG,
   templateUrl = "/api/card-template"
@@ -208,13 +207,11 @@ export async function downloadCalibrationCard(
   canvas.height = 926;
   const ctx = canvas.getContext("2d")!;
 
-  // Template background
   try {
     const template = await loadImage(templateUrl);
     ctx.drawImage(template, 0, 0);
   } catch (_) { ctx.fillStyle = "#fffde7"; ctx.fillRect(0, 0, 2480, 926); }
 
-  // Semi-transparent overlay so markers stand out
   ctx.fillStyle = "rgba(0,0,0,0.18)";
   ctx.fillRect(0, 0, 2480, 926);
 
@@ -241,25 +238,24 @@ export async function downloadCalibrationCard(
   }
 
   const { photoBox: pb, qrCode: qr } = config;
-  marker("📷 PHOTO",      pb.x, pb.y, "#e91e63", pb.w, pb.h);
+  marker("📷 PHOTO",  pb.x, pb.y, "#e91e63", pb.w, pb.h);
   if (config.stamp) marker("💮 STAMP", config.stamp.x, config.stamp.y, "#f06292", config.stamp.w, config.stamp.h);
-  marker("QR",            qr.x, qr.y, "#9c27b0", qr.size, qr.size);
-  marker("1 CARD NO",     config.cardNumber.x,  config.cardNumber.y,  "#f44336");
-  marker("2 NAME",        config.name.x,        config.name.y,        "#ff5722");
-  marker("3 DESIGN",      config.designation.x, config.designation.y, "#ff9800");
-  marker("4 VALID",       config.validUntil.x,  config.validUntil.y,  "#ffc107");
-  marker("5 ADDRESS",     config.address.x,      config.address.y,     "#4caf50");
-  marker("6 MOBILE",      config.mobile.x,       config.mobile.y,      "#2196f3");
-  marker("7 AADHAAR",     config.aadhaar.x,      config.aadhaar.y,     "#00bcd4");
+  marker("QR",        qr.x, qr.y, "#9c27b0", qr.size, qr.size);
+  marker("1 CARD NO", config.cardNumber.x,  config.cardNumber.y,  "#f44336");
+  marker("2 NAME",    config.name.x,        config.name.y,        "#ff5722");
+  marker("3 DESIGN",  config.designation.x, config.designation.y, "#ff9800");
+  marker("4 VALID",   config.validUntil.x,  config.validUntil.y,  "#ffc107");
+  marker("5 PIND",    config.address.x,      config.address.y,     "#4caf50");
+  marker("6 MOBILE",  config.mobile.x,       config.mobile.y,      "#2196f3");
+  marker("7 AADHAAR", config.aadhaar.x,      config.aadhaar.y,     "#00bcd4");
 
-  // Legend
   ctx.fillStyle = "rgba(0,0,0,0.7)";
   ctx.fillRect(0, 860, 2480, 66);
   ctx.fillStyle = "#fff";
   ctx.font = "bold 30px monospace";
   ctx.textAlign = "left";
   ctx.textBaseline = "middle";
-  ctx.fillText("CALIBRATION — ਹਰ circle ਦਾ center = text baseline (x,y). box = photo/QR box (x,y,w,h). admin ਪੈਨਲ ਤੋਂ adjust ਕਰੋ।", 20, 893);
+  ctx.fillText("CALIBRATION — circle center = text baseline (x,y). box = area (x,y,w,h). admin panel ਤੋਂ adjust ਕਰੋ।", 20, 893);
 
   const dataUrl = canvas.toDataURL("image/png");
   const a = document.createElement("a");
