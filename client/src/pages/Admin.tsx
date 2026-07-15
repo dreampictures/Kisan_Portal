@@ -18,7 +18,7 @@ import {
   MapPin, Phone, CreditCard, UserPlus, Newspaper, Plus, X,
   Clock, ThumbsUp, ThumbsDown, BarChart2, Globe, TrendingUp,
   Pencil, KeyRound, FileText, UserCog, Bell, ChevronRight,
-  AlertCircle, CheckCheck, Camera, CheckCircle2,
+  AlertCircle, CheckCheck, Camera, CheckCircle2, LayoutGrid, List, KeySquare,
 } from "lucide-react";
 import { motion } from "framer-motion";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
@@ -825,8 +825,12 @@ function PendingCard({ reg, userRole }: { reg: Registration; userRole: StaffRole
 function CardDownloadButton({ reg }: { reg: Registration }) {
   const { toast } = useToast();
   const [loading, setLoading] = useState(false);
+  const [pinOpen, setPinOpen] = useState(false);
+  const [pinVal, setPinVal] = useState("");
+  const [pinErr, setPinErr] = useState("");
+  const [pinLoading, setPinLoading] = useState(false);
 
-  async function handleDownload() {
+  async function doDownload() {
     setLoading(true);
     try {
       const res = await fetch("/api/admin/card-config", { credentials: "include" });
@@ -841,11 +845,52 @@ function CardDownloadButton({ reg }: { reg: Registration }) {
     }
   }
 
+  async function handlePinSubmit() {
+    if (!pinVal) { setPinErr("PIN ਦਰਜ ਕਰੋ"); return; }
+    setPinLoading(true); setPinErr("");
+    try {
+      const res = await fetch("/api/admin/verify-pin", {
+        method: "POST", credentials: "include",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ pin: pinVal }),
+      });
+      if (res.ok) {
+        setPinOpen(false); setPinVal("");
+        await doDownload();
+      } else {
+        setPinErr("ਗਲਤ PIN। ਦੁਬਾਰਾ ਕੋਸ਼ਿਸ਼ ਕਰੋ।");
+      }
+    } catch { setPinErr("ਗਲਤੀ ਆਈ। ਦੁਬਾਰਾ ਕੋਸ਼ਿਸ਼ ਕਰੋ।"); }
+    finally { setPinLoading(false); }
+  }
+
   return (
-    <Button size="sm" variant="outline" className="w-full gap-1.5 border-green-300 text-green-700 hover:bg-green-50" onClick={handleDownload} disabled={loading}>
-      {loading ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : <Download className="h-3.5 w-3.5" />}
-      {loading ? "ਕਾਰਡ ਬਣ ਰਿਹਾ ਹੈ..." : "ਕਾਰਡ ਡਾਊਨਲੋਡ ਕਰੋ"}
-    </Button>
+    <>
+      <Button size="sm" variant="outline" className="w-full gap-1.5 border-green-300 text-green-700 hover:bg-green-50" onClick={() => { setPinVal(""); setPinErr(""); setPinOpen(true); }} disabled={loading}>
+        {loading ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : <Download className="h-3.5 w-3.5" />}
+        {loading ? "ਕਾਰਡ ਬਣ ਰਿਹਾ ਹੈ..." : "ਕਾਰਡ ਡਾਊਨਲੋਡ ਕਰੋ"}
+      </Button>
+      <Dialog open={pinOpen} onOpenChange={(o) => { setPinOpen(o); if (!o) setPinVal(""); }}>
+        <DialogContent className="max-w-xs">
+          <DialogHeader><DialogTitle className="flex items-center gap-2"><KeySquare className="h-4 w-4 text-green-700" /> PIN ਦਰਜ ਕਰੋ</DialogTitle></DialogHeader>
+          <div className="space-y-3 pt-1">
+            <p className="text-sm text-muted-foreground">ਕਾਰਡ ਡਾਊਨਲੋਡ ਕਰਨ ਲਈ ਆਪਣਾ 4-ਅੰਕੀ PIN ਦਰਜ ਕਰੋ।</p>
+            <Input
+              type="password" maxLength={4} inputMode="numeric" placeholder="••••"
+              value={pinVal} onChange={(e) => { setPinVal(e.target.value.replace(/\D/g, "")); setPinErr(""); }}
+              onKeyDown={(e) => e.key === "Enter" && handlePinSubmit()}
+              className="text-center text-xl tracking-widest font-mono"
+              autoFocus
+            />
+            {pinErr && <p className="text-xs text-destructive">{pinErr}</p>}
+            <Button onClick={handlePinSubmit} disabled={pinLoading || pinVal.length !== 4} className="w-full bg-green-600 hover:bg-green-700">
+              {pinLoading ? <Loader2 className="h-4 w-4 animate-spin mr-2" /> : <KeySquare className="h-4 w-4 mr-2" />}
+              ਪੁਸ਼ਟੀ ਕਰੋ
+            </Button>
+          </div>
+        </DialogContent>
+      </Dialog>
+    </>
   );
 }
 
@@ -1047,6 +1092,85 @@ function MemberCard({ reg, isAdminRole }: { reg: Registration; isAdminRole: bool
           ) : (
             <DeleteRequestDialog reg={reg} />
           )}
+        </div>
+      </CardContent>
+    </Card>
+  );
+}
+
+// ─── Large Member Card (list view) ───────────────────────────
+function MemberCardLarge({ reg, isAdminRole }: { reg: Registration; isAdminRole: boolean }) {
+  const { toast } = useToast();
+  const queryClient = useQueryClient();
+  const isExpired = reg.validUntil && new Date(reg.validUntil) < new Date();
+  const isActive = reg.validFrom && reg.validUntil && new Date() >= new Date(reg.validFrom) && new Date() <= new Date(reg.validUntil);
+  const photoSrc = reg.photoUrl || (reg.photoData ? `data:${reg.photoMimeType};base64,${reg.photoData}` : null);
+
+  const deleteMut = useMutation({
+    mutationFn: async () => {
+      const res = await fetch(`/api/admin/registrations/${reg.id}`, { method: "DELETE", credentials: "include" });
+      if (!res.ok) throw new Error("ਮਿਟਾਉਣ ਵਿੱਚ ਗਲਤੀ");
+      return res.json();
+    },
+    onSuccess: () => { toast({ title: "ਮਿਟਾਇਆ ਗਿਆ" }); queryClient.invalidateQueries({ queryKey: ["/api/admin/registrations"] }); },
+    onError: () => toast({ title: "ਗਲਤੀ", variant: "destructive" }),
+  });
+
+  return (
+    <Card className="overflow-hidden hover:shadow-md transition-shadow">
+      <CardContent className="p-0">
+        <div className="flex gap-0">
+          {/* Photo column */}
+          <div className="w-32 sm:w-44 flex-shrink-0 bg-muted/30 flex items-center justify-center min-h-[160px]">
+            {photoSrc ? (
+              <img src={photoSrc} alt={reg.name} className="w-full h-full object-cover" style={{ minHeight: 160, maxHeight: 220 }} />
+            ) : (
+              <div className="flex items-center justify-center w-full h-full min-h-[160px]">
+                <span className="text-5xl font-bold text-muted-foreground/40">{reg.name[0]}</span>
+              </div>
+            )}
+          </div>
+          {/* Details column */}
+          <div className="flex-1 p-4 flex flex-col gap-3">
+            <div className="flex items-start justify-between gap-2 flex-wrap">
+              <div>
+                <p className="text-lg font-bold leading-tight">{reg.name}</p>
+                <p className="text-sm text-muted-foreground">{reg.designation}</p>
+              </div>
+              <div className="flex flex-wrap gap-1.5 items-center">
+                {stageBadge(reg.currentStage)}
+                {isActive ? <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full bg-green-100 text-green-700 text-xs font-medium"><CheckCircle className="h-3 w-3" /> Active</span>
+                  : isExpired ? <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full bg-orange-100 text-orange-700 text-xs font-medium"><AlertTriangle className="h-3 w-3" /> Expired</span>
+                  : <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full bg-blue-100 text-blue-700 text-xs font-medium"><Clock className="h-3 w-3" /> Ready</span>}
+              </div>
+            </div>
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-x-4 gap-y-1 text-sm text-muted-foreground">
+              <div className="flex items-center gap-1.5"><MapPin className="h-3.5 w-3.5 flex-shrink-0" />{reg.village}, {reg.tehsil}, {reg.district}</div>
+              {reg.mobileNumber && <div className="flex items-center gap-1.5"><Phone className="h-3.5 w-3.5 flex-shrink-0" /><span className="font-mono">{reg.mobileNumber}</span></div>}
+              {reg.cardNumber && <div className="flex items-center gap-1.5"><CreditCard className="h-3.5 w-3.5 flex-shrink-0 text-green-600" /><span className="font-mono text-green-700 font-semibold">{reg.cardNumber}</span></div>}
+              {reg.trackingId && <div className="flex items-center gap-1.5"><CreditCard className="h-3.5 w-3.5 flex-shrink-0 text-blue-500" /><span className="font-mono text-blue-600 text-xs">{reg.trackingId}</span></div>}
+              {reg.aadhaarNumber && <div className="flex items-center gap-1.5"><KeyRound className="h-3.5 w-3.5 flex-shrink-0" /><span className="font-mono">**** **** {reg.aadhaarNumber.slice(-4)}</span></div>}
+              {reg.validFrom && reg.validUntil && (
+                <div className="flex items-center gap-1.5 sm:col-span-2"><Calendar className="h-3.5 w-3.5 flex-shrink-0" />
+                  {new Date(reg.validFrom).toLocaleDateString("en-IN", { day: "2-digit", month: "short", year: "numeric" })} → {new Date(reg.validUntil).toLocaleDateString("en-IN", { day: "2-digit", month: "short", year: "numeric" })}
+                </div>
+              )}
+            </div>
+            <div className="flex flex-wrap gap-2 mt-auto pt-1">
+              {isAdminRole && reg.currentStage === "card_issued" && <CardDownloadButton reg={reg} />}
+              {isAdminRole && <IssueQRDialog reg={reg} />}
+              <EditDialog reg={reg} />
+              {isAdminRole ? (
+                <Button size="sm" variant="ghost" className="text-destructive hover:bg-destructive/10 text-xs"
+                  onClick={() => { if (confirm(`ਕੀ ਤੁਸੀਂ ${reg.name} ਨੂੰ ਪੱਕੇ ਤੌਰ ਤੇ ਮਿਟਾਉਣਾ ਚਾਹੁੰਦੇ ਹੋ?`)) deleteMut.mutate(); }}
+                  disabled={deleteMut.isPending}>
+                  <Trash2 className="h-3.5 w-3.5 mr-1" /> ਮਿਟਾਓ
+                </Button>
+              ) : (
+                <DeleteRequestDialog reg={reg} />
+              )}
+            </div>
+          </div>
         </div>
       </CardContent>
     </Card>
@@ -1634,6 +1758,7 @@ export default function Admin() {
   const { data: registrations, isLoading } = useRegistrations();
   const downloadAll = useDownloadRegistrations();
   const [search, setSearch] = useState("");
+  const [viewMode, setViewMode] = useState<"grid" | "list">("grid");
 
   const { data: stats } = useQuery<any>({
     queryKey: ["/api/admin/dashboard-stats"],
@@ -1684,6 +1809,7 @@ export default function Admin() {
         { label: "Pending", value: isLoading ? "..." : allPending.length, color: "text-amber-500" },
         { label: "Approved", value: isLoading ? "..." : approved.length, color: "text-green-600" },
         { label: "Card ਜਾਰੀ", value: isLoading ? "..." : (stats?.cardIssued ?? "..."), color: "text-blue-500" },
+        { label: "ਰੱਦ", value: isLoading ? "..." : rejected.length, color: "text-red-500" },
       ]
     : [
         { label: "ਮੇਰੀ ਸਮੀਖਿਆ", value: isLoading ? "..." : myPending.length, color: "text-amber-500" },
@@ -1711,7 +1837,7 @@ export default function Admin() {
           </Button>
         </div>
 
-        <div className="grid grid-cols-2 md:grid-cols-4 gap-3 mb-6">
+        <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-5 gap-3 mb-6">
           {overviewStats.map((s) => (
             <Card key={s.label}><CardContent className="pt-4 pb-3 text-center">
               <p className="text-xs text-muted-foreground mb-1">{s.label}</p>
@@ -1784,17 +1910,33 @@ export default function Admin() {
             <div className="flex flex-col sm:flex-row gap-3 mb-4">
               <Input placeholder="ਖੋਜੋ — ਨਾਮ, ਪਿੰਡ, ਮੋਬਾਈਲ, Card No, TRK-..."
                 value={search} onChange={(e) => setSearch(e.target.value)} className="flex-1" data-testid="input-search" />
+              <div className="flex gap-1 border rounded-md p-0.5 bg-muted/40 self-start">
+                <button onClick={() => setViewMode("grid")} className={`p-1.5 rounded transition-colors ${viewMode === "grid" ? "bg-white shadow text-primary" : "text-muted-foreground hover:text-foreground"}`} title="Grid ਵਿਊ">
+                  <LayoutGrid className="h-4 w-4" />
+                </button>
+                <button onClick={() => setViewMode("list")} className={`p-1.5 rounded transition-colors ${viewMode === "list" ? "bg-white shadow text-primary" : "text-muted-foreground hover:text-foreground"}`} title="ਵੱਡਾ ਕਾਰਡ ਵਿਊ">
+                  <List className="h-4 w-4" />
+                </button>
+              </div>
             </div>
             {isLoading ? <div className="flex justify-center py-16"><Loader2 className="h-8 w-8 animate-spin text-primary" /></div>
               : !filteredApproved.length ? (
                 <Card><CardContent className="text-center py-16 text-muted-foreground">
                   <Users className="h-12 w-12 mx-auto mb-4 opacity-40" /><p>{search ? "ਕੋਈ ਨਤੀਜਾ ਨਹੀਂ" : "ਕੋਈ Approved ਮੈਂਬਰ ਨਹੀਂ"}</p>
                 </CardContent></Card>
-              ) : (
+              ) : viewMode === "grid" ? (
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                   {filteredApproved.map((reg) => (
                     <motion.div key={reg.id} initial={{ opacity: 0, y: 8 }} animate={{ opacity: 1, y: 0 }}>
                       <MemberCard reg={reg} isAdminRole={isAdminRole} />
+                    </motion.div>
+                  ))}
+                </div>
+              ) : (
+                <div className="flex flex-col gap-4">
+                  {filteredApproved.map((reg) => (
+                    <motion.div key={reg.id} initial={{ opacity: 0, y: 8 }} animate={{ opacity: 1, y: 0 }}>
+                      <MemberCardLarge reg={reg} isAdminRole={isAdminRole} />
                     </motion.div>
                   ))}
                 </div>

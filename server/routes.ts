@@ -203,7 +203,7 @@ export async function registerRoutes(httpServer: Server, app: Express): Promise<
   });
 
   // ── Public: card verification ────────────────────────────
-  app.get("/api/verify/:cardNumber", async (req, res) => {
+  app.get("/api/verify/:cardNumber", trackLimiter, async (req, res) => {
     try {
       const reg = await storage.getRegistrationByCardNumber(req.params.cardNumber);
       if (!reg) return res.status(404).json({ valid: false, message: "Card ਨਹੀਂ ਮਿਲਿਆ" });
@@ -1032,7 +1032,7 @@ export async function registerRoutes(httpServer: Server, app: Express): Promise<
   });
 
   // ── Card template: serve current (R2 or static default) ─
-  app.get("/api/card-template", async (req: any, res: any) => {
+  app.get("/api/card-template", isStaffAuth, async (req: any, res: any) => {
     try {
       const url = await storage.getSetting("card_template_url");
       if (url) {
