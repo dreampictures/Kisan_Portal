@@ -309,6 +309,10 @@ function IssueQRDialog({ reg }: { reg: Registration }) {
   const [loading, setLoading] = useState(false);
   const [qrDataUrl, setQrDataUrl] = useState<string | null>(null);
   const [issuedReg, setIssuedReg] = useState<Registration | null>(null);
+  const [pinStep, setPinStep] = useState(false);
+  const [pinVal, setPinVal] = useState("");
+  const [pinErr, setPinErr] = useState("");
+  const [pinLoading, setPinLoading] = useState(false);
   const { toast } = useToast();
   const queryClient = useQueryClient();
 
@@ -324,6 +328,25 @@ function IssueQRDialog({ reg }: { reg: Registration }) {
     finally { setLoading(false); }
   };
 
+  const handlePinSubmit = async () => {
+    if (!pinVal) { setPinErr("PIN ਦਰਜ ਕਰੋ"); return; }
+    setPinLoading(true); setPinErr("");
+    try {
+      const res = await fetch("/api/admin/verify-pin", {
+        method: "POST", credentials: "include",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ pin: pinVal }),
+      });
+      if (res.ok) {
+        setPinStep(false); setPinVal("");
+        await handleIssue();
+      } else {
+        setPinErr("ਗਲਤ PIN। ਦੁਬਾਰਾ ਕੋਸ਼ਿਸ਼ ਕਰੋ।");
+      }
+    } catch { setPinErr("ਗਲਤੀ ਆਈ।"); }
+    finally { setPinLoading(false); }
+  };
+
   const loadExistingQR = async () => {
     if (qrDataUrl || !reg.cardNumber) return;
     try {
@@ -335,16 +358,40 @@ function IssueQRDialog({ reg }: { reg: Registration }) {
     } catch { }
   };
 
+  const handleClose = (o: boolean) => {
+    setOpen(o);
+    if (o && reg.cardNumber && reg.validFrom) loadExistingQR();
+    if (!o) { setQrDataUrl(null); setIssuedReg(null); setPinStep(false); setPinVal(""); setPinErr(""); }
+  };
+
   return (
-    <Dialog open={open} onOpenChange={(o) => { setOpen(o); if (o && reg.cardNumber && reg.validFrom) loadExistingQR(); if (!o) { setQrDataUrl(null); setIssuedReg(null); } }}>
+    <Dialog open={open} onOpenChange={handleClose}>
       <DialogTrigger asChild>
         <Button size="sm" className="gap-1.5 bg-green-600 hover:bg-green-700 text-white w-full" data-testid={`button-qr-${reg.id}`}>
           <QrCode className="h-3.5 w-3.5" />{reg.cardNumber ? "QR ਦੇਖੋ / ਨਵਿਆਓ" : "QR ਬਣਾਓ"}
         </Button>
       </DialogTrigger>
       <DialogContent className="max-w-sm">
-        <DialogHeader><DialogTitle><QrCode className="inline h-4 w-4 mr-2 text-green-700" />{qrDataUrl ? "QR Code" : "QR ਬਣਾਓ"}</DialogTitle></DialogHeader>
-        {qrDataUrl ? <QRPanel qrDataUrl={qrDataUrl} reg={issuedReg || reg} /> : (
+        <DialogHeader><DialogTitle><QrCode className="inline h-4 w-4 mr-2 text-green-700" />{qrDataUrl ? "QR Code" : pinStep ? "PIN ਦਰਜ ਕਰੋ" : "QR ਬਣਾਓ"}</DialogTitle></DialogHeader>
+        {qrDataUrl ? <QRPanel qrDataUrl={qrDataUrl} reg={issuedReg || reg} /> : pinStep ? (
+          <div className="space-y-3 pt-1">
+            <p className="text-sm text-muted-foreground">QR ਜਾਰੀ ਕਰਨ ਲਈ 4-ਅੰਕੀ PIN ਦਰਜ ਕਰੋ।</p>
+            <Input
+              type="password" maxLength={4} inputMode="numeric" placeholder="••••"
+              value={pinVal} onChange={(e) => { setPinVal(e.target.value.replace(/\D/g, "")); setPinErr(""); }}
+              onKeyDown={(e) => e.key === "Enter" && handlePinSubmit()}
+              className="text-center text-xl tracking-widest font-mono"
+              autoFocus
+            />
+            {pinErr && <p className="text-xs text-destructive">{pinErr}</p>}
+            <div className="flex gap-2">
+              <Button variant="outline" className="flex-1" onClick={() => { setPinStep(false); setPinVal(""); setPinErr(""); }}>ਵਾਪਸ</Button>
+              <Button onClick={handlePinSubmit} disabled={pinLoading || pinVal.length !== 4} className="flex-1 bg-green-600 hover:bg-green-700">
+                {pinLoading ? <Loader2 className="h-4 w-4 animate-spin mr-2" /> : <KeySquare className="h-4 w-4 mr-2" />}ਪੁਸ਼ਟੀ ਕਰੋ
+              </Button>
+            </div>
+          </div>
+        ) : (
           <div className="space-y-4">
             <div className="bg-muted/40 rounded-lg p-3 flex items-center gap-3">
               <Avatar className="h-12 w-12 border-2 border-primary/20">
@@ -357,8 +404,8 @@ function IssueQRDialog({ reg }: { reg: Registration }) {
               <div className="space-y-1"><Label className="text-xs">Valid From</Label><Input type="date" value={vFrom} onChange={(e) => setVFrom(e.target.value)} /></div>
               <div className="space-y-1"><Label className="text-xs">Valid Until</Label><Input type="date" value={vUntil} onChange={(e) => setVUntil(e.target.value)} /></div>
             </div>
-            <Button onClick={handleIssue} disabled={loading} className="w-full bg-green-600 hover:bg-green-700">
-              {loading ? <><Loader2 className="mr-2 h-4 w-4 animate-spin" />QR ਬਣ ਰਿਹਾ...</> : <><QrCode className="mr-2 h-4 w-4" />QR ਬਣਾਓ</>}
+            <Button onClick={() => setPinStep(true)} disabled={loading} className="w-full bg-green-600 hover:bg-green-700">
+              <QrCode className="mr-2 h-4 w-4" />QR ਬਣਾਓ
             </Button>
           </div>
         )}
@@ -825,10 +872,6 @@ function PendingCard({ reg, userRole }: { reg: Registration; userRole: StaffRole
 function CardDownloadButton({ reg }: { reg: Registration }) {
   const { toast } = useToast();
   const [loading, setLoading] = useState(false);
-  const [pinOpen, setPinOpen] = useState(false);
-  const [pinVal, setPinVal] = useState("");
-  const [pinErr, setPinErr] = useState("");
-  const [pinLoading, setPinLoading] = useState(false);
 
   async function doDownload() {
     setLoading(true);
@@ -845,52 +888,11 @@ function CardDownloadButton({ reg }: { reg: Registration }) {
     }
   }
 
-  async function handlePinSubmit() {
-    if (!pinVal) { setPinErr("PIN ਦਰਜ ਕਰੋ"); return; }
-    setPinLoading(true); setPinErr("");
-    try {
-      const res = await fetch("/api/admin/verify-pin", {
-        method: "POST", credentials: "include",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ pin: pinVal }),
-      });
-      if (res.ok) {
-        setPinOpen(false); setPinVal("");
-        await doDownload();
-      } else {
-        setPinErr("ਗਲਤ PIN। ਦੁਬਾਰਾ ਕੋਸ਼ਿਸ਼ ਕਰੋ।");
-      }
-    } catch { setPinErr("ਗਲਤੀ ਆਈ। ਦੁਬਾਰਾ ਕੋਸ਼ਿਸ਼ ਕਰੋ।"); }
-    finally { setPinLoading(false); }
-  }
-
   return (
-    <>
-      <Button size="sm" variant="outline" className="w-full gap-1.5 border-green-300 text-green-700 hover:bg-green-50" onClick={() => { setPinVal(""); setPinErr(""); setPinOpen(true); }} disabled={loading}>
-        {loading ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : <Download className="h-3.5 w-3.5" />}
-        {loading ? "ਕਾਰਡ ਬਣ ਰਿਹਾ ਹੈ..." : "ਕਾਰਡ ਡਾਊਨਲੋਡ ਕਰੋ"}
-      </Button>
-      <Dialog open={pinOpen} onOpenChange={(o) => { setPinOpen(o); if (!o) setPinVal(""); }}>
-        <DialogContent className="max-w-xs">
-          <DialogHeader><DialogTitle className="flex items-center gap-2"><KeySquare className="h-4 w-4 text-green-700" /> PIN ਦਰਜ ਕਰੋ</DialogTitle></DialogHeader>
-          <div className="space-y-3 pt-1">
-            <p className="text-sm text-muted-foreground">ਕਾਰਡ ਡਾਊਨਲੋਡ ਕਰਨ ਲਈ ਆਪਣਾ 4-ਅੰਕੀ PIN ਦਰਜ ਕਰੋ।</p>
-            <Input
-              type="password" maxLength={4} inputMode="numeric" placeholder="••••"
-              value={pinVal} onChange={(e) => { setPinVal(e.target.value.replace(/\D/g, "")); setPinErr(""); }}
-              onKeyDown={(e) => e.key === "Enter" && handlePinSubmit()}
-              className="text-center text-xl tracking-widest font-mono"
-              autoFocus
-            />
-            {pinErr && <p className="text-xs text-destructive">{pinErr}</p>}
-            <Button onClick={handlePinSubmit} disabled={pinLoading || pinVal.length !== 4} className="w-full bg-green-600 hover:bg-green-700">
-              {pinLoading ? <Loader2 className="h-4 w-4 animate-spin mr-2" /> : <KeySquare className="h-4 w-4 mr-2" />}
-              ਪੁਸ਼ਟੀ ਕਰੋ
-            </Button>
-          </div>
-        </DialogContent>
-      </Dialog>
-    </>
+    <Button size="sm" variant="outline" className="w-full gap-1.5 border-green-300 text-green-700 hover:bg-green-50" onClick={doDownload} disabled={loading}>
+      {loading ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : <Download className="h-3.5 w-3.5" />}
+      {loading ? "ਕਾਰਡ ਬਣ ਰਿਹਾ ਹੈ..." : "ਕਾਰਡ ਡਾਊਨਲੋਡ ਕਰੋ"}
+    </Button>
   );
 }
 
