@@ -1,7 +1,7 @@
 # fly.toml - Fly.io configuration
 
 app = "kisan-union-punjab"
-primary_region = "bom"
+primary_region = "sin"
 
 [build]
 
